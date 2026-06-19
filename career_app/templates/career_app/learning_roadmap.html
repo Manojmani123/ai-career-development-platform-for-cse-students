@@ -1,0 +1,23 @@
+<h1>Personalized Learning Roadmap</h1>
+
+<h2>
+    Target Role:
+    {{ result.job_role.role_name }}
+</h2>
+
+<h3>
+    Current Match Score:
+    {{ result.match_score }}%
+</h3>
+
+<hr>
+
+{% for step in roadmap_steps %}
+    <p>{{ step }}</p>
+{% endfor %}
+
+<br>
+
+<a href="{% url 'user_dashboard' %}">
+    Back to Dashboard
+</a>

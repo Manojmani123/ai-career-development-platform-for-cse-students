@@ -321,3 +321,35 @@ def view_learning_resources(request):
         'career_app/view_learning_resources.html',
         {'resources': resources}
     )
+@login_required
+def learning_roadmap(request, result_id):
+
+    result = CareerMatchResult.objects.get(
+        id=result_id,
+        user=request.user
+    )
+
+    missing_skills = result.missing_skills.all()
+
+    roadmap_steps = []
+
+    step_number = 1
+
+    for skill in missing_skills:
+        roadmap_steps.append(
+            f"Step {step_number}: Learn {skill.skill_name}"
+        )
+        step_number += 1
+
+    roadmap_steps.append(
+        f"Step {step_number}: Build a project related to {result.job_role.role_name}"
+    )
+
+    return render(
+        request,
+        'career_app/learning_roadmap.html',
+        {
+            'result': result,
+            'roadmap_steps': roadmap_steps
+        }
+    )

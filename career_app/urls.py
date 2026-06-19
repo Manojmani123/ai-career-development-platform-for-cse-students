@@ -66,4 +66,9 @@ path(
     views.view_learning_resources,
     name='view_learning_resources'
 ),
+path(
+    'learning-roadmap/<int:result_id>/',
+    views.learning_roadmap,
+    name='learning_roadmap'
+),
 ]
