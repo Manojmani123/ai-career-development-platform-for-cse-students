@@ -8,6 +8,17 @@ from .models import AdminRequest
 from .models import JobRole, Skill, JobRoleSkill
 
 from .models import CareerMatchResult
+from .models import LearningResource
+
+class LearningResourceForm(forms.ModelForm):
+    class Meta:
+        model = LearningResource
+        fields = [
+            'skill',
+            'title',
+            'resource_type',
+            'url'
+        ]
 
 class CareerMatchForm(forms.ModelForm):
     class Meta:

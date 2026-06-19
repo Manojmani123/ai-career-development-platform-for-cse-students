@@ -22,6 +22,38 @@
     {% endfor %}
 </ul>
 
+<hr>
+
+<h3>Recommended Learning Resources</h3>
+
+{% if resources %}
+    <table border="1" cellpadding="10">
+        <tr>
+            <th>Missing Skill</th>
+            <th>Resource Title</th>
+            <th>Type</th>
+            <th>Link</th>
+        </tr>
+
+        {% for resource in resources %}
+        <tr>
+            <td>{{ resource.skill.skill_name }}</td>
+            <td>{{ resource.title }}</td>
+            <td>{{ resource.resource_type }}</td>
+            <td>
+                <a href="{{ resource.url }}" target="_blank">
+                    Open Resource
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <p>No learning resources found for missing skills yet.</p>
+{% endif %}
+
+<br>
+
 <a href="{% url 'career_match' %}">Try Again</a>
 <br>
 <a href="{% url 'user_dashboard' %}">Back to Dashboard</a>

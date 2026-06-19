@@ -55,5 +55,15 @@ path('assign-skill-to-role/', views.assign_skill_to_role, name='assign_skill_to_
 path('view-role-skills/', views.view_role_skills, name='view_role_skills'),
 path('career-match/', views.career_match, name='career_match'),
 path('career-match-result/<int:result_id>/', views.career_match_result, name='career_match_result'),
+path(
+    'add-learning-resource/',
+    views.add_learning_resource,
+    name='add_learning_resource'
+),
 
+path(
+    'view-learning-resources/',
+    views.view_learning_resources,
+    name='view_learning_resources'
+),
 ]

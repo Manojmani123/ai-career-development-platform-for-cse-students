@@ -11,6 +11,9 @@ from .forms import RegisterForm, AdminRequestForm, JobRoleForm, SkillForm, JobRo
 from .models import AdminInviteCode, AdminRequest, JobRole, Skill, JobRoleSkill
 from .forms import CareerMatchForm
 from .models import CareerMatchResult
+from .models import LearningResource
+from .forms import LearningResourceForm
+from .models import LearningResource
 
 
 from django.conf import settings
@@ -277,4 +280,44 @@ def career_match(request):
 @login_required
 def career_match_result(request, result_id):
     result = CareerMatchResult.objects.get(id=result_id, user=request.user)
-    return render(request, 'career_app/career_match_result.html', {'result': result})
+
+    missing_skills = result.missing_skills.all()
+
+    resources = LearningResource.objects.filter(
+        skill__in=missing_skills
+    ).select_related('skill')
+
+    return render(request, 'career_app/career_match_result.html', {
+        'result': result,
+        'resources': resources
+    })
+@login_required
+def add_learning_resource(request):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    form = LearningResourceForm(request.POST or None)
+
+    if form.is_valid():
+        form.save()
+        return redirect('view_learning_resources')
+
+    return render(
+        request,
+        'career_app/add_learning_resource.html',
+        {'form': form}
+    )
+
+
+@login_required
+def view_learning_resources(request):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    resources = LearningResource.objects.select_related('skill')
+
+    return render(
+        request,
+        'career_app/view_learning_resources.html',
+        {'resources': resources}
+    )

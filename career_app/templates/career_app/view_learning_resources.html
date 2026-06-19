@@ -1,0 +1,28 @@
+<h1>Learning Resources</h1>
+
+<a href="{% url 'add_learning_resource' %}">
+    Add New Resource
+</a>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Skill</th>
+        <th>Title</th>
+        <th>Type</th>
+        <th>Link</th>
+    </tr>
+
+    {% for resource in resources %}
+    <tr>
+        <td>{{ resource.skill.skill_name }}</td>
+        <td>{{ resource.title }}</td>
+        <td>{{ resource.resource_type }}</td>
+
+        <td>
+            <a href="{{ resource.url }}" target="_blank">
+                Open
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>

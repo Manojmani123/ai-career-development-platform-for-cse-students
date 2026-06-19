@@ -89,3 +89,26 @@ class CareerMatchResult(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.job_role.role_name} - {self.match_score}%"
+    
+class LearningResource(models.Model):
+    RESOURCE_TYPES = [
+        ('Course', 'Course'),
+        ('Video', 'Video'),
+        ('Documentation', 'Documentation'),
+        ('Book', 'Book'),
+        ('Article', 'Article'),
+    ]
+
+    skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
+
+    title = models.CharField(max_length=200)
+
+    resource_type = models.CharField(
+        max_length=50,
+        choices=RESOURCE_TYPES
+    )
+
+    url = models.URLField()
+
+    def __str__(self):
+        return self.title
