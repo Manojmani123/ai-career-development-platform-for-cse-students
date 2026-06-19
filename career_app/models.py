@@ -151,6 +151,18 @@ class UserProfile(models.Model):
         blank=True,
         null=True
     )
+    extracted_text = models.TextField(
+        blank=True,
+        null=True
+    )
 
+    extracted_skills = models.ManyToManyField(
+        Skill,
+        blank=True
+    )
+
+    is_resume_valid = models.BooleanField(
+        default=False
+    )
     def __str__(self):
         return self.user.username

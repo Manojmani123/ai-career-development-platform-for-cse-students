@@ -32,6 +32,47 @@
             No resume uploaded
         {% endif %}
     </p>
+    <p>
+    <strong>Resume:</strong>
+
+    {% if profile.resume %}
+        <a href="{{ profile.resume.url }}" target="_blank">
+            View Resume
+        </a>
+    {% else %}
+        No resume uploaded
+    {% endif %}
+</p>
+
+<!-- PASTE HERE -->
+
+<h3>Resume Validation</h3>
+
+{% if profile.resume %}
+    {% if profile.is_resume_valid %}
+        <p style="color: green;">
+            Valid resume detected.
+        </p>
+    {% else %}
+        <p style="color: red;">
+            Uploaded file does not appear to be a valid resume.
+        </p>
+    {% endif %}
+{% endif %}
+
+<h3>Extracted Skills</h3>
+
+<ul>
+    {% for skill in profile.extracted_skills.all %}
+        <li>{{ skill.skill_name }}</li>
+    {% empty %}
+        <li>No skills extracted yet.</li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'edit_profile' %}">
+    Edit Profile
+</a>
 
     <a href="{% url 'edit_profile' %}">Edit Profile</a>
 {% else %}

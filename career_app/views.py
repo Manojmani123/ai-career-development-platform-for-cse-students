@@ -16,6 +16,8 @@ from .forms import LearningResourceForm
 from .models import LearningResource
 from .forms import UserProfileForm
 from .models import UserProfile
+from .utils import extract_text_from_resume, is_valid_resume, extract_skills_from_text
+from .models import Skill
 
 
 from django.conf import settings
@@ -366,6 +368,24 @@ def create_profile(request):
         profile = form.save(commit=False)
         profile.user = request.user
         profile.save()
+        form.save_m2m()
+
+        if profile.resume:
+            file_path = profile.resume.path
+
+            extracted_text = extract_text_from_resume(file_path)
+            profile.extracted_text = extracted_text
+            profile.is_resume_valid = is_valid_resume(extracted_text)
+            profile.save()
+
+            if profile.is_resume_valid:
+                all_skills = Skill.objects.all()
+                extracted_skills = extract_skills_from_text(
+                    extracted_text,
+                    all_skills
+                )
+                profile.extracted_skills.set(extracted_skills)
+
         return redirect('view_profile')
 
     return render(request, 'career_app/create_profile.html', {'form': form})
@@ -388,7 +408,26 @@ def edit_profile(request):
     )
 
     if form.is_valid():
-        form.save()
+        profile = form.save()
+
+        if profile.resume:
+            file_path = profile.resume.path
+
+            extracted_text = extract_text_from_resume(file_path)
+            profile.extracted_text = extracted_text
+            profile.is_resume_valid = is_valid_resume(extracted_text)
+            profile.save()
+
+            if profile.is_resume_valid:
+                all_skills = Skill.objects.all()
+                extracted_skills = extract_skills_from_text(
+                    extracted_text,
+                    all_skills
+                )
+                profile.extracted_skills.set(extracted_skills)
+            else:
+                profile.extracted_skills.clear()
+
         return redirect('view_profile')
 
     return render(request, 'career_app/edit_profile.html', {'form': form})
