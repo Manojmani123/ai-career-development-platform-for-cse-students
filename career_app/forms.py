@@ -10,6 +10,8 @@ from .models import JobRole, Skill, JobRoleSkill
 from .models import CareerMatchResult
 from .models import LearningResource
 from .models import UserProfile
+import os
+from django import forms
 
 class UserProfileForm(forms.ModelForm):
     class Meta:
@@ -23,7 +25,26 @@ class UserProfileForm(forms.ModelForm):
             'linkedin_link',
             'resume',
         ]
+    def clean_resume(self):
+        resume = self.cleaned_data.get('resume')
 
+        if resume:
+            allowed_extensions = ['.pdf', '.docx']
+            ext = os.path.splitext(resume.name)[1].lower()
+
+            if ext not in allowed_extensions:
+                raise forms.ValidationError(
+                    "Only PDF and DOCX resume files are allowed."
+                )
+
+            max_size = 5 * 1024 * 1024  # 5MB
+
+            if resume.size > max_size:
+                raise forms.ValidationError(
+                    "Resume file size must be less than 5MB."
+                )
+
+        return resume
 class LearningResourceForm(forms.ModelForm):
     class Meta:
         model = LearningResource
