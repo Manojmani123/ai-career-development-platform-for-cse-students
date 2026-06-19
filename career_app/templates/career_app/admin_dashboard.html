@@ -1,0 +1,16 @@
+<h1>Admin Dashboard</h1>
+
+<p>Welcome Admin, {{ request.user.username }}</p>
+
+<ul>
+    <li><a href="{% url 'add_job_role' %}">Add Job Role</a></li>
+    <li><a href="{% url 'view_job_roles' %}">View Job Roles</a></li>
+
+    <li><a href="{% url 'add_skill' %}">Add Skill</a></li>
+    <li><a href="{% url 'view_skills' %}">View Skills</a></li>
+
+    <li><a href="{% url 'assign_skill_to_role' %}">Assign Skills to Roles</a></li>
+    <li><a href="{% url 'view_role_skills' %}">View Role-Skill Mapping</a></li>
+</ul>
+
+<a href="{% url 'logout' %}">Logout</a>

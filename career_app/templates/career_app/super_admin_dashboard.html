@@ -1,0 +1,13 @@
+<h1>Super Admin Dashboard</h1>
+
+<p>Welcome Super Admin, {{ request.user.username }}</p>
+
+<ul>
+    <li><a href="{% url 'generate_admin_invite' %}">Generate Admin Invite Code</a></li>
+    <li><a href="{% url 'view_admin_requests' %}">Approve Admin Requests</a></li>
+    <li><a href="#">View Users</a></li>
+    <li><a href="#">View Admins</a></li>
+    <li><a href="#">Platform Analytics</a></li>
+</ul>
+
+<a href="{% url 'logout' %}">Logout</a>

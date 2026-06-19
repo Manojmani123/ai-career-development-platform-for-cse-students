@@ -1,0 +1,13 @@
+<h1>Generate Admin Invite Code</h1>
+
+<form method="POST">
+    {% csrf_token %}
+    <button type="submit">Generate Invite Code</button>
+</form>
+
+{% if code %}
+    <h3>Generated Invite Code:</h3>
+    <p><strong>{{ code }}</strong></p>
+{% endif %}
+
+<a href="{% url 'super_admin_dashboard' %}">Back to Dashboard</a>

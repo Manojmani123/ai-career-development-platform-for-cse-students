@@ -1,0 +1,33 @@
+<h1>Admin Request Form</h1>
+
+{% for message in messages %}
+    <p>{{ message }}</p>
+{% endfor %}
+
+<form method="POST">
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    <p>
+        {{ form.full_name.label_tag }}
+        {{ form.full_name }}
+        {{ form.full_name.errors }}
+    </p>
+
+    <p>
+        {{ form.email.label_tag }}
+        {{ form.email }}
+        {{ form.email.errors }}
+    </p>
+
+    <p>
+        {{ form.invite_code.label_tag }}
+        {{ form.invite_code }}
+        {{ form.invite_code.errors }}
+    </p>
+
+    <button type="submit">Submit Request</button>
+</form>
+
+<a href="{% url 'login' %}">Back to Login</a>

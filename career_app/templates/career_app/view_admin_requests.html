@@ -1,0 +1,34 @@
+<h1>Admin Requests</h1>
+
+{% for message in messages %}
+    <p>{{ message }}</p>
+{% endfor %}
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Full Name</th>
+        <th>Email</th>
+        <th>Invite Code</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+
+    {% for req in requests %}
+    <tr>
+        <td>{{ req.full_name }}</td>
+        <td>{{ req.email }}</td>
+        <td>{{ req.invite_code }}</td>
+        <td>{{ req.status }}</td>
+        <td>
+            {% if req.status == 'Pending' %}
+                <a href="{% url 'approve_admin_request' req.id %}">Approve</a> |
+                <a href="{% url 'reject_admin_request' req.id %}">Reject</a>
+            {% else %}
+                No Action
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="{% url 'super_admin_dashboard' %}">Back to Dashboard</a>

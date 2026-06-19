@@ -1,0 +1,9 @@
+<h1>Add Job Role</h1>
+
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Add Role</button>
+</form>
+
+<a href="{% url 'admin_dashboard' %}">Back</a>

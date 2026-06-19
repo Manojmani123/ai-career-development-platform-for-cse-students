@@ -1,0 +1,21 @@
+<h1>Role-Skill Mapping</h1>
+
+<a href="{% url 'assign_skill_to_role' %}">Assign New Skill</a>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Job Role</th>
+        <th>Skill</th>
+        <th>Importance</th>
+    </tr>
+
+    {% for item in role_skills %}
+    <tr>
+        <td>{{ item.job_role.role_name }}</td>
+        <td>{{ item.skill.skill_name }}</td>
+        <td>{{ item.importance }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="{% url 'admin_dashboard' %}">Back</a>

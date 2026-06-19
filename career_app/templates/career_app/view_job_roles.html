@@ -1,0 +1,19 @@
+<h1>Job Roles</h1>
+
+<a href="{% url 'add_job_role' %}">Add New Role</a>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Role Name</th>
+        <th>Description</th>
+    </tr>
+
+    {% for role in roles %}
+    <tr>
+        <td>{{ role.role_name }}</td>
+        <td>{{ role.description }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="{% url 'admin_dashboard' %}">Back</a>
