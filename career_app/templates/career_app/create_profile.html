@@ -1,0 +1,9 @@
+<h1>Create Profile</h1>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save Profile</button>
+</form>
+
+<a href="{% url 'user_dashboard' %}">Back</a>

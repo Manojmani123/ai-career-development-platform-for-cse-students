@@ -9,6 +9,20 @@ from .models import JobRole, Skill, JobRoleSkill
 
 from .models import CareerMatchResult
 from .models import LearningResource
+from .models import UserProfile
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = [
+            'full_name',
+            'university',
+            'degree',
+            'year_of_study',
+            'github_link',
+            'linkedin_link',
+            'resume',
+        ]
 
 class LearningResourceForm(forms.ModelForm):
     class Meta:

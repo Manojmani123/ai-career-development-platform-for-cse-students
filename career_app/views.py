@@ -14,6 +14,8 @@ from .models import CareerMatchResult
 from .models import LearningResource
 from .forms import LearningResourceForm
 from .models import LearningResource
+from .forms import UserProfileForm
+from .models import UserProfile
 
 
 from django.conf import settings
@@ -353,3 +355,40 @@ def learning_roadmap(request, result_id):
             'roadmap_steps': roadmap_steps
         }
     )
+@login_required
+def create_profile(request):
+    if UserProfile.objects.filter(user=request.user).exists():
+        return redirect('view_profile')
+
+    form = UserProfileForm(request.POST or None, request.FILES or None)
+
+    if form.is_valid():
+        profile = form.save(commit=False)
+        profile.user = request.user
+        profile.save()
+        return redirect('view_profile')
+
+    return render(request, 'career_app/create_profile.html', {'form': form})
+
+
+@login_required
+def view_profile(request):
+    profile = UserProfile.objects.filter(user=request.user).first()
+    return render(request, 'career_app/view_profile.html', {'profile': profile})
+
+
+@login_required
+def edit_profile(request):
+    profile = UserProfile.objects.get(user=request.user)
+
+    form = UserProfileForm(
+        request.POST or None,
+        request.FILES or None,
+        instance=profile
+    )
+
+    if form.is_valid():
+        form.save()
+        return redirect('view_profile')
+
+    return render(request, 'career_app/edit_profile.html', {'form': form})

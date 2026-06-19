@@ -112,3 +112,45 @@ class LearningResource(models.Model):
 
     def __str__(self):
         return self.title
+    
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+    full_name = models.CharField(max_length=200)
+
+    university = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True
+    )
+
+    degree = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True
+    )
+
+    year_of_study = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True
+    )
+
+    github_link = models.URLField(
+        blank=True,
+        null=True
+    )
+
+    linkedin_link = models.URLField(
+        blank=True,
+        null=True
+    )
+
+    resume = models.FileField(
+        upload_to='resumes/',
+        blank=True,
+        null=True
+    )
+
+    def __str__(self):
+        return self.user.username

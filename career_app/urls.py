@@ -71,4 +71,7 @@ path(
     views.learning_roadmap,
     name='learning_roadmap'
 ),
+path('create-profile/', views.create_profile, name='create_profile'),
+path('view-profile/', views.view_profile, name='view_profile'),
+path('edit-profile/', views.edit_profile, name='edit_profile'),
 ]

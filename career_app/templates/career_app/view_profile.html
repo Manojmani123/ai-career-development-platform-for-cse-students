@@ -1,0 +1,43 @@
+<h1>My Profile</h1>
+
+{% if profile %}
+    <p><strong>Full Name:</strong> {{ profile.full_name }}</p>
+    <p><strong>University:</strong> {{ profile.university }}</p>
+    <p><strong>Degree:</strong> {{ profile.degree }}</p>
+    <p><strong>Year of Study:</strong> {{ profile.year_of_study }}</p>
+
+    <p>
+        <strong>GitHub:</strong>
+        {% if profile.github_link %}
+            <a href="{{ profile.github_link }}" target="_blank">GitHub Profile</a>
+        {% else %}
+            Not added
+        {% endif %}
+    </p>
+
+    <p>
+        <strong>LinkedIn:</strong>
+        {% if profile.linkedin_link %}
+            <a href="{{ profile.linkedin_link }}" target="_blank">LinkedIn Profile</a>
+        {% else %}
+            Not added
+        {% endif %}
+    </p>
+
+    <p>
+        <strong>Resume:</strong>
+        {% if profile.resume %}
+            <a href="{{ profile.resume.url }}" target="_blank">View Resume</a>
+        {% else %}
+            No resume uploaded
+        {% endif %}
+    </p>
+
+    <a href="{% url 'edit_profile' %}">Edit Profile</a>
+{% else %}
+    <p>No profile created yet.</p>
+    <a href="{% url 'create_profile' %}">Create Profile</a>
+{% endif %}
+
+<br><br>
+<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>
