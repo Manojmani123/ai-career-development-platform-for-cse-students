@@ -53,5 +53,7 @@ path('view-skills/', views.view_skills, name='view_skills'),
 
 path('assign-skill-to-role/', views.assign_skill_to_role, name='assign_skill_to_role'),
 path('view-role-skills/', views.view_role_skills, name='view_role_skills'),
+path('career-match/', views.career_match, name='career_match'),
+path('career-match-result/<int:result_id>/', views.career_match_result, name='career_match_result'),
 
 ]

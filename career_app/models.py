@@ -74,8 +74,18 @@ class JobRoleSkill(models.Model):
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
     importance = models.CharField(max_length=20, choices=IMPORTANCE_CHOICES, default='Medium')
 
-    class Meta:
+class Meta:
         unique_together = ('job_role', 'skill')
+        def __str__(self):
+            return f"{self.job_role.role_name} - {self.skill.skill_name}"
+class CareerMatchResult(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    job_role = models.ForeignKey(JobRole, on_delete=models.CASCADE)
+    selected_skills = models.ManyToManyField(Skill, related_name='selected_skills')
+    matched_skills = models.ManyToManyField(Skill, related_name='matched_skills', blank=True)
+    missing_skills = models.ManyToManyField(Skill, related_name='missing_skills', blank=True)
+    match_score = models.FloatField(default=0)
+    created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"{self.job_role.role_name} - {self.skill.skill_name}"
+        return f"{self.user.username} - {self.job_role.role_name} - {self.match_score}%"

@@ -1,0 +1,27 @@
+<h1>Career Match Result</h1>
+
+<h2>Target Role: {{ result.job_role.role_name }}</h2>
+
+<h3>Match Score: {{ result.match_score }}%</h3>
+
+<h3>Matched Skills</h3>
+<ul>
+    {% for skill in result.matched_skills.all %}
+        <li>{{ skill.skill_name }}</li>
+    {% empty %}
+        <li>No matched skills found.</li>
+    {% endfor %}
+</ul>
+
+<h3>Missing Skills</h3>
+<ul>
+    {% for skill in result.missing_skills.all %}
+        <li>{{ skill.skill_name }}</li>
+    {% empty %}
+        <li>No missing skills. Good match.</li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'career_match' %}">Try Again</a>
+<br>
+<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>

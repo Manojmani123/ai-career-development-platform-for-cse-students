@@ -7,6 +7,16 @@ from django.contrib.auth.models import User
 from .models import AdminRequest
 from .models import JobRole, Skill, JobRoleSkill
 
+from .models import CareerMatchResult
+
+class CareerMatchForm(forms.ModelForm):
+    class Meta:
+        model = CareerMatchResult
+        fields = ['job_role', 'selected_skills']
+
+        widgets = {
+            'selected_skills': forms.CheckboxSelectMultiple,
+        }
 class JobRoleForm(forms.ModelForm):
     class Meta:
         model = JobRole

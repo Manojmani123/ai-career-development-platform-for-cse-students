@@ -1,0 +1,9 @@
+<h1>Career Matching</h1>
+
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Analyze Career Match</button>
+</form>
+
+<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>

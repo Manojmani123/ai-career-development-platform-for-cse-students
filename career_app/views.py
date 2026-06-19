@@ -9,6 +9,8 @@ from .models import AdminInviteCode, AdminRequest
 from .forms import AdminRequestForm
 from .forms import RegisterForm, AdminRequestForm, JobRoleForm, SkillForm, JobRoleSkillForm
 from .models import AdminInviteCode, AdminRequest, JobRole, Skill, JobRoleSkill
+from .forms import CareerMatchForm
+from .models import CareerMatchResult
 
 
 from django.conf import settings
@@ -231,4 +233,48 @@ def view_role_skills(request):
     role_skills = JobRoleSkill.objects.select_related('job_role', 'skill').all()
     return render(request, 'career_app/view_role_skills.html', {'role_skills': role_skills})
 
+@login_required
+def career_match(request):
+    form = CareerMatchForm(request.POST or None)
 
+    if request.method == 'POST':
+        if form.is_valid():
+            result = form.save(commit=False)
+            result.user = request.user
+            result.save()
+            form.save_m2m()
+
+            required_skills = Skill.objects.filter(
+                jobroleskill__job_role=result.job_role
+            ).distinct()
+
+            selected_skills = result.selected_skills.all()
+
+            matched_skills = selected_skills.filter(
+                id__in=required_skills.values_list('id', flat=True)
+            )
+
+            missing_skills = required_skills.exclude(
+                id__in=selected_skills.values_list('id', flat=True)
+            )
+
+            if required_skills.count() > 0:
+                match_score = (matched_skills.count() / required_skills.count()) * 100
+            else:
+                match_score = 0
+
+            result.match_score = round(match_score, 2)
+            result.save()
+
+            result.matched_skills.set(matched_skills)
+            result.missing_skills.set(missing_skills)
+
+            return redirect('career_match_result', result_id=result.id)
+
+    return render(request, 'career_app/career_match.html', {'form': form})
+
+
+@login_required
+def career_match_result(request, result_id):
+    result = CareerMatchResult.objects.get(id=result_id, user=request.user)
+    return render(request, 'career_app/career_match_result.html', {'result': result})
