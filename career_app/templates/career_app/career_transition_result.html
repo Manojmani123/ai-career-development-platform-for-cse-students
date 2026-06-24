@@ -1,0 +1,23 @@
+<h2>Career Transition Feasibility Result</h2>
+
+<p><strong>Current Role:</strong> {{ analysis.current_role.role_name }}</p>
+<p><strong>Target Role:</strong> {{ analysis.target_role.role_name }}</p>
+
+<p><strong>Skill Match Score:</strong> {{ analysis.skill_match_score }}%</p>
+<p><strong>Tool Match Score:</strong> {{ analysis.tool_match_score }}%</p>
+<p><strong>Feasibility Score:</strong> {{ analysis.feasibility_score }}%</p>
+
+<p><strong>Difficulty Level:</strong> {{ analysis.difficulty_level }}</p>
+
+<h3>Missing Skills</h3>
+<p>{{ analysis.missing_skills|default:"No major missing skills" }}</p>
+
+<h3>Missing Tools</h3>
+<p>{{ analysis.missing_tools|default:"No major missing tools" }}</p>
+
+<h3>Recommendation</h3>
+<p>{{ analysis.recommendation }}</p>
+
+<a href="{% url 'career_transition_analysis' %}">Analyse Another Transition</a>
+<br>
+<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>

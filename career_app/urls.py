@@ -64,4 +64,48 @@ path('view-profile/', views.view_profile, name='view_profile'),
 path('edit-profile/', views.edit_profile, name='edit_profile'),
 path('readiness-assessment/', views.readiness_assessment, name='readiness_assessment'),
 path('readiness-result/<int:assessment_id>/', views.readiness_result, name='readiness_result'),
+path('add-industry-tool/', views.add_industry_tool, name='add_industry_tool'),
+path('view-industry-tools/', views.view_industry_tools, name='view_industry_tools'),
+path('assign-tool-to-role/', views.assign_tool_to_role, name='assign_tool_to_role'),
+path('view-role-tools/', views.view_role_tools, name='view_role_tools'),
+path(
+    'bottleneck-detection/',
+    views.bottleneck_detection,
+    name='bottleneck_detection'
+),
+
+path(
+    'bottleneck-result/<int:bottleneck_id>/',
+    views.bottleneck_result,
+    name='bottleneck_result'
+),
+
+path(
+    'add-project/',
+    views.add_project,
+    name='add_project'
+),
+
+path(
+    'view-projects/',
+    views.view_projects,
+    name='view_projects'
+),
+path(
+    'delete-project/<int:project_id>/',
+    views.delete_project,
+    name='delete_project'
+),
+
+path(
+    'career-transition-analysis/',
+    views.career_transition_analysis,
+    name='career_transition_analysis'
+),
+
+path(
+    'career-transition-result/<int:analysis_id>/',
+    views.career_transition_result,
+    name='career_transition_result'
+),
 ]

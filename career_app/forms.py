@@ -13,7 +13,61 @@ from .models import UserProfile
 import os
 from django import forms
 from .models import ReadinessAssessment
+from .models import IndustryTool, JobRoleTool,UserProject
+from .models import (
+    IndustryTool,
+    JobRoleTool,
+    UserProject,
+    CareerTransitionAnalysis
+)
+class CareerTransitionForm(forms.ModelForm):
+    class Meta:
+        model = CareerTransitionAnalysis
+        fields = [
+            'current_role',
+            'target_role'
+        ]
 
+class IndustryToolForm(forms.ModelForm):
+    class Meta:
+        model = IndustryTool
+        fields = ['tool_name', 'category']
+
+
+class JobRoleToolForm(forms.Form):
+    job_role = forms.ModelChoiceField(
+        queryset=JobRole.objects.none(),
+        label="Job Role"
+    )
+
+    high_tools = forms.ModelMultipleChoiceField(
+        queryset=IndustryTool.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="High Importance Tools"
+    )
+
+    medium_tools = forms.ModelMultipleChoiceField(
+        queryset=IndustryTool.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Medium Importance Tools"
+    )
+
+    low_tools = forms.ModelMultipleChoiceField(
+        queryset=IndustryTool.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Low Importance Tools"
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(JobRoleToolForm, self).__init__(*args, **kwargs)
+
+        self.fields['job_role'].queryset = JobRole.objects.all()
+        self.fields['high_tools'].queryset = IndustryTool.objects.all()
+        self.fields['medium_tools'].queryset = IndustryTool.objects.all()
+        self.fields['low_tools'].queryset = IndustryTool.objects.all()
 class ReadinessAssessmentForm(forms.ModelForm):
     class Meta:
         model = ReadinessAssessment
@@ -31,9 +85,11 @@ class UserProfileForm(forms.ModelForm):
             'linkedin_link',
             'resume',
              'manual_skills',
+             'manual_tools'
         ]
         widgets = {
             'manual_skills': forms.CheckboxSelectMultiple,
+            'manual_tools': forms.CheckboxSelectMultiple,
         }
     def clean_resume(self):
         resume = self.cleaned_data.get('resume')
@@ -129,3 +185,25 @@ class RegisterForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
+
+class BottleneckForm(forms.Form):
+    job_role = forms.ModelChoiceField(
+        queryset=JobRole.objects.all()
+    )
+
+class UserProjectForm(forms.ModelForm):
+    class Meta:
+        model = UserProject
+        fields = [
+            'title',
+            'description',
+            'project_url',
+            'github_url',
+            'skills_used',
+            'tools_used'
+        ]
+
+        widgets = {
+            'skills_used': forms.CheckboxSelectMultiple,
+            'tools_used': forms.CheckboxSelectMultiple,
+        }

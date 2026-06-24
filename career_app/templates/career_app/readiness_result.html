@@ -9,12 +9,12 @@
 <hr>
 
 <h3>Strengths</h3>
-<p>{{ assessment.strengths }}</p>
+<pre>{{ assessment.strengths }}</pre>
 
 <h3>Weaknesses / Missing Skills</h3>
 
 {% if assessment.weaknesses %}
-    <p>{{ assessment.weaknesses }}</p>
+    <pre>{{ assessment.weaknesses }}</pre>
 {% else %}
     <p>No missing skills found. This usually means no required skills are mapped to this job role yet.</p>
 {% endif %}

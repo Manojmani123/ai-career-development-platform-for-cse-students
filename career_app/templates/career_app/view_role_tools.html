@@ -1,0 +1,21 @@
+<h1>Role-Tool Mapping</h1>
+
+<a href="{% url 'assign_tool_to_role' %}">Assign New Tools</a>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Job Role</th>
+        <th>Tool</th>
+        <th>Importance</th>
+    </tr>
+
+    {% for item in role_tools %}
+    <tr>
+        <td>{{ item.job_role.role_name }}</td>
+        <td>{{ item.tool.tool_name }}</td>
+        <td>{{ item.importance }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="{% url 'admin_dashboard' %}">Back</a>

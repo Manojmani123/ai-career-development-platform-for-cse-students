@@ -79,6 +79,15 @@
         <li>No manual skills added yet.</li>
     {% endfor %}
 </ul>
+<h3>Manual Tools</h3>
+
+<ul>
+    {% for tool in profile.manual_tools.all %}
+        <li>{{ tool.tool_name }}</li>
+    {% empty %}
+        <li>No manual tools added yet.</li>
+    {% endfor %}
+</ul>
 
 <a href="{% url 'edit_profile' %}">
     Edit Profile

@@ -1,0 +1,9 @@
+<h1>Add Industry Tool</h1>
+
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Add Tool</button>
+</form>
+
+<a href="{% url 'admin_dashboard' %}">Back</a>

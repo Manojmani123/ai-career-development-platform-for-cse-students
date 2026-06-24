@@ -1,0 +1,19 @@
+<h1>Industry Tools</h1>
+
+<a href="{% url 'add_industry_tool' %}">Add New Tool</a>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Tool Name</th>
+        <th>Category</th>
+    </tr>
+
+    {% for tool in tools %}
+    <tr>
+        <td>{{ tool.tool_name }}</td>
+        <td>{{ tool.category }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="{% url 'admin_dashboard' %}">Back</a>

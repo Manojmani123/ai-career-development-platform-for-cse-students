@@ -1,0 +1,29 @@
+<h2>Career Transition Feasibility Analysis</h2>
+
+{% if messages %}
+    {% for message in messages %}
+        <p style="color:red;">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+
+<form method="POST">
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    <p>
+        <label>Current Role:</label>
+        {{ form.current_role }}
+        {{ form.current_role.errors }}
+    </p>
+
+    <p>
+        <label>Target Role:</label>
+        {{ form.target_role }}
+        {{ form.target_role.errors }}
+    </p>
+
+    <button type="submit">Analyse Transition</button>
+</form>
+
+<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>
