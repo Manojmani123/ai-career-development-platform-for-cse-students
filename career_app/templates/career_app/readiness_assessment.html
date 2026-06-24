@@ -1,0 +1,11 @@
+<h1>Academic-to-Industry Readiness Assessment</h1>
+
+<p>Select your target job role to calculate your readiness score.</p>
+
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Calculate Readiness</button>
+</form>
+
+<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>

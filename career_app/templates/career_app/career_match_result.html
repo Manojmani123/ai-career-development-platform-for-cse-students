@@ -21,6 +21,9 @@
         <li>No missing skills. Good match.</li>
     {% endfor %}
 </ul>
+{% empty %}
+    <li>No missing skills found. Either you are a good match or no skills are mapped to this role.</li>
+{% endfor %}
 
 <hr>
 

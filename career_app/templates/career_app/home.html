@@ -4,7 +4,40 @@
     <title>CareerReady AI</title>
 </head>
 <body>
-    <h1>Welcome to CareerReady AI</h1>
-    <p>AI-powered career development platform for Computer Science students.</p>
+
+    <center>
+
+        <h1>CareerReady AI</h1>
+
+        <p>
+            AI-Powered Career Development Platform
+        </p>
+
+        <br>
+
+        <a href="{% url 'login' %}">
+            <button style="padding:10px 20px;">
+                Login
+            </button>
+        </a>
+
+        <br><br>
+
+        <a href="{% url 'register' %}">
+            <button style="padding:10px 20px;">
+                Register
+            </button>
+        </a>
+
+        <br><br>
+
+        <a href="{% url 'admin_request' %}">
+            <button style="padding:10px 20px;">
+                Admin Request
+            </button>
+        </a>
+
+    </center>
+
 </body>
 </html>

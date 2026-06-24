@@ -70,6 +70,16 @@
     {% endfor %}
 </ul>
 
+<h3>Manual Skills</h3>
+
+<ul>
+    {% for skill in profile.manual_skills.all %}
+        <li>{{ skill.skill_name }}</li>
+    {% empty %}
+        <li>No manual skills added yet.</li>
+    {% endfor %}
+</ul>
+
 <a href="{% url 'edit_profile' %}">
     Edit Profile
 </a>

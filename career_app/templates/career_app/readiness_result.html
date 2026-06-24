@@ -1,0 +1,26 @@
+<h1>Readiness Assessment Result</h1>
+
+<h2>Target Role: {{ assessment.job_role.role_name }}</h2>
+
+<p><strong>Academic Score:</strong> {{ assessment.academic_score }}%</p>
+<p><strong>Industry Score:</strong> {{ assessment.industry_score }}%</p>
+<p><strong>Overall Readiness Score:</strong> {{ assessment.overall_readiness_score }}%</p>
+
+<hr>
+
+<h3>Strengths</h3>
+<p>{{ assessment.strengths }}</p>
+
+<h3>Weaknesses / Missing Skills</h3>
+
+{% if assessment.weaknesses %}
+    <p>{{ assessment.weaknesses }}</p>
+{% else %}
+    <p>No missing skills found. This usually means no required skills are mapped to this job role yet.</p>
+{% endif %}
+<h3>Recommendation</h3>
+<p>{{ assessment.recommendation }}</p>
+
+<a href="{% url 'readiness_assessment' %}">Try Again</a>
+<br>
+<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>

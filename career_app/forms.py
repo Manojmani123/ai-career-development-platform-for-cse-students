@@ -12,6 +12,12 @@ from .models import LearningResource
 from .models import UserProfile
 import os
 from django import forms
+from .models import ReadinessAssessment
+
+class ReadinessAssessmentForm(forms.ModelForm):
+    class Meta:
+        model = ReadinessAssessment
+        fields = ['job_role']
 
 class UserProfileForm(forms.ModelForm):
     class Meta:
@@ -24,7 +30,11 @@ class UserProfileForm(forms.ModelForm):
             'github_link',
             'linkedin_link',
             'resume',
+             'manual_skills',
         ]
+        widgets = {
+            'manual_skills': forms.CheckboxSelectMultiple,
+        }
     def clean_resume(self):
         resume = self.cleaned_data.get('resume')
 
@@ -58,11 +68,7 @@ class LearningResourceForm(forms.ModelForm):
 class CareerMatchForm(forms.ModelForm):
     class Meta:
         model = CareerMatchResult
-        fields = ['job_role', 'selected_skills']
-
-        widgets = {
-            'selected_skills': forms.CheckboxSelectMultiple,
-        }
+        fields = ['job_role']
 class JobRoleForm(forms.ModelForm):
     class Meta:
         model = JobRole
@@ -74,11 +80,32 @@ class SkillForm(forms.ModelForm):
         model = Skill
         fields = ['skill_name', 'category']
 
+class JobRoleSkillForm(forms.Form):
+    job_role = forms.ModelChoiceField(
+        queryset=JobRole.objects.all(),
+        label="Job Role"
+    )
 
-class JobRoleSkillForm(forms.ModelForm):
-    class Meta:
-        model = JobRoleSkill
-        fields = ['job_role', 'skill', 'importance']
+    high_skills = forms.ModelMultipleChoiceField(
+        queryset=Skill.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="High Importance Skills"
+    )
+
+    medium_skills = forms.ModelMultipleChoiceField(
+        queryset=Skill.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Medium Importance Skills"
+    )
+
+    low_skills = forms.ModelMultipleChoiceField(
+        queryset=Skill.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Low Importance Skills"
+    )
 
 class AdminRequestForm(forms.ModelForm):
     class Meta:

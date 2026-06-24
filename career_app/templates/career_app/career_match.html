@@ -1,9 +1,15 @@
 <h1>Career Matching</h1>
 
+<p>
+    The system will use your resume-extracted skills and manually added profile skills.
+</p>
+
 <form method="POST">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Analyze Career Match</button>
 </form>
 
+<a href="{% url 'view_profile' %}">View / Edit Profile Skills</a>
+<br>
 <a href="{% url 'user_dashboard' %}">Back to Dashboard</a>

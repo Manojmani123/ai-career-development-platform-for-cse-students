@@ -161,8 +161,31 @@ class UserProfile(models.Model):
         blank=True
     )
 
+    manual_skills = models.ManyToManyField(
+    Skill,
+    blank=True,
+    related_name='manual_user_profiles'
+)
+
     is_resume_valid = models.BooleanField(
         default=False
     )
     def __str__(self):
         return self.user.username
+    
+class ReadinessAssessment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    job_role = models.ForeignKey(JobRole, on_delete=models.CASCADE)
+
+    academic_score = models.FloatField(default=0)
+    industry_score = models.FloatField(default=0)
+    overall_readiness_score = models.FloatField(default=0)
+
+    strengths = models.TextField(blank=True, null=True)
+    weaknesses = models.TextField(blank=True, null=True)
+    recommendation = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.job_role.role_name} - {self.overall_readiness_score}%"

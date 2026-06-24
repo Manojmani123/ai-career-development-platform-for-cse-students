@@ -18,6 +18,8 @@ from .forms import UserProfileForm
 from .models import UserProfile
 from .utils import extract_text_from_resume, is_valid_resume, extract_skills_from_text
 from .models import Skill
+from .forms import ReadinessAssessmentForm
+from .models import ReadinessAssessment
 
 
 from django.conf import settings
@@ -216,8 +218,6 @@ def view_skills(request):
 
     skills = Skill.objects.all()
     return render(request, 'career_app/view_skills.html', {'skills': skills})
-
-
 @login_required
 def assign_skill_to_role(request):
     if not request.user.is_staff:
@@ -225,8 +225,27 @@ def assign_skill_to_role(request):
 
     form = JobRoleSkillForm(request.POST or None)
 
-    if form.is_valid():
-        form.save()
+    if request.method == 'POST' and form.is_valid():
+        job_role = form.cleaned_data['job_role']
+
+        importance_groups = {
+            'High': form.cleaned_data['high_skills'],
+            'Medium': form.cleaned_data['medium_skills'],
+            'Low': form.cleaned_data['low_skills'],
+        }
+
+        for importance, skills in importance_groups.items():
+            for skill in skills:
+                obj, created = JobRoleSkill.objects.get_or_create(
+                    job_role=job_role,
+                    skill=skill,
+                    defaults={'importance': importance}
+                )
+
+                if not created:
+                    obj.importance = importance
+                    obj.save()
+
         return redirect('view_role_skills')
 
     return render(request, 'career_app/assign_skill_to_role.html', {'form': form})
@@ -246,29 +265,43 @@ def career_match(request):
 
     if request.method == 'POST':
         if form.is_valid():
+            profile = UserProfile.objects.filter(user=request.user).first()
+
+            if not profile:
+                return redirect('create_profile')
+
             result = form.save(commit=False)
             result.user = request.user
             result.save()
-            form.save_m2m()
+
+            user_skills = (
+                profile.extracted_skills.all() | profile.manual_skills.all()
+            ).distinct()
+
+            result.selected_skills.set(user_skills)
 
             required_skills = Skill.objects.filter(
                 jobroleskill__job_role=result.job_role
             ).distinct()
 
-            selected_skills = result.selected_skills.all()
+            if required_skills.count() == 0:
+                result.match_score = 0
+                result.save()
+                result.matched_skills.clear()
+                result.missing_skills.clear()
+                return redirect('career_match_result', result_id=result.id)
 
-            matched_skills = selected_skills.filter(
+            matched_skills = user_skills.filter(
                 id__in=required_skills.values_list('id', flat=True)
             )
 
             missing_skills = required_skills.exclude(
-                id__in=selected_skills.values_list('id', flat=True)
+                id__in=user_skills.values_list('id', flat=True)
             )
 
-            if required_skills.count() > 0:
-                match_score = (matched_skills.count() / required_skills.count()) * 100
-            else:
-                match_score = 0
+            match_score = (
+                matched_skills.count() / required_skills.count()
+            ) * 100
 
             result.match_score = round(match_score, 2)
             result.save()
@@ -279,8 +312,6 @@ def career_match(request):
             return redirect('career_match_result', result_id=result.id)
 
     return render(request, 'career_app/career_match.html', {'form': form})
-
-
 @login_required
 def career_match_result(request, result_id):
     result = CareerMatchResult.objects.get(id=result_id, user=request.user)
@@ -431,3 +462,82 @@ def edit_profile(request):
         return redirect('view_profile')
 
     return render(request, 'career_app/edit_profile.html', {'form': form})
+
+@login_required
+def readiness_assessment(request):
+    form = ReadinessAssessmentForm(request.POST or None)
+
+    if request.method == 'POST':
+        if form.is_valid():
+            assessment = form.save(commit=False)
+            assessment.user = request.user
+
+            job_role = assessment.job_role
+
+            required_skills = Skill.objects.filter(
+                jobroleskill__job_role=job_role
+            ).distinct()
+
+            profile = UserProfile.objects.filter(user=request.user).first()
+
+            if profile:
+                user_skills = (
+        profile.extracted_skills.all() | profile.manual_skills.all()
+        ).distinct()
+            else:
+                user_skills = Skill.objects.none()
+            matched_skills = user_skills.filter(
+                id__in=required_skills.values_list('id', flat=True)
+            )
+
+            missing_skills = required_skills.exclude(
+                id__in=user_skills.values_list('id', flat=True)
+            )
+
+            if required_skills.count() > 0:
+                academic_score = (matched_skills.count() / required_skills.count()) * 100
+            else:
+                academic_score = 0
+
+            industry_score = academic_score * 0.7
+
+            overall_score = (academic_score * 0.6) + (industry_score * 0.4)
+
+            assessment.academic_score = round(academic_score, 2)
+            assessment.industry_score = round(industry_score, 2)
+            assessment.overall_readiness_score = round(overall_score, 2)
+
+            assessment.strengths = ", ".join(
+                [skill.skill_name for skill in matched_skills]
+            )
+
+            assessment.weaknesses = ", ".join(
+                [skill.skill_name for skill in missing_skills]
+            )
+
+            if overall_score >= 75:
+                assessment.recommendation = "You are close to industry-ready for this role. Focus on portfolio projects and interview preparation."
+            elif overall_score >= 50:
+                assessment.recommendation = "You have a moderate readiness level. Improve missing technical skills and build practical projects."
+            else:
+                assessment.recommendation = "Your readiness is low for this role. Start with foundational skills before applying."
+
+            assessment.save()
+
+            return redirect('readiness_result', assessment_id=assessment.id)
+
+    return render(request, 'career_app/readiness_assessment.html', {'form': form})
+
+
+@login_required
+def readiness_result(request, assessment_id):
+    assessment = ReadinessAssessment.objects.get(
+        id=assessment_id,
+        user=request.user
+    )
+
+    return render(
+        request,
+        'career_app/readiness_result.html',
+        {'assessment': assessment}
+    )
