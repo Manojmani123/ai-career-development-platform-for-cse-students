@@ -1,0 +1,35 @@
+<h2>Add Skills to Competency Group</h2>
+
+<form method="GET">
+    <p>
+        <label>Competency Group:</label><br>
+        {{ form.group }}
+    </p>
+
+    <button type="submit">Load Skills</button>
+</form>
+
+{% if selected_group %}
+    <hr>
+
+    <h3>{{ selected_group.job_role.role_name }} - {{ selected_group.group_name }}</h3>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <input type="hidden" name="group" value="{{ selected_group.id }}">
+
+        <p>
+            <label>Skills in this Group:</label><br>
+            {{ form.job_role_skills }}
+        </p>
+
+        <button type="submit">Save Group Members</button>
+    </form>
+{% endif %}
+
+<br>
+
+<a href="{% url 'view_competency_groups' %}">Back to Competency Groups</a>
+<br>
+<a href="{% url 'admin_dashboard' %}">Back to Admin Dashboard</a>

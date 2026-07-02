@@ -1,0 +1,16 @@
+<h2>Import Dataset</h2>
+
+{% if messages %}
+    {% for message in messages %}
+        <p style="color: green;">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit">Import Dataset</button>
+</form>
+
+<a href="{% url 'admin_dashboard' %}">Back to Admin Dashboard</a>

@@ -108,4 +108,22 @@ path(
     views.career_transition_result,
     name='career_transition_result'
 ),
+path('import-dataset/', views.import_dataset, name='import_dataset'),
+path(
+    'add-competency-group/',
+    views.add_competency_group,
+    name='add_competency_group'
+),
+
+path(
+    'view-competency-groups/',
+    views.view_competency_groups,
+    name='view_competency_groups'
+),
+
+path(
+    'add-competency-group-members/',
+    views.add_competency_group_members,
+    name='add_competency_group_members'
+),
 ]

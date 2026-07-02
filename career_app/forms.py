@@ -18,8 +18,13 @@ from .models import (
     IndustryTool,
     JobRoleTool,
     UserProject,
-    CareerTransitionAnalysis
+    CareerTransitionAnalysis,
+    CompetencyGroup,
+    CompetencyGroupMember
+    
 )
+class DatasetImportForm(forms.Form):
+    dataset_file = forms.FileField(label="Upload Excel Dataset")
 class CareerTransitionForm(forms.ModelForm):
     class Meta:
         model = CareerTransitionAnalysis
@@ -27,7 +32,33 @@ class CareerTransitionForm(forms.ModelForm):
             'current_role',
             'target_role'
         ]
+class CompetencyGroupForm(forms.ModelForm):
+    class Meta:
+        model = CompetencyGroup
+        fields = ['job_role', 'group_name', 'rule']
 
+
+class CompetencyGroupMemberForm(forms.Form):
+    group = forms.ModelChoiceField(
+        queryset=CompetencyGroup.objects.all(),
+        label="Competency Group"
+    )
+
+    job_role_skills = forms.ModelMultipleChoiceField(
+        queryset=JobRoleSkill.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        label="Skills in this Group",
+        required=False
+    )
+
+    def __init__(self, *args, **kwargs):
+        selected_group = kwargs.pop('selected_group', None)
+        super().__init__(*args, **kwargs)
+
+        if selected_group:
+            self.fields['job_role_skills'].queryset = JobRoleSkill.objects.filter(
+                job_role=selected_group.job_role
+            ).select_related('skill', 'job_role')
 class IndustryToolForm(forms.ModelForm):
     class Meta:
         model = IndustryTool

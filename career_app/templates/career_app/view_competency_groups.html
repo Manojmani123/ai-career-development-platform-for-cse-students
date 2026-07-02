@@ -1,0 +1,38 @@
+<h2>Competency Groups</h2>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Job Role</th>
+        <th>Group Name</th>
+        <th>Rule</th>
+        <th>Skills</th>
+    </tr>
+
+    {% for group in groups %}
+        <tr>
+            <td>{{ group.job_role.role_name }}</td>
+            <td>{{ group.group_name }}</td>
+            <td>{{ group.get_rule_display }}</td>
+            <td>
+                {% for member in group.members.all %}
+                    {{ member.job_role_skill.skill.skill_name }}
+                    {% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    No skills added
+                {% endfor %}
+            </td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="4">No competency groups added yet.</td>
+        </tr>
+    {% endfor %}
+</table>
+
+<br>
+
+<a href="{% url 'add_competency_group' %}">Add Competency Group</a>
+<br>
+<a href="{% url 'add_competency_group_members' %}">Add Skills to Group</a>
+<br>
+<a href="{% url 'admin_dashboard' %}">Back to Dashboard</a>

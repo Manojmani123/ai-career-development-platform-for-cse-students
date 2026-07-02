@@ -1,3 +1,5 @@
+from unittest import result
+
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
@@ -28,6 +30,11 @@ from .forms import (
     CareerMatchForm,
     ReadinessAssessmentForm
 )
+from .models import CompetencyGroup, CompetencyGroupMember
+
+from .forms import CompetencyGroupForm, CompetencyGroupMemberForm
+from openpyxl import load_workbook
+from .forms import DatasetImportForm
 from .forms import BottleneckForm
 from .models import EmployabilityBottleneck
 from .models import CareerTransitionAnalysis
@@ -297,24 +304,84 @@ def career_match(request):
                 jobroleskill__job_role=result.job_role
             ).distinct()
 
-            if required_skills.count() == 0:
+            if not required_skills.exists():
                 result.match_score = 0
                 result.save()
                 result.matched_skills.clear()
                 result.missing_skills.clear()
                 return redirect('career_match_result', result_id=result.id)
 
-            matched_skills = user_skills.filter(
-                id__in=required_skills.values_list('id', flat=True)
+            matched_skill_ids = set()
+            missing_skill_ids = set()
+
+            user_skill_ids = set(
+                user_skills.values_list('id', flat=True)
             )
 
-            missing_skills = required_skills.exclude(
-                id__in=user_skills.values_list('id', flat=True)
+            grouped_skill_ids = set()
+
+            groups = CompetencyGroup.objects.filter(
+                job_role=result.job_role
             )
 
-            match_score = (
-                matched_skills.count() / required_skills.count()
-            ) * 100
+            for group in groups:
+                members = CompetencyGroupMember.objects.filter(
+                    group=group
+                ).select_related('job_role_skill__skill')
+
+                skills = [
+                    member.job_role_skill.skill
+                    for member in members
+                ]
+
+                skill_ids = {
+                    skill.id
+                    for skill in skills
+                }
+
+                grouped_skill_ids.update(skill_ids)
+
+                if group.rule == "ANY_ONE":
+                    matched = skill_ids.intersection(user_skill_ids)
+
+                    if matched:
+                        matched_skill_ids.add(next(iter(matched)))
+                    else:
+                        missing_skill_ids.update(skill_ids)
+
+                else:
+                    for skill in skills:
+                        if skill.id in user_skill_ids:
+                            matched_skill_ids.add(skill.id)
+                        else:
+                            missing_skill_ids.add(skill.id)
+
+            normal_skills = required_skills.exclude(
+                id__in=grouped_skill_ids
+            )
+
+            for skill in normal_skills:
+                if skill.id in user_skill_ids:
+                    matched_skill_ids.add(skill.id)
+                else:
+                    missing_skill_ids.add(skill.id)
+
+            matched_skills = Skill.objects.filter(
+                id__in=matched_skill_ids
+            )
+
+            missing_skills = Skill.objects.filter(
+                id__in=missing_skill_ids
+            )
+
+            total_required = len(matched_skill_ids) + len(missing_skill_ids)
+
+            if total_required == 0:
+                match_score = 0
+            else:
+                match_score = (
+                    len(matched_skill_ids) / total_required
+                ) * 100
 
             result.match_score = round(match_score, 2)
             result.save()
@@ -506,13 +573,77 @@ def readiness_assessment(request):
                 user_skills = Skill.objects.none()
                 user_tools = IndustryTool.objects.none()
 
-            matched_skills = user_skills.filter(
-                id__in=required_skills.values_list('id', flat=True)
+            matched_skill_ids = set()
+            missing_skill_ids = set()
+
+            user_skill_ids = set(
+                user_skills.values_list('id', flat=True)
             )
 
-            missing_skills = required_skills.exclude(
-                id__in=user_skills.values_list('id', flat=True)
+            grouped_skill_ids = set()
+
+            groups = CompetencyGroup.objects.filter(
+                job_role=job_role
             )
+
+            for group in groups:
+                members = CompetencyGroupMember.objects.filter(
+                    group=group
+                ).select_related('job_role_skill__skill')
+
+                skills = [
+                    member.job_role_skill.skill
+                    for member in members
+                ]
+
+                skill_ids = {
+                    skill.id
+                    for skill in skills
+                }
+
+                grouped_skill_ids.update(skill_ids)
+
+                if group.rule == "ANY_ONE":
+                    matched = skill_ids.intersection(user_skill_ids)
+
+                    if matched:
+                        matched_skill_ids.add(next(iter(matched)))
+                    else:
+                        missing_skill_ids.update(skill_ids)
+
+                else:
+                    for skill in skills:
+                        if skill.id in user_skill_ids:
+                            matched_skill_ids.add(skill.id)
+                        else:
+                            missing_skill_ids.add(skill.id)
+
+            normal_skills = required_skills.exclude(
+                id__in=grouped_skill_ids
+            )
+
+            for skill in normal_skills:
+                if skill.id in user_skill_ids:
+                    matched_skill_ids.add(skill.id)
+                else:
+                    missing_skill_ids.add(skill.id)
+
+            matched_skills = Skill.objects.filter(
+                id__in=matched_skill_ids
+            )
+
+            missing_skills = Skill.objects.filter(
+                id__in=missing_skill_ids
+            )
+
+            total_required_skills = len(matched_skill_ids) + len(missing_skill_ids)
+
+            if total_required_skills > 0:
+                academic_score = (
+                    len(matched_skill_ids) / total_required_skills
+                ) * 100
+            else:
+                academic_score = 0
 
             matched_tools = user_tools.filter(
                 id__in=required_tools.values_list('id', flat=True)
@@ -521,13 +652,6 @@ def readiness_assessment(request):
             missing_tools = required_tools.exclude(
                 id__in=user_tools.values_list('id', flat=True)
             )
-
-            if required_skills.count() > 0:
-                academic_score = (
-                    matched_skills.count() / required_skills.count()
-                ) * 100
-            else:
-                academic_score = 0
 
             if required_tools.count() > 0:
                 industry_score = (
@@ -542,11 +666,25 @@ def readiness_assessment(request):
             assessment.industry_score = round(industry_score, 2)
             assessment.overall_readiness_score = round(overall_score, 2)
 
-            matched_skill_names = [skill.skill_name for skill in matched_skills]
-            missing_skill_names = [skill.skill_name for skill in missing_skills]
+            matched_skill_names = [
+                skill.skill_name
+                for skill in matched_skills
+            ]
 
-            matched_tool_names = [tool.tool_name for tool in matched_tools]
-            missing_tool_names = [tool.tool_name for tool in missing_tools]
+            missing_skill_names = [
+                skill.skill_name
+                for skill in missing_skills
+            ]
+
+            matched_tool_names = [
+                tool.tool_name
+                for tool in matched_tools
+            ]
+
+            missing_tool_names = [
+                tool.tool_name
+                for tool in missing_tools
+            ]
 
             assessment.strengths = (
                 "Matched Skills: " + ", ".join(matched_skill_names) +
@@ -586,8 +724,6 @@ def readiness_assessment(request):
         'career_app/readiness_assessment.html',
         {'form': form}
     )
-
-
 @login_required
 def readiness_result(request, assessment_id):
     assessment = ReadinessAssessment.objects.get(
@@ -692,9 +828,6 @@ def bottleneck_detection(request):
                 jobroletool__job_role=job_role
             ).distinct()
 
-            required_skill_ids = set(required_skills.values_list('id', flat=True))
-            required_tool_ids = set(required_tools.values_list('id', flat=True))
-
             project_skill_ids = set()
             project_tool_ids = set()
 
@@ -706,35 +839,102 @@ def bottleneck_detection(request):
                     project.tools_used.values_list('id', flat=True)
                 )
 
-            relevant_project_skills = project_skill_ids.intersection(required_skill_ids)
-            relevant_project_tools = project_tool_ids.intersection(required_tool_ids)
+            matched_project_skill_ids = set()
+            missing_project_skill_ids = set()
+            grouped_skill_ids = set()
 
-            missing_project_skill_ids = required_skill_ids.difference(project_skill_ids)
-            missing_project_tool_ids = required_tool_ids.difference(project_tool_ids)
+            groups = CompetencyGroup.objects.filter(
+                job_role=job_role
+            )
 
-            total_required_items = len(required_skill_ids) + len(required_tool_ids)
-            total_relevant_items = len(relevant_project_skills) + len(relevant_project_tools)
+            for group in groups:
+                members = CompetencyGroupMember.objects.filter(
+                    group=group
+                ).select_related('job_role_skill__skill')
 
-            if total_required_items > 0:
-                project_relevance_score = round(
-                    (total_relevant_items / total_required_items) * 100
-                )
-            else:
-                project_relevance_score = 0
+                skills = [
+                    member.job_role_skill.skill
+                    for member in members
+                ]
 
-            if len(required_skill_ids) > 0:
+                skill_ids = {
+                    skill.id
+                    for skill in skills
+                }
+
+                grouped_skill_ids.update(skill_ids)
+
+                if group.rule == "ANY_ONE":
+                    matched = skill_ids.intersection(project_skill_ids)
+
+                    if matched:
+                        matched_project_skill_ids.add(next(iter(matched)))
+                    else:
+                        missing_project_skill_ids.update(skill_ids)
+
+                else:
+                    for skill in skills:
+                        if skill.id in project_skill_ids:
+                            matched_project_skill_ids.add(skill.id)
+                        else:
+                            missing_project_skill_ids.add(skill.id)
+
+            normal_required_skills = required_skills.exclude(
+                id__in=grouped_skill_ids
+            )
+
+            for skill in normal_required_skills:
+                if skill.id in project_skill_ids:
+                    matched_project_skill_ids.add(skill.id)
+                else:
+                    missing_project_skill_ids.add(skill.id)
+
+            required_tool_ids = set(
+                required_tools.values_list('id', flat=True)
+            )
+
+            relevant_project_tools = project_tool_ids.intersection(
+                required_tool_ids
+            )
+
+            missing_project_tool_ids = required_tool_ids.difference(
+                project_tool_ids
+            )
+
+            total_skill_items = (
+                len(matched_project_skill_ids) +
+                len(missing_project_skill_ids)
+            )
+
+            if total_skill_items > 0:
                 project_skill_coverage = round(
-                    (len(relevant_project_skills) / len(required_skill_ids)) * 100
+                    (len(matched_project_skill_ids) / total_skill_items) * 100,
+                    2
                 )
             else:
                 project_skill_coverage = 0
 
             if len(required_tool_ids) > 0:
                 project_tool_coverage = round(
-                    (len(relevant_project_tools) / len(required_tool_ids)) * 100
+                    (len(relevant_project_tools) / len(required_tool_ids)) * 100,
+                    2
                 )
             else:
                 project_tool_coverage = 0
+
+            total_required_items = total_skill_items + len(required_tool_ids)
+            total_relevant_items = (
+                len(matched_project_skill_ids) +
+                len(relevant_project_tools)
+            )
+
+            if total_required_items > 0:
+                project_relevance_score = round(
+                    (total_relevant_items / total_required_items) * 100,
+                    2
+                )
+            else:
+                project_relevance_score = 0
 
             missing_project_skills = Skill.objects.filter(
                 id__in=missing_project_skill_ids
@@ -749,7 +949,7 @@ def bottleneck_detection(request):
             )
 
             missing_tool_names = ", ".join(
-                missing_project_tools.values_list("tool_name", flat=True)[:5]
+                missing_project_tools.values_list("tool_name", flat=True)
             )
 
             bottleneck = EmployabilityBottleneck()
@@ -790,7 +990,7 @@ def bottleneck_detection(request):
                 bottleneck.main_bottleneck = "Weak Project Skill Evidence"
                 bottleneck.explanation = (
                     f"You added {project_count} project(s), but they only prove "
-                    f"{project_skill_coverage}% of the required skills for {job_role.role_name}."
+                    f"{project_skill_coverage}% of the required skill competencies for {job_role.role_name}."
                 )
                 bottleneck.recommendation = (
                     f"Strengthen your projects using missing role skills such as: "
@@ -939,13 +1139,77 @@ def career_transition_analysis(request):
             jobroletool__job_role=target_role
         ).distinct()
 
-        matched_skills = user_skills.filter(
-            id__in=target_required_skills.values_list('id', flat=True)
+        matched_skill_ids = set()
+        missing_skill_ids = set()
+
+        user_skill_ids = set(
+            user_skills.values_list('id', flat=True)
         )
 
-        missing_skills = target_required_skills.exclude(
-            id__in=user_skills.values_list('id', flat=True)
+        grouped_skill_ids = set()
+
+        groups = CompetencyGroup.objects.filter(
+            job_role=target_role
         )
+
+        for group in groups:
+            members = CompetencyGroupMember.objects.filter(
+                group=group
+            ).select_related('job_role_skill__skill')
+
+            skills = [
+                member.job_role_skill.skill
+                for member in members
+            ]
+
+            skill_ids = {
+                skill.id
+                for skill in skills
+            }
+
+            grouped_skill_ids.update(skill_ids)
+
+            if group.rule == "ANY_ONE":
+                matched = skill_ids.intersection(user_skill_ids)
+
+                if matched:
+                    matched_skill_ids.add(next(iter(matched)))
+                else:
+                    missing_skill_ids.update(skill_ids)
+
+            else:
+                for skill in skills:
+                    if skill.id in user_skill_ids:
+                        matched_skill_ids.add(skill.id)
+                    else:
+                        missing_skill_ids.add(skill.id)
+
+        normal_skills = target_required_skills.exclude(
+            id__in=grouped_skill_ids
+        )
+
+        for skill in normal_skills:
+            if skill.id in user_skill_ids:
+                matched_skill_ids.add(skill.id)
+            else:
+                missing_skill_ids.add(skill.id)
+
+        matched_skills = Skill.objects.filter(
+            id__in=matched_skill_ids
+        )
+
+        missing_skills = Skill.objects.filter(
+            id__in=missing_skill_ids
+        )
+
+        total_required_skills = len(matched_skill_ids) + len(missing_skill_ids)
+
+        if total_required_skills > 0:
+            skill_match_score = (
+                len(matched_skill_ids) / total_required_skills
+            ) * 100
+        else:
+            skill_match_score = 0
 
         matched_tools = user_tools.filter(
             id__in=target_required_tools.values_list('id', flat=True)
@@ -955,13 +1219,12 @@ def career_transition_analysis(request):
             id__in=user_tools.values_list('id', flat=True)
         )
 
-        skill_match_score = (
-            matched_skills.count() / target_required_skills.count()
-        ) * 100 if target_required_skills.count() > 0 else 0
-
-        tool_match_score = (
-            matched_tools.count() / target_required_tools.count()
-        ) * 100 if target_required_tools.count() > 0 else 0
+        if target_required_tools.count() > 0:
+            tool_match_score = (
+                matched_tools.count() / target_required_tools.count()
+            ) * 100
+        else:
+            tool_match_score = 0
 
         feasibility_score = (skill_match_score * 0.7) + (tool_match_score * 0.3)
 
@@ -1012,7 +1275,6 @@ def career_transition_analysis(request):
         {'form': form}
     )
 
-
 @login_required
 def career_transition_result(request, analysis_id):
     analysis = CareerTransitionAnalysis.objects.get(
@@ -1024,4 +1286,271 @@ def career_transition_result(request, analysis_id):
         request,
         'career_app/career_transition_result.html',
         {'analysis': analysis}
+    )
+
+@login_required
+def import_dataset(request):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    form = DatasetImportForm(request.POST or None, request.FILES or None)
+
+    if request.method == 'POST' and form.is_valid():
+        dataset_file = request.FILES['dataset_file']
+
+        workbook = load_workbook(dataset_file)
+
+        created_counts = {
+            'roles': 0,
+            'skills': 0,
+            'tools': 0,
+            'role_skills': 0,
+            'role_tools': 0,
+            'resources': 0,
+        }
+
+        def clean(value):
+            if value is None:
+                return ''
+            return str(value).strip()
+
+        if 'JobRoles' in workbook.sheetnames:
+            sheet = workbook['JobRoles']
+
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                role_name = clean(row[0])
+                description = clean(row[1]) if len(row) > 1 else ''
+
+                if role_name:
+                    obj, created = JobRole.objects.get_or_create(
+                        role_name=role_name,
+                        defaults={'description': description}
+                    )
+
+                    if not created and description:
+                        obj.description = description
+                        obj.save()
+
+                    if created:
+                        created_counts['roles'] += 1
+
+        if 'Skills' in workbook.sheetnames:
+            sheet = workbook['Skills']
+
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                skill_name = clean(row[0])
+                category = clean(row[1]) if len(row) > 1 else 'Programming'
+
+                if skill_name:
+                    obj, created = Skill.objects.get_or_create(
+                        skill_name=skill_name,
+                        defaults={'category': category}
+                    )
+
+                    if not created and category:
+                        obj.category = category
+                        obj.save()
+
+                    if created:
+                        created_counts['skills'] += 1
+
+        if 'Tools' in workbook.sheetnames:
+            sheet = workbook['Tools']
+
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                tool_name = clean(row[0])
+                category = clean(row[1]) if len(row) > 1 else 'Development Tool'
+
+                if tool_name:
+                    obj, created = IndustryTool.objects.get_or_create(
+                        tool_name=tool_name,
+                        defaults={'category': category}
+                    )
+
+                    if not created and category:
+                        obj.category = category
+                        obj.save()
+
+                    if created:
+                        created_counts['tools'] += 1
+
+        if 'RoleSkills' in workbook.sheetnames:
+            sheet = workbook['RoleSkills']
+
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                role_name = clean(row[0])
+                skill_name = clean(row[1])
+                importance = clean(row[2]) if len(row) > 2 else 'Medium'
+
+                if role_name and skill_name:
+                    job_role = JobRole.objects.filter(role_name=role_name).first()
+                    skill = Skill.objects.filter(skill_name=skill_name).first()
+
+                    if job_role and skill:
+                        obj, created = JobRoleSkill.objects.get_or_create(
+                            job_role=job_role,
+                            skill=skill,
+                            defaults={'importance': importance}
+                        )
+
+                        if not created:
+                            obj.importance = importance
+                            obj.save()
+
+                        if created:
+                            created_counts['role_skills'] += 1
+
+        if 'RoleTools' in workbook.sheetnames:
+            sheet = workbook['RoleTools']
+
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                role_name = clean(row[0])
+                tool_name = clean(row[1])
+                importance = clean(row[2]) if len(row) > 2 else 'Medium'
+
+                if role_name and tool_name:
+                    job_role = JobRole.objects.filter(role_name=role_name).first()
+                    tool = IndustryTool.objects.filter(tool_name=tool_name).first()
+
+                    if job_role and tool:
+                        obj, created = JobRoleTool.objects.get_or_create(
+                            job_role=job_role,
+                            tool=tool,
+                            defaults={'importance': importance}
+                        )
+
+                        if not created:
+                            obj.importance = importance
+                            obj.save()
+
+                        if created:
+                            created_counts['role_tools'] += 1
+
+        if 'LearningResources' in workbook.sheetnames:
+            sheet = workbook['LearningResources']
+
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                skill_name = clean(row[0])
+                title = clean(row[1])
+                resource_type = clean(row[2]) if len(row) > 2 else 'Course'
+                url = clean(row[3]) if len(row) > 3 else ''
+
+                if skill_name and title and url:
+                    skill = Skill.objects.filter(skill_name=skill_name).first()
+
+                    if skill:
+                        obj, created = LearningResource.objects.get_or_create(
+                            skill=skill,
+                            title=title,
+                            defaults={
+                                'resource_type': resource_type,
+                                'url': url
+                            }
+                        )
+
+                        if not created:
+                            obj.resource_type = resource_type
+                            obj.url = url
+                            obj.save()
+
+                        if created:
+                            created_counts['resources'] += 1
+
+        messages.success(
+            request,
+            f"Dataset imported successfully. "
+            f"Roles: {created_counts['roles']}, "
+            f"Skills: {created_counts['skills']}, "
+            f"Tools: {created_counts['tools']}, "
+            f"Role-Skills: {created_counts['role_skills']}, "
+            f"Role-Tools: {created_counts['role_tools']}, "
+            f"Resources: {created_counts['resources']}."
+        )
+
+        return redirect('import_dataset')
+
+    return render(
+        request,
+        'career_app/import_dataset.html',
+        {'form': form}
+    )
+
+@login_required
+def add_competency_group(request):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    form = CompetencyGroupForm(request.POST or None)
+
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('view_competency_groups')
+
+    return render(
+        request,
+        'career_app/add_competency_group.html',
+        {'form': form}
+    )
+
+
+@login_required
+def view_competency_groups(request):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    groups = CompetencyGroup.objects.select_related(
+        'job_role'
+    ).prefetch_related(
+        'members__job_role_skill__skill'
+    ).all()
+
+    return render(
+        request,
+        'career_app/view_competency_groups.html',
+        {'groups': groups}
+    )
+
+
+@login_required
+def add_competency_group_members(request):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    selected_group = None
+    group_id = request.GET.get('group') or request.POST.get('group')
+
+    if group_id:
+        selected_group = CompetencyGroup.objects.filter(id=group_id).first()
+
+    if request.method == 'POST':
+        form = CompetencyGroupMemberForm(
+            request.POST,
+            selected_group=selected_group
+        )
+
+        if form.is_valid():
+            group = form.cleaned_data['group']
+            job_role_skills = form.cleaned_data['job_role_skills']
+
+            CompetencyGroupMember.objects.filter(group=group).delete()
+
+            for job_role_skill in job_role_skills:
+                CompetencyGroupMember.objects.get_or_create(
+                    group=group,
+                    job_role_skill=job_role_skill
+                )
+
+            return redirect('view_competency_groups')
+    else:
+        form = CompetencyGroupMemberForm(
+            selected_group=selected_group
+        )
+
+    return render(
+        request,
+        'career_app/add_competency_group_members.html',
+        {
+            'form': form,
+            'selected_group': selected_group
+        }
     )

@@ -14,16 +14,14 @@
 </ul>
 
 <h3>Missing Skills</h3>
+
 <ul>
     {% for skill in result.missing_skills.all %}
         <li>{{ skill.skill_name }}</li>
     {% empty %}
-        <li>No missing skills. Good match.</li>
+        <li>No missing skills found. Either you are a good match or no skills are mapped to this role.</li>
     {% endfor %}
 </ul>
-{% empty %}
-    <li>No missing skills found. Either you are a good match or no skills are mapped to this role.</li>
-{% endfor %}
 
 <hr>
 

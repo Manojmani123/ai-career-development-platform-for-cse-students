@@ -74,6 +74,50 @@ class JobRoleSkill(models.Model):
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
     importance = models.CharField(max_length=20, choices=IMPORTANCE_CHOICES, default='Medium')
 
+    class Meta:
+        unique_together = ('job_role', 'skill')
+
+    def __str__(self):
+        return f"{self.job_role.role_name} - {self.skill.skill_name} - {self.importance}"
+class CompetencyGroup(models.Model):
+    RULE_CHOICES = [
+        ('ANY_ONE', 'Any One'),
+        ('ALL_REQUIRED', 'All Required'),
+    ]
+
+    job_role = models.ForeignKey(JobRole, on_delete=models.CASCADE)
+    group_name = models.CharField(max_length=100)
+
+    rule = models.CharField(
+        max_length=20,
+        choices=RULE_CHOICES,
+        default='ANY_ONE'
+    )
+
+    class Meta:
+        unique_together = ('job_role', 'group_name')
+
+    def __str__(self):
+        return f"{self.job_role.role_name} - {self.group_name} - {self.rule}"
+
+
+class CompetencyGroupMember(models.Model):
+    group = models.ForeignKey(
+        CompetencyGroup,
+        on_delete=models.CASCADE,
+        related_name='members'
+    )
+
+    job_role_skill = models.ForeignKey(
+        JobRoleSkill,
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        unique_together = ('group', 'job_role_skill')
+
+    def __str__(self):
+        return f"{self.group.group_name} - {self.job_role_skill.skill.skill_name}"
 class Meta:
         unique_together = ('job_role', 'skill')
         def __str__(self):
