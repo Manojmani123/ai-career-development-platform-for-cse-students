@@ -1,19 +1,100 @@
-<h1>Job Roles</h1>
+{% extends 'career_app/base.html' %}
 
-<a href="{% url 'add_job_role' %}">Add New Role</a>
+{% block content %}
 
-<table border="1" cellpadding="10">
-    <tr>
-        <th>Role Name</th>
-        <th>Description</th>
-    </tr>
+<div class="container mt-5">
 
-    {% for role in roles %}
-    <tr>
-        <td>{{ role.role_name }}</td>
-        <td>{{ role.description }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Job Roles</h2>
 
-<a href="{% url 'admin_dashboard' %}">Back</a>
+        <div>
+            <a href="{% url 'add_job_role' %}" class="btn btn-primary">
+                Add Job Role
+            </a>
+
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            {% if roles %}
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered table-hover align-middle">
+
+                        <thead class="table-dark">
+
+                            <tr>
+                                <th>#</th>
+                                <th>Role Name</th>
+                                <th>Description</th>
+                                <th width="180">Actions</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        {% for role in roles %}
+
+                            <tr>
+
+                                <td>{{ forloop.counter }}</td>
+
+                                <td>{{ role.role_name }}</td>
+
+                                <td>{{ role.description|default:"-" }}</td>
+
+                                <td>
+
+                                    <a href="{% url 'edit_job_role' role.id %}"
+                                       class="btn btn-warning btn-sm">
+                                        Edit
+                                    </a>
+
+                                    <a href="{% url 'delete_job_role' role.id %}"
+                                       class="btn btn-danger btn-sm">
+                                        Delete
+                                    </a>
+
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            {% else %}
+
+                <div class="alert alert-info mb-0">
+                    No job roles found.
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

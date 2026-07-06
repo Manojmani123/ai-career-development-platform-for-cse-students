@@ -48,16 +48,38 @@ path('password-reset-complete/', auth_views.PasswordResetCompleteView.as_view(
 path('add-job-role/', views.add_job_role, name='add_job_role'),
 path('view-job-roles/', views.view_job_roles, name='view_job_roles'),
 
+path(
+    'edit-job-role/<int:role_id>/',
+    views.edit_job_role,
+    name='edit_job_role'
+),
+
+path(
+    'delete-job-role/<int:role_id>/',
+    views.delete_job_role,
+    name='delete_job_role'
+),
 path('add-skill/', views.add_skill, name='add_skill'),
 path('view-skills/', views.view_skills, name='view_skills'),
-
+path( 'edit-skill/<int:skill_id>/',views.edit_skill,name='edit_skill'),
+path('delete-skill/<int:skill_id>/',views.delete_skill,name='delete_skill'),
 path('assign-skill-to-role/', views.assign_skill_to_role, name='assign_skill_to_role'),
 path('view-role-skills/', views.view_role_skills, name='view_role_skills'),
 path('career-match/', views.career_match, name='career_match'),
 path('career-match-result/<int:result_id>/', views.career_match_result, name='career_match_result'),
 path('add-learning-resource/', views.add_learning_resource, name='add_learning_resource'),
-
 path('view-learning-resources/', views.view_learning_resources, name='view_learning_resources'),
+path(
+    'edit-learning-resource/<int:resource_id>/',
+    views.edit_learning_resource,
+    name='edit_learning_resource'
+),
+
+path(
+    'delete-learning-resource/<int:resource_id>/',
+    views.delete_learning_resource,
+    name='delete_learning_resource'
+),
 path('learning-roadmap/<int:result_id>/', views.learning_roadmap, name='learning_roadmap'),
 path('create-profile/', views.create_profile, name='create_profile'),
 path('view-profile/', views.view_profile, name='view_profile'),
@@ -66,19 +88,22 @@ path('readiness-assessment/', views.readiness_assessment, name='readiness_assess
 path('readiness-result/<int:assessment_id>/', views.readiness_result, name='readiness_result'),
 path('add-industry-tool/', views.add_industry_tool, name='add_industry_tool'),
 path('view-industry-tools/', views.view_industry_tools, name='view_industry_tools'),
-path('assign-tool-to-role/', views.assign_tool_to_role, name='assign_tool_to_role'),
-path('view-role-tools/', views.view_role_tools, name='view_role_tools'),
 path(
-    'bottleneck-detection/',
-    views.bottleneck_detection,
-    name='bottleneck_detection'
+    'edit-industry-tool/<int:tool_id>/',
+    views.edit_industry_tool,
+    name='edit_industry_tool'
 ),
 
 path(
-    'bottleneck-result/<int:bottleneck_id>/',
-    views.bottleneck_result,
-    name='bottleneck_result'
+    'delete-industry-tool/<int:tool_id>/',
+    views.delete_industry_tool,
+    name='delete_industry_tool'
 ),
+path('assign-tool-to-role/', views.assign_tool_to_role, name='assign_tool_to_role'),
+path('view-role-tools/', views.view_role_tools, name='view_role_tools'),
+path('bottleneck-detection/',views.bottleneck_detection,name='bottleneck_detection'),
+
+path('bottleneck-result/<int:bottleneck_id>/',views.bottleneck_result,name='bottleneck_result'),
 
 path(
     'add-project/',
@@ -125,5 +150,33 @@ path(
     'add-competency-group-members/',
     views.add_competency_group_members,
     name='add_competency_group_members'
+),
+
+path(
+    'edit-competency-group/<int:group_id>/',
+    views.edit_competency_group,
+    name='edit_competency_group'
+),
+
+path(
+    'delete-competency-group/<int:group_id>/',
+    views.delete_competency_group,
+    name='delete_competency_group'
+),
+path(
+    'view-users/',
+    views.view_users,
+    name='view_users'
+),
+
+path(
+    'view-admins/',
+    views.view_admins,
+    name='view_admins'
+),
+path(
+    'platform-analytics/',
+    views.platform_analytics,
+    name='platform_analytics'
 ),
 ]

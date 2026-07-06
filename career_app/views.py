@@ -42,6 +42,41 @@ from .forms import CareerTransitionForm
 from django.conf import settings
 from .models import UserProject
 from .forms import UserProjectForm
+from django.contrib.auth.models import User
+
+
+@login_required
+def view_users(request):
+    if not request.user.is_superuser:
+        return redirect('user_dashboard')
+
+    users = User.objects.filter(
+        is_staff=False,
+        is_superuser=False
+    )
+
+    return render(
+        request,
+        'career_app/view_users.html',
+        {'users': users}
+    )
+
+
+@login_required
+def view_admins(request):
+    if not request.user.is_superuser:
+        return redirect('user_dashboard')
+
+    admins = User.objects.filter(
+        is_staff=True,
+        is_superuser=False
+    )
+
+    return render(
+        request,
+        'career_app/view_admins.html',
+        {'admins': admins}
+    )
 
 
 def home(request):
@@ -216,6 +251,52 @@ def view_job_roles(request):
     roles = JobRole.objects.all()
     return render(request, 'career_app/view_job_roles.html', {'roles': roles})
 
+@login_required
+def edit_job_role(request, role_id):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    role = JobRole.objects.get(id=role_id)
+
+    form = JobRoleForm(
+        request.POST or None,
+        instance=role
+    )
+
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, "Job role updated successfully.")
+        return redirect('view_job_roles')
+
+    return render(
+        request,
+        'career_app/edit_job_role.html',
+        {
+            'form': form,
+            'role': role
+        }
+    )
+
+
+@login_required
+def delete_job_role(request, role_id):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    role = JobRole.objects.get(id=role_id)
+
+    if request.method == 'POST':
+        role.delete()
+        messages.success(request, "Job role deleted successfully.")
+        return redirect('view_job_roles')
+
+    return render(
+        request,
+        'career_app/delete_job_role.html',
+        {
+            'role': role
+        }
+    )
 
 @login_required
 def add_skill(request):
@@ -238,6 +319,53 @@ def view_skills(request):
 
     skills = Skill.objects.all()
     return render(request, 'career_app/view_skills.html', {'skills': skills})
+
+@login_required
+def edit_skill(request, skill_id):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    skill = Skill.objects.get(id=skill_id)
+
+    form = SkillForm(
+        request.POST or None,
+        instance=skill
+    )
+
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, "Skill updated successfully.")
+        return redirect('view_skills')
+
+    return render(
+        request,
+        'career_app/edit_skill.html',
+        {
+            'form': form,
+            'skill': skill
+        }
+    )
+
+
+@login_required
+def delete_skill(request, skill_id):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    skill = Skill.objects.get(id=skill_id)
+
+    if request.method == 'POST':
+        skill.delete()
+        messages.success(request, "Skill deleted successfully.")
+        return redirect('view_skills')
+
+    return render(
+        request,
+        'career_app/delete_skill.html',
+        {
+            'skill': skill
+        }
+    )
 @login_required
 def assign_skill_to_role(request):
     if not request.user.is_staff:
@@ -435,6 +563,53 @@ def view_learning_resources(request):
         request,
         'career_app/view_learning_resources.html',
         {'resources': resources}
+    )
+
+@login_required
+def edit_learning_resource(request, resource_id):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    resource = LearningResource.objects.get(id=resource_id)
+
+    form = LearningResourceForm(
+        request.POST or None,
+        instance=resource
+    )
+
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, "Learning resource updated successfully.")
+        return redirect('view_learning_resources')
+
+    return render(
+        request,
+        'career_app/edit_learning_resource.html',
+        {
+            'form': form,
+            'resource': resource
+        }
+    )
+
+
+@login_required
+def delete_learning_resource(request, resource_id):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    resource = LearningResource.objects.get(id=resource_id)
+
+    if request.method == 'POST':
+        resource.delete()
+        messages.success(request, "Learning resource deleted successfully.")
+        return redirect('view_learning_resources')
+
+    return render(
+        request,
+        'career_app/delete_learning_resource.html',
+        {
+            'resource': resource
+        }
     )
 @login_required
 def learning_roadmap(request, result_id):
@@ -758,6 +933,52 @@ def view_industry_tools(request):
     tools = IndustryTool.objects.all()
     return render(request, 'career_app/view_industry_tools.html', {'tools': tools})
 
+@login_required
+def edit_industry_tool(request, tool_id):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    tool = IndustryTool.objects.get(id=tool_id)
+
+    form = IndustryToolForm(
+        request.POST or None,
+        instance=tool
+    )
+
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, "Industry tool updated successfully.")
+        return redirect('view_industry_tools')
+
+    return render(
+        request,
+        'career_app/edit_industry_tool.html',
+        {
+            'form': form,
+            'tool': tool
+        }
+    )
+
+
+@login_required
+def delete_industry_tool(request, tool_id):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    tool = IndustryTool.objects.get(id=tool_id)
+
+    if request.method == 'POST':
+        tool.delete()
+        messages.success(request, "Industry tool deleted successfully.")
+        return redirect('view_industry_tools')
+
+    return render(
+        request,
+        'career_app/delete_industry_tool.html',
+        {
+            'tool': tool
+        }
+    )
 
 @login_required
 def assign_tool_to_role(request):
@@ -1297,16 +1518,28 @@ def import_dataset(request):
 
     if request.method == 'POST' and form.is_valid():
         dataset_file = request.FILES['dataset_file']
-
         workbook = load_workbook(dataset_file)
 
-        created_counts = {
-            'roles': 0,
-            'skills': 0,
-            'tools': 0,
-            'role_skills': 0,
-            'role_tools': 0,
-            'resources': 0,
+        summary = {
+            'created': {
+                'roles': 0,
+                'skills': 0,
+                'tools': 0,
+                'role_skills': 0,
+                'role_tools': 0,
+                'resources': 0,
+            },
+            'updated': {
+                'roles': 0,
+                'skills': 0,
+                'tools': 0,
+                'role_skills': 0,
+                'role_tools': 0,
+                'resources': 0,
+            },
+            'duplicates': 0,
+            'skipped': 0,
+            'warnings': []
         }
 
         def clean(value):
@@ -1314,167 +1547,232 @@ def import_dataset(request):
                 return ''
             return str(value).strip()
 
+        def add_warning(message):
+            summary['warnings'].append(message)
+
         if 'JobRoles' in workbook.sheetnames:
             sheet = workbook['JobRoles']
 
-            for row in sheet.iter_rows(min_row=2, values_only=True):
+            for index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
                 role_name = clean(row[0])
                 description = clean(row[1]) if len(row) > 1 else ''
 
-                if role_name:
-                    obj, created = JobRole.objects.get_or_create(
-                        role_name=role_name,
-                        defaults={'description': description}
-                    )
+                if not role_name:
+                    summary['skipped'] += 1
+                    add_warning(f"JobRoles row {index}: missing role name.")
+                    continue
 
-                    if not created and description:
+                obj, created = JobRole.objects.get_or_create(
+                    role_name=role_name,
+                    defaults={'description': description}
+                )
+
+                if created:
+                    summary['created']['roles'] += 1
+                else:
+                    summary['duplicates'] += 1
+                    if description and obj.description != description:
                         obj.description = description
                         obj.save()
-
-                    if created:
-                        created_counts['roles'] += 1
+                        summary['updated']['roles'] += 1
 
         if 'Skills' in workbook.sheetnames:
             sheet = workbook['Skills']
 
-            for row in sheet.iter_rows(min_row=2, values_only=True):
+            for index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
                 skill_name = clean(row[0])
                 category = clean(row[1]) if len(row) > 1 else 'Programming'
 
-                if skill_name:
-                    obj, created = Skill.objects.get_or_create(
-                        skill_name=skill_name,
-                        defaults={'category': category}
-                    )
+                if not skill_name:
+                    summary['skipped'] += 1
+                    add_warning(f"Skills row {index}: missing skill name.")
+                    continue
 
-                    if not created and category:
+                obj, created = Skill.objects.get_or_create(
+                    skill_name=skill_name,
+                    defaults={'category': category}
+                )
+
+                if created:
+                    summary['created']['skills'] += 1
+                else:
+                    summary['duplicates'] += 1
+                    if category and obj.category != category:
                         obj.category = category
                         obj.save()
-
-                    if created:
-                        created_counts['skills'] += 1
+                        summary['updated']['skills'] += 1
 
         if 'Tools' in workbook.sheetnames:
             sheet = workbook['Tools']
 
-            for row in sheet.iter_rows(min_row=2, values_only=True):
+            for index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
                 tool_name = clean(row[0])
                 category = clean(row[1]) if len(row) > 1 else 'Development Tool'
 
-                if tool_name:
-                    obj, created = IndustryTool.objects.get_or_create(
-                        tool_name=tool_name,
-                        defaults={'category': category}
-                    )
+                if not tool_name:
+                    summary['skipped'] += 1
+                    add_warning(f"Tools row {index}: missing tool name.")
+                    continue
 
-                    if not created and category:
+                obj, created = IndustryTool.objects.get_or_create(
+                    tool_name=tool_name,
+                    defaults={'category': category}
+                )
+
+                if created:
+                    summary['created']['tools'] += 1
+                else:
+                    summary['duplicates'] += 1
+                    if category and obj.category != category:
                         obj.category = category
                         obj.save()
-
-                    if created:
-                        created_counts['tools'] += 1
+                        summary['updated']['tools'] += 1
 
         if 'RoleSkills' in workbook.sheetnames:
             sheet = workbook['RoleSkills']
 
-            for row in sheet.iter_rows(min_row=2, values_only=True):
+            for index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
                 role_name = clean(row[0])
                 skill_name = clean(row[1])
                 importance = clean(row[2]) if len(row) > 2 else 'Medium'
 
-                if role_name and skill_name:
-                    job_role = JobRole.objects.filter(role_name=role_name).first()
-                    skill = Skill.objects.filter(skill_name=skill_name).first()
+                if not role_name or not skill_name:
+                    summary['skipped'] += 1
+                    add_warning(f"RoleSkills row {index}: missing role or skill.")
+                    continue
 
-                    if job_role and skill:
-                        obj, created = JobRoleSkill.objects.get_or_create(
-                            job_role=job_role,
-                            skill=skill,
-                            defaults={'importance': importance}
-                        )
+                job_role = JobRole.objects.filter(role_name=role_name).first()
+                skill = Skill.objects.filter(skill_name=skill_name).first()
 
-                        if not created:
-                            obj.importance = importance
-                            obj.save()
+                if not job_role:
+                    summary['skipped'] += 1
+                    add_warning(f"RoleSkills row {index}: role '{role_name}' not found.")
+                    continue
 
-                        if created:
-                            created_counts['role_skills'] += 1
+                if not skill:
+                    summary['skipped'] += 1
+                    add_warning(f"RoleSkills row {index}: skill '{skill_name}' not found.")
+                    continue
+
+                obj, created = JobRoleSkill.objects.get_or_create(
+                    job_role=job_role,
+                    skill=skill,
+                    defaults={'importance': importance}
+                )
+
+                if created:
+                    summary['created']['role_skills'] += 1
+                else:
+                    summary['duplicates'] += 1
+                    if importance and obj.importance != importance:
+                        obj.importance = importance
+                        obj.save()
+                        summary['updated']['role_skills'] += 1
 
         if 'RoleTools' in workbook.sheetnames:
             sheet = workbook['RoleTools']
 
-            for row in sheet.iter_rows(min_row=2, values_only=True):
+            for index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
                 role_name = clean(row[0])
                 tool_name = clean(row[1])
                 importance = clean(row[2]) if len(row) > 2 else 'Medium'
 
-                if role_name and tool_name:
-                    job_role = JobRole.objects.filter(role_name=role_name).first()
-                    tool = IndustryTool.objects.filter(tool_name=tool_name).first()
+                if not role_name or not tool_name:
+                    summary['skipped'] += 1
+                    add_warning(f"RoleTools row {index}: missing role or tool.")
+                    continue
 
-                    if job_role and tool:
-                        obj, created = JobRoleTool.objects.get_or_create(
-                            job_role=job_role,
-                            tool=tool,
-                            defaults={'importance': importance}
-                        )
+                job_role = JobRole.objects.filter(role_name=role_name).first()
+                tool = IndustryTool.objects.filter(tool_name=tool_name).first()
 
-                        if not created:
-                            obj.importance = importance
-                            obj.save()
+                if not job_role:
+                    summary['skipped'] += 1
+                    add_warning(f"RoleTools row {index}: role '{role_name}' not found.")
+                    continue
 
-                        if created:
-                            created_counts['role_tools'] += 1
+                if not tool:
+                    summary['skipped'] += 1
+                    add_warning(f"RoleTools row {index}: tool '{tool_name}' not found.")
+                    continue
+
+                obj, created = JobRoleTool.objects.get_or_create(
+                    job_role=job_role,
+                    tool=tool,
+                    defaults={'importance': importance}
+                )
+
+                if created:
+                    summary['created']['role_tools'] += 1
+                else:
+                    summary['duplicates'] += 1
+                    if importance and obj.importance != importance:
+                        obj.importance = importance
+                        obj.save()
+                        summary['updated']['role_tools'] += 1
 
         if 'LearningResources' in workbook.sheetnames:
             sheet = workbook['LearningResources']
 
-            for row in sheet.iter_rows(min_row=2, values_only=True):
+            for index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
                 skill_name = clean(row[0])
                 title = clean(row[1])
                 resource_type = clean(row[2]) if len(row) > 2 else 'Course'
                 url = clean(row[3]) if len(row) > 3 else ''
 
-                if skill_name and title and url:
-                    skill = Skill.objects.filter(skill_name=skill_name).first()
+                if not skill_name or not title or not url:
+                    summary['skipped'] += 1
+                    add_warning(f"LearningResources row {index}: missing skill, title, or URL.")
+                    continue
 
-                    if skill:
-                        obj, created = LearningResource.objects.get_or_create(
-                            skill=skill,
-                            title=title,
-                            defaults={
-                                'resource_type': resource_type,
-                                'url': url
-                            }
-                        )
+                skill = Skill.objects.filter(skill_name=skill_name).first()
 
-                        if not created:
-                            obj.resource_type = resource_type
-                            obj.url = url
-                            obj.save()
+                if not skill:
+                    summary['skipped'] += 1
+                    add_warning(f"LearningResources row {index}: skill '{skill_name}' not found.")
+                    continue
 
-                        if created:
-                            created_counts['resources'] += 1
+                obj, created = LearningResource.objects.get_or_create(
+                    skill=skill,
+                    title=title,
+                    defaults={
+                        'resource_type': resource_type,
+                        'url': url
+                    }
+                )
+
+                if created:
+                    summary['created']['resources'] += 1
+                else:
+                    summary['duplicates'] += 1
+                    if obj.resource_type != resource_type or obj.url != url:
+                        obj.resource_type = resource_type
+                        obj.url = url
+                        obj.save()
+                        summary['updated']['resources'] += 1
 
         messages.success(
             request,
-            f"Dataset imported successfully. "
-            f"Roles: {created_counts['roles']}, "
-            f"Skills: {created_counts['skills']}, "
-            f"Tools: {created_counts['tools']}, "
-            f"Role-Skills: {created_counts['role_skills']}, "
-            f"Role-Tools: {created_counts['role_tools']}, "
-            f"Resources: {created_counts['resources']}."
+            "Dataset import completed. "
+            f"Created: {sum(summary['created'].values())}, "
+            f"Updated: {sum(summary['updated'].values())}, "
+            f"Duplicates: {summary['duplicates']}, "
+            f"Skipped: {summary['skipped']}."
         )
 
-        return redirect('import_dataset')
+        return render(
+            request,
+            'career_app/import_dataset.html',
+            {
+                'form': DatasetImportForm(),
+                'summary': summary
+            }
+        )
 
     return render(
         request,
         'career_app/import_dataset.html',
         {'form': form}
     )
-
 @login_required
 def add_competency_group(request):
     if not request.user.is_staff:
@@ -1553,4 +1851,76 @@ def add_competency_group_members(request):
             'form': form,
             'selected_group': selected_group
         }
+    )
+
+@login_required
+def edit_competency_group(request, group_id):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    group = CompetencyGroup.objects.get(id=group_id)
+
+    form = CompetencyGroupForm(
+        request.POST or None,
+        instance=group
+    )
+
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('view_competency_groups')
+
+    return render(
+        request,
+        'career_app/edit_competency_group.html',
+        {
+            'form': form,
+            'group': group
+        }
+    )
+
+
+@login_required
+def delete_competency_group(request, group_id):
+    if not request.user.is_staff:
+        return redirect('user_dashboard')
+
+    group = CompetencyGroup.objects.get(id=group_id)
+
+    if request.method == 'POST':
+        group.delete()
+        return redirect('view_competency_groups')
+
+    return render(
+        request,
+        'career_app/delete_competency_group.html',
+        {'group': group}
+    )
+
+@login_required
+def platform_analytics(request):
+    if not request.user.is_superuser:
+        return redirect('user_dashboard')
+
+    context = {
+        'total_users': User.objects.filter(is_staff=False, is_superuser=False).count(),
+        'total_admins': User.objects.filter(is_staff=True, is_superuser=False).count(),
+        'total_job_roles': JobRole.objects.count(),
+        'total_skills': Skill.objects.count(),
+        'total_tools': IndustryTool.objects.count(),
+        'total_learning_resources': LearningResource.objects.count(),
+        'total_projects': UserProject.objects.count(),
+        'total_readiness_assessments': ReadinessAssessment.objects.count(),
+        'total_bottleneck_reports': EmployabilityBottleneck.objects.count(),
+        'total_transition_analyses': CareerTransitionAnalysis.objects.count(),
+        'pending_admin_requests': AdminRequest.objects.filter(status='Pending').count(),
+        'approved_admin_requests': AdminRequest.objects.filter(status='Approved').count(),
+        'rejected_admin_requests': AdminRequest.objects.filter(status='Rejected').count(),
+        'used_invites': AdminInviteCode.objects.filter(is_used=True).count(),
+        'unused_invites': AdminInviteCode.objects.filter(is_used=False).count(),
+    }
+
+    return render(
+        request,
+        'career_app/platform_analytics.html',
+        context
     )

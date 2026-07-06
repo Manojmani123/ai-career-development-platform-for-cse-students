@@ -1,35 +1,139 @@
-<h2>Add Skills to Competency Group</h2>
+{% extends 'career_app/base.html' %}
 
-<form method="GET">
-    <p>
-        <label>Competency Group:</label><br>
-        {{ form.group }}
-    </p>
+{% block content %}
 
-    <button type="submit">Load Skills</button>
-</form>
+<div class="row justify-content-center">
 
-{% if selected_group %}
-    <hr>
+    <div class="col-lg-10">
 
-    <h3>{{ selected_group.job_role.role_name }} - {{ selected_group.group_name }}</h3>
+        <div class="card shadow">
 
-    <form method="POST">
-        {% csrf_token %}
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Add Skills to Competency Group</h3>
+            </div>
 
-        <input type="hidden" name="group" value="{{ selected_group.id }}">
+            <div class="card-body">
 
-        <p>
-            <label>Skills in this Group:</label><br>
-            {{ form.job_role_skills }}
-        </p>
+                <div class="alert alert-info">
+                    Select a competency group to load all skills assigned to its
+                    job role. Tick the skills that belong to this competency
+                    group and save your selection.
+                </div>
 
-        <button type="submit">Save Group Members</button>
-    </form>
-{% endif %}
+                <form method="GET">
 
-<br>
+                    <div class="mb-3">
 
-<a href="{% url 'view_competency_groups' %}">Back to Competency Groups</a>
-<br>
-<a href="{% url 'admin_dashboard' %}">Back to Admin Dashboard</a>
+                        <label class="form-label">
+                            <strong>Competency Group</strong>
+                        </label>
+
+                        {{ form.group }}
+
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        Load Skills
+                    </button>
+
+                </form>
+
+                {% if selected_group %}
+
+                <hr>
+
+                <div class="card border-success mt-4">
+
+                    <div class="card-header bg-success text-white">
+
+                        <h5 class="mb-0">
+                            {{ selected_group.job_role.role_name }}
+                            -
+                            {{ selected_group.group_name }}
+                        </h5>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <p>
+
+                            <strong>Rule:</strong>
+
+                            {% if selected_group.rule == "ANY_ONE" %}
+
+                                <span class="badge bg-warning text-dark">
+                                    Any One
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-primary">
+                                    All Required
+                                </span>
+
+                            {% endif %}
+
+                        </p>
+
+                        <form method="POST">
+
+                            {% csrf_token %}
+
+                            <input
+                                type="hidden"
+                                name="group"
+                                value="{{ selected_group.id }}"
+                            >
+
+                            <div class="border rounded p-3"
+                                 style="max-height:350px; overflow-y:auto;">
+
+                                {{ form.job_role_skills }}
+
+                            </div>
+
+                            <br>
+
+                            <button type="submit"
+                                    class="btn btn-success">
+
+                                Save Group Members
+
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+                <div class="mt-4">
+
+                    <a href="{% url 'view_competency_groups' %}"
+                       class="btn btn-secondary">
+
+                        View Competency Groups
+
+                    </a>
+
+                    <a href="{% url 'admin_dashboard' %}"
+                       class="btn btn-dark">
+
+                        Back to Dashboard
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

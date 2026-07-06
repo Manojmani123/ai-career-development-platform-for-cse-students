@@ -1,24 +1,42 @@
-<h1>User Dashboard</h1>
+{% extends 'career_app/base.html' %}
 
+{% block content %}
+<h2>User Dashboard</h2>
 <p>Welcome, {{ request.user.username }}</p>
 
-<ul>
-    <li><a href="{% url 'career_match' %}">Career Matching</a></li>
-    <li><a href="{% url 'view_profile' %}">My Profile</a></li>
-    <li><a href="{% url 'readiness_assessment' %}">Academic-to-Industry Readiness Assessment</a></li>
-    <li><a href="{% url 'readiness_assessment' %}">Readiness Assessment</a></li>
-<li><a href="{% url 'bottleneck_detection' %}">Employability Bottleneck Detection</a></li>
-<a href="{% url 'add_project' %}">
-    Add Project
-</a>
+<div class="list-group mt-4">
 
-<br><br>
+    <a href="{% url 'career_match' %}" class="list-group-item list-group-item-action">
+        Career Matching
+    </a>
 
-<a href="{% url 'view_projects' %}">
-    View Projects
-</a>
+    <a href="{% url 'view_profile' %}" class="list-group-item list-group-item-action">
+        My Profile
+    </a>
 
-</ul>
-<a href="{% url 'career_transition_analysis' %}">Career Transition Feasibility Analysis</a>
+    <a href="{% url 'readiness_assessment' %}" class="list-group-item list-group-item-action">
+        Academic-to-Industry Readiness Assessment
+    </a>
 
-<a href="{% url 'logout' %}">Logout</a>
+    <a href="{% url 'bottleneck_detection' %}" class="list-group-item list-group-item-action">
+        Employability Bottleneck Detection
+    </a>
+
+    <a href="{% url 'add_project' %}" class="list-group-item list-group-item-action">
+        Add Project
+    </a>
+
+    <a href="{% url 'view_projects' %}" class="list-group-item list-group-item-action">
+        View Projects
+    </a>
+
+    <a href="{% url 'career_transition_analysis' %}" class="list-group-item list-group-item-action">
+        Career Transition Feasibility Analysis
+    </a>
+
+    <a href="{% url 'logout' %}" class="list-group-item list-group-item-action text-danger">
+        Logout
+    </a>
+
+</div>
+{% endblock %}

@@ -1,21 +1,65 @@
-<h1>Employability Bottleneck Result</h1>
+{% extends 'career_app/base.html' %}
 
-<p>
-<b>Target Role:</b>
-{{ bottleneck.job_role.role_name }}
+{% block content %}
+
+<h2>Employability Bottleneck Analysis</h2>
+
+<p class="text-muted">
+    Target Role: {{ bottleneck.job_role.role_name }}
 </p>
 
-<p>
-<b>Main Bottleneck:</b>
-{{ bottleneck.main_bottleneck }}
-</p>
+<div class="card mt-4 border-danger">
 
-<p>
-<b>Explanation:</b>
-{{ bottleneck.explanation }}
-</p>
+    <div class="card-header bg-danger text-white">
+        Primary Bottleneck
+    </div>
 
-<p>
-<b>Recommendation:</b>
-{{ bottleneck.recommendation }}
-</p>
+    <div class="card-body">
+
+        <h3>{{ bottleneck.main_bottleneck }}</h3>
+
+    </div>
+
+</div>
+
+<div class="card mt-4">
+
+    <div class="card-header">
+        Explanation
+    </div>
+
+    <div class="card-body">
+
+        <p>{{ bottleneck.explanation }}</p>
+
+    </div>
+
+</div>
+
+<div class="card mt-4">
+
+    <div class="card-header bg-success text-white">
+        Recommendation
+    </div>
+
+    <div class="card-body">
+
+        <p>{{ bottleneck.recommendation }}</p>
+
+    </div>
+
+</div>
+
+<div class="mt-4">
+
+    <a href="{% url 'bottleneck_detection' %}" class="btn btn-secondary">
+        Analyze Again
+    </a>
+
+    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
+        Back to Dashboard
+    </a>
+
+</div>
+
+{% endblock %}

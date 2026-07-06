@@ -1,16 +1,65 @@
-<h2>Add Competency Group</h2>
+{% extends 'career_app/base.html' %}
 
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
+{% block content %}
 
-    <button type="submit">
-        Save Group
-    </button>
-</form>
+<div class="row justify-content-center">
 
-<br>
+    <div class="col-lg-8">
 
-<a href="{% url 'admin_dashboard' %}">
-    Back to Dashboard
-</a>
+        <div class="card shadow">
+
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Add Competency Group</h3>
+            </div>
+
+            <div class="card-body">
+
+                <div class="alert alert-info">
+                    Create a competency group for a job role. Use
+                    <strong>ANY_ONE</strong> when one skill is enough, such as
+                    Python OR Java. Use <strong>ALL_REQUIRED</strong> when every
+                    skill is required, such as HTML + CSS + JavaScript.
+                </div>
+
+                <form method="POST">
+
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        {{ form.job_role.label_tag }}
+                        {{ form.job_role }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.group_name.label_tag }}
+                        {{ form.group_name }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.rule.label_tag }}
+                        {{ form.rule }}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        Save Group
+                    </button>
+
+                    <a href="{% url 'view_competency_groups' %}" class="btn btn-secondary">
+                        View Groups
+                    </a>
+
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-dark">
+                        Back to Dashboard
+                    </a>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

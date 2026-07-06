@@ -1,23 +1,120 @@
-<h2>Career Transition Feasibility Result</h2>
+{% extends 'career_app/base.html' %}
 
-<p><strong>Current Role:</strong> {{ analysis.current_role.role_name }}</p>
-<p><strong>Target Role:</strong> {{ analysis.target_role.role_name }}</p>
+{% block content %}
 
-<p><strong>Skill Match Score:</strong> {{ analysis.skill_match_score }}%</p>
-<p><strong>Tool Match Score:</strong> {{ analysis.tool_match_score }}%</p>
-<p><strong>Feasibility Score:</strong> {{ analysis.feasibility_score }}%</p>
+<h2>Career Transition Feasibility Analysis</h2>
 
-<p><strong>Difficulty Level:</strong> {{ analysis.difficulty_level }}</p>
+<p class="text-muted">
+    <strong>Current Role:</strong> {{ analysis.current_role.role_name }}
+    →
+    <strong>Target Role:</strong> {{ analysis.target_role.role_name }}
+</p>
 
-<h3>Missing Skills</h3>
-<p>{{ analysis.missing_skills|default:"No major missing skills" }}</p>
+<div class="row mt-4">
 
-<h3>Missing Tools</h3>
-<p>{{ analysis.missing_tools|default:"No major missing tools" }}</p>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5>Skill Match</h5>
+                <h2>{{ analysis.skill_match_score }}%</h2>
+            </div>
+        </div>
+    </div>
 
-<h3>Recommendation</h3>
-<p>{{ analysis.recommendation }}</p>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5>Tool Match</h5>
+                <h2>{{ analysis.tool_match_score }}%</h2>
+            </div>
+        </div>
+    </div>
 
-<a href="{% url 'career_transition_analysis' %}">Analyse Another Transition</a>
-<br>
-<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5>Feasibility</h5>
+                <h2>{{ analysis.feasibility_score }}%</h2>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="card mt-4">
+
+    <div class="card-header bg-primary text-white">
+        Difficulty Level
+    </div>
+
+    <div class="card-body">
+
+        <h4>{{ analysis.difficulty_level }}</h4>
+
+    </div>
+
+</div>
+
+<div class="card mt-4">
+
+    <div class="card-header bg-danger text-white">
+        Missing Skills
+    </div>
+
+    <div class="card-body">
+
+        {% if analysis.missing_skills %}
+            {{ analysis.missing_skills }}
+        {% else %}
+            No major missing skills.
+        {% endif %}
+
+    </div>
+
+</div>
+
+<div class="card mt-4">
+
+    <div class="card-header bg-warning">
+        Missing Tools
+    </div>
+
+    <div class="card-body">
+
+        {% if analysis.missing_tools %}
+            {{ analysis.missing_tools }}
+        {% else %}
+            No major missing tools.
+        {% endif %}
+
+    </div>
+
+</div>
+
+<div class="card mt-4">
+
+    <div class="card-header bg-success text-white">
+        Recommendation
+    </div>
+
+    <div class="card-body">
+
+        {{ analysis.recommendation }}
+
+    </div>
+
+</div>
+
+<div class="mt-4">
+
+    <a href="{% url 'career_transition_analysis' %}" class="btn btn-secondary">
+        Analyse Another Transition
+    </a>
+
+    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
+        Back to Dashboard
+    </a>
+
+</div>
+
+{% endblock %}

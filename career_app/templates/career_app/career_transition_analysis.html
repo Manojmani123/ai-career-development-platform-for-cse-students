@@ -1,29 +1,75 @@
-<h2>Career Transition Feasibility Analysis</h2>
+{% extends 'career_app/base.html' %}
 
-{% if messages %}
-    {% for message in messages %}
-        <p style="color:red;">{{ message }}</p>
-    {% endfor %}
-{% endif %}
+{% block content %}
 
-<form method="POST">
-    {% csrf_token %}
+<div class="row justify-content-center">
 
-    {{ form.non_field_errors }}
+    <div class="col-lg-8">
 
-    <p>
-        <label>Current Role:</label>
-        {{ form.current_role }}
-        {{ form.current_role.errors }}
-    </p>
+        <div class="card shadow">
 
-    <p>
-        <label>Target Role:</label>
-        {{ form.target_role }}
-        {{ form.target_role.errors }}
-    </p>
+            <div class="card-header bg-warning">
+                <h3 class="mb-0">Career Transition Feasibility Analysis</h3>
+            </div>
 
-    <button type="submit">Analyse Transition</button>
-</form>
+            <div class="card-body">
 
-<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>
+                <div class="alert alert-info">
+                    Compare your current career with your desired career. The
+                    system evaluates transferable skills, industry tools, and
+                    competency groups to estimate how feasible the transition is.
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-danger">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST">
+
+                    {% csrf_token %}
+
+                    {{ form.non_field_errors }}
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <strong>Current Role</strong>
+                        </label>
+
+                        {{ form.current_role }}
+
+                        {{ form.current_role.errors }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <strong>Target Role</strong>
+                        </label>
+
+                        {{ form.target_role }}
+
+                        {{ form.target_role.errors }}
+                    </div>
+
+                    <button type="submit" class="btn btn-warning">
+                        Analyse Transition
+                    </button>
+
+                    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
+                        Back to Dashboard
+                    </a>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

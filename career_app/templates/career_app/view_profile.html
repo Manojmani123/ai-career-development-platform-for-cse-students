@@ -1,103 +1,158 @@
-<h1>My Profile</h1>
+{% extends 'career_app/base.html' %}
 
-{% if profile %}
-    <p><strong>Full Name:</strong> {{ profile.full_name }}</p>
-    <p><strong>University:</strong> {{ profile.university }}</p>
-    <p><strong>Degree:</strong> {{ profile.degree }}</p>
-    <p><strong>Year of Study:</strong> {{ profile.year_of_study }}</p>
+{% block content %}
 
-    <p>
-        <strong>GitHub:</strong>
-        {% if profile.github_link %}
-            <a href="{{ profile.github_link }}" target="_blank">GitHub Profile</a>
-        {% else %}
-            Not added
-        {% endif %}
-    </p>
+<div class="container mt-4">
 
-    <p>
-        <strong>LinkedIn:</strong>
-        {% if profile.linkedin_link %}
-            <a href="{{ profile.linkedin_link }}" target="_blank">LinkedIn Profile</a>
-        {% else %}
-            Not added
-        {% endif %}
-    </p>
+    <div class="card shadow">
 
-    <p>
-        <strong>Resume:</strong>
-        {% if profile.resume %}
-            <a href="{{ profile.resume.url }}" target="_blank">View Resume</a>
-        {% else %}
-            No resume uploaded
-        {% endif %}
-    </p>
-    <p>
-    <strong>Resume:</strong>
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">My Profile</h3>
+        </div>
 
-    {% if profile.resume %}
-        <a href="{{ profile.resume.url }}" target="_blank">
-            View Resume
-        </a>
-    {% else %}
-        No resume uploaded
-    {% endif %}
-</p>
+        <div class="card-body">
 
-<!-- PASTE HERE -->
+            {% if profile %}
 
-<h3>Resume Validation</h3>
+            <div class="row">
 
-{% if profile.resume %}
-    {% if profile.is_resume_valid %}
-        <p style="color: green;">
-            Valid resume detected.
-        </p>
-    {% else %}
-        <p style="color: red;">
-            Uploaded file does not appear to be a valid resume.
-        </p>
-    {% endif %}
-{% endif %}
+                <div class="col-md-6">
 
-<h3>Extracted Skills</h3>
+                    <h5>Personal Information</h5>
+                    <hr>
 
-<ul>
-    {% for skill in profile.extracted_skills.all %}
-        <li>{{ skill.skill_name }}</li>
-    {% empty %}
-        <li>No skills extracted yet.</li>
-    {% endfor %}
-</ul>
+                    <p><strong>Full Name:</strong> {{ profile.full_name }}</p>
+                    <p><strong>University:</strong> {{ profile.university }}</p>
+                    <p><strong>Degree:</strong> {{ profile.degree }}</p>
+                    <p><strong>Year of Study:</strong> {{ profile.year_of_study }}</p>
 
-<h3>Manual Skills</h3>
+                </div>
 
-<ul>
-    {% for skill in profile.manual_skills.all %}
-        <li>{{ skill.skill_name }}</li>
-    {% empty %}
-        <li>No manual skills added yet.</li>
-    {% endfor %}
-</ul>
-<h3>Manual Tools</h3>
+                <div class="col-md-6">
 
-<ul>
-    {% for tool in profile.manual_tools.all %}
-        <li>{{ tool.tool_name }}</li>
-    {% empty %}
-        <li>No manual tools added yet.</li>
-    {% endfor %}
-</ul>
+                    <h5>Professional Links</h5>
+                    <hr>
 
-<a href="{% url 'edit_profile' %}">
-    Edit Profile
-</a>
+                    <p>
+                        <strong>GitHub:</strong>
 
-    <a href="{% url 'edit_profile' %}">Edit Profile</a>
-{% else %}
-    <p>No profile created yet.</p>
-    <a href="{% url 'create_profile' %}">Create Profile</a>
-{% endif %}
+                        {% if profile.github_link %}
+                            <a href="{{ profile.github_link }}" target="_blank">
+                                View GitHub
+                            </a>
+                        {% else %}
+                            Not Added
+                        {% endif %}
+                    </p>
 
-<br><br>
-<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>
+                    <p>
+                        <strong>LinkedIn:</strong>
+
+                        {% if profile.linkedin_link %}
+                            <a href="{{ profile.linkedin_link }}" target="_blank">
+                                View LinkedIn
+                            </a>
+                        {% else %}
+                            Not Added
+                        {% endif %}
+                    </p>
+
+                    <p>
+                        <strong>Resume:</strong>
+
+                        {% if profile.resume %}
+                            <a href="{{ profile.resume.url }}" target="_blank">
+                                View Resume
+                            </a>
+                        {% else %}
+                            No Resume Uploaded
+                        {% endif %}
+                    </p>
+
+                </div>
+
+            </div>
+
+            <hr>
+
+            <h5>Resume Validation</h5>
+
+            {% if profile.resume %}
+
+                {% if profile.is_resume_valid %}
+                    <div class="alert alert-success">
+                        ✔ Resume validation successful.
+                    </div>
+                {% else %}
+                    <div class="alert alert-danger">
+                        ✖ Uploaded file does not appear to be a valid resume.
+                    </div>
+                {% endif %}
+
+            {% endif %}
+
+            <h5 class="mt-4">Extracted Skills</h5>
+
+            {% for skill in profile.extracted_skills.all %}
+                <span class="badge bg-success me-1 mb-1">
+                    {{ skill.skill_name }}
+                </span>
+            {% empty %}
+                <p>No extracted skills found.</p>
+            {% endfor %}
+
+            <h5 class="mt-4">Manual Skills</h5>
+
+            {% for skill in profile.manual_skills.all %}
+                <span class="badge bg-primary me-1 mb-1">
+                    {{ skill.skill_name }}
+                </span>
+            {% empty %}
+                <p>No manual skills added.</p>
+            {% endfor %}
+
+            <h5 class="mt-4">Manual Industry Tools</h5>
+
+            {% for tool in profile.manual_tools.all %}
+                <span class="badge bg-warning text-dark me-1 mb-1">
+                    {{ tool.tool_name }}
+                </span>
+            {% empty %}
+                <p>No manual tools added.</p>
+            {% endfor %}
+
+            <div class="mt-4">
+
+                <a href="{% url 'edit_profile' %}" class="btn btn-primary">
+                    Edit Profile
+                </a>
+
+                <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
+                    Back to Dashboard
+                </a>
+
+            </div>
+
+            {% else %}
+
+                <div class="alert alert-warning">
+                    No profile has been created yet.
+                </div>
+
+                <a href="{% url 'create_profile' %}" class="btn btn-success">
+                    Create Profile
+                </a>
+
+                <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
+                    Back to Dashboard
+                </a>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

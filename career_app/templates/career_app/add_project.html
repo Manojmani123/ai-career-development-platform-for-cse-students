@@ -1,14 +1,89 @@
-<h2>Add Project</h2>
+{% extends 'career_app/base.html' %}
 
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
+{% block content %}
 
-    <button type="submit">
-        Save Project
-    </button>
-</form>
-<br>
-<a href="{% url 'view_projects' %}">Back to Projects</a>
-<br>
-<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>
+<div class="row justify-content-center">
+
+    <div class="col-lg-8">
+
+        <div class="card shadow">
+
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0">Add Project</h3>
+            </div>
+
+            <div class="card-body">
+
+                <div class="alert alert-info">
+                    Add your academic or personal projects. These projects are
+                    used by CareerReady AI when calculating your employability
+                    readiness and identifying career bottlenecks.
+                </div>
+
+                <form method="POST">
+
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        {{ form.title.label_tag }}
+                        {{ form.title }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.description.label_tag }}
+                        {{ form.description }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.project_url.label_tag }}
+                        {{ form.project_url }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.github_url.label_tag }}
+                        {{ form.github_url }}
+                    </div>
+
+                    <hr>
+
+                    <h5>Skills Used</h5>
+
+                    <div class="border rounded p-3 mb-3"
+                         style="max-height:250px; overflow-y:auto;">
+
+                        {{ form.skills_used }}
+
+                    </div>
+
+                    <h5>Industry Tools Used</h5>
+
+                    <div class="border rounded p-3 mb-3"
+                         style="max-height:250px; overflow-y:auto;">
+
+                        {{ form.tools_used }}
+
+                    </div>
+
+                    <button type="submit" class="btn btn-success">
+                        Save Project
+                    </button>
+
+                    <a href="{% url 'view_projects' %}" class="btn btn-secondary">
+                        Back to Projects
+                    </a>
+
+                    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
+                        Back to Dashboard
+                    </a>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

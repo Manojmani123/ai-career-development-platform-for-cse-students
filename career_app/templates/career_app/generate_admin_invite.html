@@ -1,13 +1,53 @@
-<h1>Generate Admin Invite Code</h1>
+{% extends 'career_app/base.html' %}
 
-<form method="POST">
-    {% csrf_token %}
-    <button type="submit">Generate Invite Code</button>
-</form>
+{% block content %}
+<div class="container mt-5">
 
-{% if code %}
-    <h3>Generated Invite Code:</h3>
-    <p><strong>{{ code }}</strong></p>
-{% endif %}
+    <div class="row justify-content-center">
+        <div class="col-md-7">
 
-<a href="{% url 'super_admin_dashboard' %}">Back to Dashboard</a>
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">Generate Admin Invite Code</h4>
+                </div>
+
+                <div class="card-body">
+
+                    <p class="text-muted">
+                        Generate a one-time invite code for a new admin. The code will be used when the admin submits an admin request.
+                    </p>
+
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <button type="submit" class="btn btn-primary">
+                            Generate Invite Code
+                        </button>
+
+                        <a href="{% url 'super_admin_dashboard' %}" class="btn btn-secondary ms-2">
+                            Back to Dashboard
+                        </a>
+                    </form>
+
+                    {% if code %}
+                        <div class="alert alert-success mt-4">
+                            <h5 class="mb-2">Generated Invite Code</h5>
+
+                            <div class="p-3 bg-light border rounded text-center">
+                                <strong class="fs-4">{{ code }}</strong>
+                            </div>
+
+                            <p class="mt-3 mb-0 text-muted">
+                                Share this code only with the approved admin candidate.
+                            </p>
+                        </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

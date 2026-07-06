@@ -1,0 +1,18 @@
+{% extends 'career_app/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Delete Competency Group</h2>
+
+    <p>
+        Are you sure you want to delete
+        <strong>{{ group.group_name }}</strong>?
+    </p>
+
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a href="{% url 'view_competency_groups' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

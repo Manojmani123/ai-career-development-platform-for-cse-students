@@ -1,0 +1,38 @@
+{% extends 'career_app/base.html' %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+    <div class="card shadow-sm border-danger">
+
+        <div class="card-header bg-danger text-white">
+            <h3>Delete Skill</h3>
+        </div>
+
+        <div class="card-body">
+
+            <p class="fs-5">
+                Are you sure you want to delete
+                <strong>{{ skill.skill_name }}</strong>?
+            </p>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <button class="btn btn-danger">
+                    Yes, Delete
+                </button>
+
+                <a href="{% url 'view_skills' %}" class="btn btn-secondary">
+                    Cancel
+                </a>
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

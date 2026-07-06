@@ -1,13 +1,41 @@
-<h1>Super Admin Dashboard</h1>
+{% extends 'career_app/base.html' %}
 
-<p>Welcome Super Admin, {{ request.user.username }}</p>
+{% block content %}
 
-<ul>
-    <li><a href="{% url 'generate_admin_invite' %}">Generate Admin Invite Code</a></li>
-    <li><a href="{% url 'view_admin_requests' %}">Approve Admin Requests</a></li>
-    <li><a href="#">View Users</a></li>
-    <li><a href="#">View Admins</a></li>
-    <li><a href="#">Platform Analytics</a></li>
-</ul>
+<h2>Super Admin Dashboard</h2>
 
-<a href="{% url 'logout' %}">Logout</a>
+<p>Welcome Super Admin, {{ request.user.first_name|default:request.user.username }}</p>
+
+<div class="list-group mt-4">
+
+    <a href="{% url 'generate_admin_invite' %}" class="list-group-item list-group-item-action">
+        Generate Admin Invite Code
+    </a>
+
+    <a href="{% url 'view_admin_requests' %}" class="list-group-item list-group-item-action">
+        Approve Admin Requests
+    </a>
+
+       <a href="{% url 'view_admin_requests' %}" class="btn btn-warning btn-lg">
+        View Admin Requests
+    </a>
+
+    <a href="{% url 'view_users' %}" class="list-group-item list-group-item-action">
+        View Users
+    </a>
+
+    <a href="{% url 'view_admins' %}" class="list-group-item list-group-item-action">
+        View Admins
+    </a>
+
+    <a href="{% url 'platform_analytics' %}" class="btn btn-primary">
+    Platform Analytics
+</a>
+
+    <a href="{% url 'logout' %}" class="list-group-item list-group-item-action text-danger">
+        Logout
+    </a>
+
+</div>
+
+{% endblock %}

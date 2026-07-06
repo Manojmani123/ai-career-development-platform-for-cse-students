@@ -1,34 +1,92 @@
-<h1>Admin Requests</h1>
+{% extends 'career_app/base.html' %}
 
-{% for message in messages %}
-    <p>{{ message }}</p>
-{% endfor %}
+{% block content %}
+<div class="container mt-5">
 
-<table border="1" cellpadding="10">
-    <tr>
-        <th>Full Name</th>
-        <th>Email</th>
-        <th>Invite Code</th>
-        <th>Status</th>
-        <th>Action</th>
-    </tr>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Admin Requests</h2>
 
-    {% for req in requests %}
-    <tr>
-        <td>{{ req.full_name }}</td>
-        <td>{{ req.email }}</td>
-        <td>{{ req.invite_code }}</td>
-        <td>{{ req.status }}</td>
-        <td>
-            {% if req.status == 'Pending' %}
-                <a href="{% url 'approve_admin_request' req.id %}">Approve</a> |
-                <a href="{% url 'reject_admin_request' req.id %}">Reject</a>
-            {% else %}
-                No Action
-            {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+        <a href="{% url 'super_admin_dashboard' %}" class="btn btn-secondary">
+            Back to Dashboard
+        </a>
+    </div>
 
-<a href="{% url 'super_admin_dashboard' %}">Back to Dashboard</a>
+    {% if requests %}
+        <div class="card shadow-sm">
+            <div class="card-body">
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Invite Code</th>
+                                <th>Status</th>
+                                <th>Requested On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for request in requests %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ request.full_name }}</td>
+                                    <td>{{ request.email }}</td>
+                                    <td><code>{{ request.invite_code }}</code></td>
+
+                                    <td>
+                                        {% if request.status == "Pending" %}
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        {% elif request.status == "Approved" %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>{{ request.created_at|date:"d M Y H:i" }}</td>
+
+                                    <td>
+                                        {% if request.status == "Pending" %}
+                                            <a href="{% url 'approve_admin_request' request.id %}"
+                                               class="btn btn-success btn-sm"
+                                               onclick="return confirm('Approve this admin request?');">
+                                                Approve
+                                            </a>
+
+                                            <a href="{% url 'reject_admin_request' request.id %}"
+                                               class="btn btn-danger btn-sm"
+                                               onclick="return confirm('Reject this admin request?');">
+                                                Reject
+                                            </a>
+                                        {% elif request.status == "Approved" %}
+                                            <button class="btn btn-success btn-sm" disabled>
+                                                Approved
+                                            </button>
+                                        {% else %}
+                                            <button class="btn btn-danger btn-sm" disabled>
+                                                Rejected
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            No admin requests available.
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

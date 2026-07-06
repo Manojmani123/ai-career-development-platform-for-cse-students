@@ -1,23 +1,109 @@
-<h1>Personalized Learning Roadmap</h1>
+{% extends 'career_app/base.html' %}
 
-<h2>
-    Target Role:
-    {{ result.job_role.role_name }}
-</h2>
+{% block content %}
 
-<h3>
-    Current Match Score:
-    {{ result.match_score }}%
-</h3>
+<div class="container mt-4">
 
-<hr>
+    <div class="card shadow">
 
-{% for step in roadmap_steps %}
-    <p>{{ step }}</p>
-{% endfor %}
+        <div class="card-header bg-success text-white">
+            <h3 class="mb-0">Personalized Learning Roadmap</h3>
+        </div>
 
-<br>
+        <div class="card-body">
 
-<a href="{% url 'user_dashboard' %}">
-    Back to Dashboard
-</a>
+            <p class="text-muted">
+                This roadmap is generated based on your current skills,
+                competency groups, and missing requirements for your selected
+                career path.
+            </p>
+
+            <div class="row mt-4">
+
+                <div class="col-md-6">
+
+                    <div class="card border-primary">
+
+                        <div class="card-body text-center">
+
+                            <h5>Target Role</h5>
+
+                            <h3>{{ result.job_role.role_name }}</h3>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <div class="card border-success">
+
+                        <div class="card-body text-center">
+
+                            <h5>Current Match Score</h5>
+
+                            <h2>{{ result.match_score }}%</h2>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="card mt-4">
+
+                <div class="card-header bg-primary text-white">
+                    Learning Plan
+                </div>
+
+                <div class="card-body">
+
+                    {% if roadmap_steps %}
+
+                        <ol class="list-group list-group-numbered">
+
+                            {% for step in roadmap_steps %}
+
+                                <li class="list-group-item">
+                                    {{ step }}
+                                </li>
+
+                            {% endfor %}
+
+                        </ol>
+
+                    {% else %}
+
+                        <div class="alert alert-success">
+                            Congratulations! No additional learning steps are required.
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+            <div class="mt-4">
+
+                <a href="{% url 'career_match' %}" class="btn btn-primary">
+                    Analyze Another Career
+                </a>
+
+                <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
+                    Back to Dashboard
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

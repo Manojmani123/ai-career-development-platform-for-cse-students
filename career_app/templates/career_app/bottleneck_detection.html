@@ -1,9 +1,55 @@
-<h1>Employability Bottleneck Detection</h1>
+{% extends 'career_app/base.html' %}
 
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">
-        Detect Bottleneck
-    </button>
-</form>
+{% block content %}
+
+<div class="row justify-content-center">
+
+    <div class="col-lg-7">
+
+        <div class="card shadow">
+
+            <div class="card-header bg-danger text-white">
+                <h3 class="mb-0">Employability Bottleneck Detection</h3>
+            </div>
+
+            <div class="card-body">
+
+                <div class="alert alert-info">
+                    Select your target job role. The system will analyze your
+                    skills, projects, and industry tools to identify the
+                    biggest factor limiting your employability.
+                </div>
+
+                <form method="POST">
+
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            <strong>Select Target Job Role</strong>
+                        </label>
+
+                        {{ form.job_role }}
+
+                    </div>
+
+                    <button type="submit" class="btn btn-danger">
+                        Detect Bottleneck
+                    </button>
+
+                    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
+                        Back to Dashboard
+                    </a>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

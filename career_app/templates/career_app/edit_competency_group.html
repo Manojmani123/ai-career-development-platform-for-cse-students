@@ -1,0 +1,15 @@
+{% extends 'career_app/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Competency Group</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit" class="btn btn-primary">Update Group</button>
+        <a href="{% url 'view_competency_groups' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

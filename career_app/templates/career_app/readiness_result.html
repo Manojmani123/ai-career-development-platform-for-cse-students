@@ -1,26 +1,80 @@
-<h1>Readiness Assessment Result</h1>
+{% extends 'career_app/base.html' %}
 
-<h2>Target Role: {{ assessment.job_role.role_name }}</h2>
+{% block content %}
 
-<p><strong>Academic Score:</strong> {{ assessment.academic_score }}%</p>
-<p><strong>Industry Score:</strong> {{ assessment.industry_score }}%</p>
-<p><strong>Overall Readiness Score:</strong> {{ assessment.overall_readiness_score }}%</p>
+<h2>Readiness Assessment Result</h2>
+<p class="text-muted">Target Role: {{ assessment.job_role.role_name }}</p>
 
-<hr>
+<div class="row mt-4">
 
-<h3>Strengths</h3>
-<pre>{{ assessment.strengths }}</pre>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5>Academic Score</h5>
+                <h2>{{ assessment.academic_score }}%</h2>
+            </div>
+        </div>
+    </div>
 
-<h3>Weaknesses / Missing Skills</h3>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5>Industry Score</h5>
+                <h2>{{ assessment.industry_score }}%</h2>
+            </div>
+        </div>
+    </div>
 
-{% if assessment.weaknesses %}
-    <pre>{{ assessment.weaknesses }}</pre>
-{% else %}
-    <p>No missing skills found. This usually means no required skills are mapped to this job role yet.</p>
-{% endif %}
-<h3>Recommendation</h3>
-<p>{{ assessment.recommendation }}</p>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5>Overall Readiness</h5>
+                <h2>{{ assessment.overall_readiness_score }}%</h2>
+            </div>
+        </div>
+    </div>
 
-<a href="{% url 'readiness_assessment' %}">Try Again</a>
-<br>
-<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header bg-success text-white">
+        Strengths
+    </div>
+    <div class="card-body">
+        <pre class="mb-0">{{ assessment.strengths }}</pre>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header bg-danger text-white">
+        Weaknesses / Missing Skills
+    </div>
+    <div class="card-body">
+        {% if assessment.weaknesses %}
+            <pre class="mb-0">{{ assessment.weaknesses }}</pre>
+        {% else %}
+            <p>No missing skills found.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        Recommendation
+    </div>
+    <div class="card-body">
+        <p>{{ assessment.recommendation }}</p>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'readiness_assessment' %}" class="btn btn-secondary">
+        Try Again
+    </a>
+
+    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
+        Back to Dashboard
+    </a>
+</div>
+
+{% endblock %}

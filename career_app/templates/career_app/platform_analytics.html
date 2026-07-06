@@ -1,0 +1,152 @@
+{% extends 'career_app/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h2 class="mb-4">Platform Analytics</h2>
+
+    <div class="row g-4">
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h5>Total Students</h5>
+                    <h2>{{ total_users }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h5>Total Admins</h5>
+                    <h2>{{ total_admins }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h5>Job Roles</h5>
+                    <h2>{{ total_job_roles }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h5>Skills</h5>
+                    <h2>{{ total_skills }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h5>Industry Tools</h5>
+                    <h2>{{ total_tools }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h5>Learning Resources</h5>
+                    <h2>{{ total_learning_resources }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h5>User Projects</h5>
+                    <h2>{{ total_projects }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h5>Readiness Assessments</h5>
+                    <h2>{{ total_readiness_assessments }}</h2>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <hr class="my-5">
+
+    <h4>Admin Request Analytics</h4>
+
+    <div class="row g-4 mt-2">
+
+        <div class="col-md-4">
+            <div class="card border-warning shadow-sm text-center">
+                <div class="card-body">
+                    <h5>Pending Requests</h5>
+                    <h2>{{ pending_admin_requests }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-success shadow-sm text-center">
+                <div class="card-body">
+                    <h5>Approved Requests</h5>
+                    <h2>{{ approved_admin_requests }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-danger shadow-sm text-center">
+                <div class="card-body">
+                    <h5>Rejected Requests</h5>
+                    <h2>{{ rejected_admin_requests }}</h2>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <hr class="my-5">
+
+    <h4>Invite Code Analytics</h4>
+
+    <div class="row g-4 mt-2">
+
+        <div class="col-md-6">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h5>Unused Invite Codes</h5>
+                    <h2>{{ unused_invites }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h5>Used Invite Codes</h5>
+                    <h2>{{ used_invites }}</h2>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'super_admin_dashboard' %}" class="btn btn-secondary">
+            Back to Super Admin Dashboard
+        </a>
+    </div>
+
+</div>
+{% endblock %}

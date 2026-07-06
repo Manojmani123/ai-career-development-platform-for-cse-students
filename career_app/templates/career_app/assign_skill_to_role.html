@@ -1,9 +1,90 @@
-<h1>Assign Skill to Job Role</h1>
+{% extends 'career_app/base.html' %}
 
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Assign Skill</button>
-</form>
+{% block content %}
 
-<a href="{% url 'admin_dashboard' %}">Back</a>
+<div class="row justify-content-center">
+
+    <div class="col-lg-10">
+
+        <div class="card shadow">
+
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Assign Skills to Job Role</h3>
+            </div>
+
+            <div class="card-body">
+
+                <div class="alert alert-info">
+                    Select a job role and assign skills based on their
+                    importance. These mappings are used by Career Matching,
+                    Readiness Assessment, Career Transition Analysis,
+                    Employability Bottleneck Detection, and Competency Groups.
+                </div>
+
+                <form method="POST">
+
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <strong>Job Role</strong>
+                        </label>
+
+                        {{ form.job_role }}
+                    </div>
+
+                    <hr>
+
+                    <h5 class="text-danger">
+                        High Importance Skills
+                    </h5>
+
+                    <div class="border rounded p-3 mb-4"
+                         style="max-height:250px; overflow-y:auto;">
+
+                        {{ form.high_skills }}
+
+                    </div>
+
+                    <h5 class="text-warning">
+                        Medium Importance Skills
+                    </h5>
+
+                    <div class="border rounded p-3 mb-4"
+                         style="max-height:250px; overflow-y:auto;">
+
+                        {{ form.medium_skills }}
+
+                    </div>
+
+                    <h5 class="text-success">
+                        Low Importance Skills
+                    </h5>
+
+                    <div class="border rounded p-3 mb-4"
+                         style="max-height:250px; overflow-y:auto;">
+
+                        {{ form.low_skills }}
+
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        Assign Skills
+                    </button>
+
+                    <a href="{% url 'admin_dashboard' %}"
+                       class="btn btn-dark">
+                        Back to Dashboard
+                    </a>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

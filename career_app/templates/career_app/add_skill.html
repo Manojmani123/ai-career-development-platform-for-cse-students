@@ -1,9 +1,55 @@
-<h1>Add Skill</h1>
+{% extends 'career_app/base.html' %}
 
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Add Skill</button>
-</form>
+{% block content %}
 
-<a href="{% url 'admin_dashboard' %}">Back</a>
+<div class="row justify-content-center">
+
+    <div class="col-lg-7">
+
+        <div class="card shadow">
+
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Add Skill</h3>
+            </div>
+
+            <div class="card-body">
+
+                <div class="alert alert-info">
+                    Add a new skill that can be assigned to job roles and used
+                    in career matching, readiness assessment, competency groups,
+                    and skill gap analysis.
+                </div>
+
+                <form method="POST">
+
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        {{ form.skill_name.label_tag }}
+                        {{ form.skill_name }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.category.label_tag }}
+                        {{ form.category }}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        Add Skill
+                    </button>
+
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-dark">
+                        Back to Dashboard
+                    </a>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

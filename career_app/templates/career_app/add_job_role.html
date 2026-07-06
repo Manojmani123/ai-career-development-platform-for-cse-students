@@ -1,9 +1,56 @@
-<h1>Add Job Role</h1>
+{% extends 'career_app/base.html' %}
 
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Add Role</button>
-</form>
+{% block content %}
 
-<a href="{% url 'admin_dashboard' %}">Back</a>
+<div class="row justify-content-center">
+
+    <div class="col-lg-7">
+
+        <div class="card shadow">
+
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Add Job Role</h3>
+            </div>
+
+            <div class="card-body">
+
+                <div class="alert alert-info">
+                    Add a new Computer Science job role. This role will be
+                    available for career matching, readiness assessment,
+                    bottleneck detection, career transition analysis, and
+                    competency group creation.
+                </div>
+
+                <form method="POST">
+
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        {{ form.role_name.label_tag }}
+                        {{ form.role_name }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.description.label_tag }}
+                        {{ form.description }}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        Add Job Role
+                    </button>
+
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-dark">
+                        Back to Dashboard
+                    </a>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

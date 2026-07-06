@@ -1,21 +1,103 @@
-<h1>Role-Tool Mapping</h1>
+\{% extends 'career_app/base.html' %}
 
-<a href="{% url 'assign_tool_to_role' %}">Assign New Tools</a>
+{% block content %}
 
-<table border="1" cellpadding="10">
-    <tr>
-        <th>Job Role</th>
-        <th>Tool</th>
-        <th>Importance</th>
-    </tr>
+<div class="container mt-4">
 
-    {% for item in role_tools %}
-    <tr>
-        <td>{{ item.job_role.role_name }}</td>
-        <td>{{ item.tool.tool_name }}</td>
-        <td>{{ item.importance }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    <div class="d-flex justify-content-between align-items-center mb-4">
 
-<a href="{% url 'admin_dashboard' %}">Back</a>
+        <h2>Role-Tool Mapping</h2>
+
+        <a href="{% url 'assign_tool_to_role' %}" class="btn btn-success">
+            Assign Tools to Role
+        </a>
+
+    </div>
+
+    {% if role_tools %}
+
+    <div class="card shadow">
+
+        <div class="card-body">
+
+            <table class="table table-bordered table-hover align-middle">
+
+                <thead class="table-dark">
+
+                    <tr>
+                        <th>Job Role</th>
+                        <th>Industry Tool</th>
+                        <th>Importance</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for item in role_tools %}
+
+                    <tr>
+
+                        <td>
+                            <strong>{{ item.job_role.role_name }}</strong>
+                        </td>
+
+                        <td>
+                            {{ item.tool.tool_name }}
+                        </td>
+
+                        <td>
+
+                            {% if item.importance == "High" %}
+
+                                <span class="badge bg-danger">
+                                    High
+                                </span>
+
+                            {% elif item.importance == "Medium" %}
+
+                                <span class="badge bg-warning text-dark">
+                                    Medium
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-success">
+                                    Low
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    {% else %}
+
+    <div class="alert alert-warning">
+        No role-tool mappings have been created yet.
+    </div>
+
+    {% endif %}
+
+    <div class="mt-4">
+
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-dark">
+            Back to Dashboard
+        </a>
+
+    </div>
+
+</div>
+
+{% endblock %}

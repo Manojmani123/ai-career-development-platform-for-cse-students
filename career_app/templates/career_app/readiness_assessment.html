@@ -1,11 +1,53 @@
-<h1>Academic-to-Industry Readiness Assessment</h1>
+{% extends 'career_app/base.html' %}
 
-<p>Select your target job role to calculate your readiness score.</p>
+{% block content %}
 
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Calculate Readiness</button>
-</form>
+<div class="row justify-content-center">
 
-<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>
+    <div class="col-lg-7">
+
+        <div class="card shadow">
+
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Academic-to-Industry Readiness Assessment</h3>
+            </div>
+
+            <div class="card-body">
+
+                <div class="alert alert-info">
+                    Select your target job role. The system will evaluate your
+                    academic skills, industry tool knowledge, and overall
+                    readiness for the selected career.
+                </div>
+
+                <form method="POST">
+
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <strong>Select Target Job Role</strong>
+                        </label>
+
+                        {{ form.job_role }}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        Calculate Readiness
+                    </button>
+
+                    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
+                        Back to Dashboard
+                    </a>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

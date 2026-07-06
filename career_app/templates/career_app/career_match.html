@@ -1,15 +1,56 @@
-<h1>Career Matching</h1>
+{% extends 'career_app/base.html' %}
 
-<p>
-    The system will use your resume-extracted skills and manually added profile skills.
-</p>
+{% block content %}
 
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Analyze Career Match</button>
-</form>
+<div class="row justify-content-center">
 
-<a href="{% url 'view_profile' %}">View / Edit Profile Skills</a>
-<br>
-<a href="{% url 'user_dashboard' %}">Back to Dashboard</a>
+    <div class="col-lg-7">
+
+        <div class="card shadow">
+
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Career Matching</h3>
+            </div>
+
+            <div class="card-body">
+
+                <div class="alert alert-info">
+                    The system will use your <strong>resume-extracted skills</strong> and your
+                    <strong>manually added profile skills</strong> to calculate your career match.
+                </div>
+
+                <form method="POST">
+
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <strong>Select Target Job Role</strong>
+                        </label>
+
+                        {{ form.job_role }}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        Analyze Career Match
+                    </button>
+
+                    <a href="{% url 'view_profile' %}" class="btn btn-outline-secondary">
+                        View / Edit Profile
+                    </a>
+
+                    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
+                        Back to Dashboard
+                    </a>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
