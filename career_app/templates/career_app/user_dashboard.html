@@ -1,42 +1,218 @@
 {% extends 'career_app/base.html' %}
 
 {% block content %}
-<h2>User Dashboard</h2>
-<p>Welcome, {{ request.user.username }}</p>
 
-<div class="list-group mt-4">
+<style>
+    .dashboard-hero {
+        padding: 40px 0 20px;
+    }
 
-    <a href="{% url 'career_match' %}" class="list-group-item list-group-item-action">
-        Career Matching
-    </a>
+    .dashboard-title {
+        font-weight: 800;
+        color: #111827;
+    }
 
-    <a href="{% url 'view_profile' %}" class="list-group-item list-group-item-action">
-        My Profile
-    </a>
+    .dashboard-subtitle {
+        color: #6b7280;
+        margin-bottom: 30px;
+    }
 
-    <a href="{% url 'readiness_assessment' %}" class="list-group-item list-group-item-action">
-        Academic-to-Industry Readiness Assessment
-    </a>
+    .feature-card {
+        position: relative;
+        height: 260px;
+        border-radius: 4px;
+        overflow: hidden;
+        text-decoration: none;
+        display: block;
+        background-size: cover;
+        background-position: center;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
 
-    <a href="{% url 'bottleneck_detection' %}" class="list-group-item list-group-item-action">
-        Employability Bottleneck Detection
-    </a>
+    .feature-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 18px 35px rgba(0, 0, 0, 0.25);
+        text-decoration: none;
+    }
 
-    <a href="{% url 'add_project' %}" class="list-group-item list-group-item-action">
-        Add Project
-    </a>
+    .feature-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.15),
+            rgba(0, 0, 0, 0.75)
+        );
+    }
 
-    <a href="{% url 'view_projects' %}" class="list-group-item list-group-item-action">
-        View Projects
-    </a>
+    .feature-content {
+        position: absolute;
+        left: 25px;
+        right: 25px;
+        bottom: 25px;
+        color: white;
+        z-index: 2;
+    }
 
-    <a href="{% url 'career_transition_analysis' %}" class="list-group-item list-group-item-action">
-        Career Transition Feasibility Analysis
-    </a>
+    .feature-label {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
 
-    <a href="{% url 'logout' %}" class="list-group-item list-group-item-action text-danger">
-        Logout
-    </a>
+    .feature-title {
+        font-size: 30px;
+        font-weight: 900;
+        line-height: 1;
+        margin-bottom: 18px;
+        text-transform: uppercase;
+    }
+
+    .feature-button {
+        display: inline-block;
+        background: #ff6a00;
+        color: white;
+        padding: 12px 22px;
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border-radius: 0;
+    }
+
+    .feature-card:hover .feature-button {
+        background: #e95f00;
+        color: white;
+    }
+
+    .logout-card .feature-button {
+        background: #dc3545;
+    }
+
+    .logout-card:hover .feature-button {
+        background: #bb2d3b;
+    }
+</style>
+
+<div class="container dashboard-hero">
+
+    <div class="mb-4">
+        <h2 class="dashboard-title">User Dashboard</h2>
+        <p class="dashboard-subtitle">
+            Welcome, {{ request.user.username }}. Choose a career development module below.
+        </p>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-4">
+            <a href="{% url 'career_match' %}"
+               class="feature-card"
+               style="background-image: url('https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80');">
+                <div class="feature-overlay"></div>
+                <div class="feature-content">
+                    <div class="feature-label">Career Fit</div>
+                    <div class="feature-title">Career Matching</div>
+                    <span class="feature-button">Start Match</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'view_profile' %}"
+               class="feature-card"
+               style="background-image: url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80');">
+                <div class="feature-overlay"></div>
+                <div class="feature-content">
+                    <div class="feature-label">Student Data</div>
+                    <div class="feature-title">My Profile</div>
+                    <span class="feature-button">View Profile</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'readiness_assessment' %}"
+               class="feature-card"
+               style="background-image: url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=80');">
+                <div class="feature-overlay"></div>
+                <div class="feature-content">
+                    <div class="feature-label">Industry Readiness</div>
+                    <div class="feature-title">Readiness</div>
+                    <span class="feature-button">Assess Now</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'bottleneck_detection' %}"
+               class="feature-card"
+               style="background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80');">
+                <div class="feature-overlay"></div>
+                <div class="feature-content">
+                    <div class="feature-label">Weakness Analysis</div>
+                    <div class="feature-title">Bottleneck</div>
+                    <span class="feature-button">Detect</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'add_project' %}"
+               class="feature-card"
+               style="background-image: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80');">
+                <div class="feature-overlay"></div>
+                <div class="feature-content">
+                    <div class="feature-label">Portfolio</div>
+                    <div class="feature-title">Add Project</div>
+                    <span class="feature-button">Add Now</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'view_projects' %}"
+               class="feature-card"
+               style="background-image: url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80');">
+                <div class="feature-overlay"></div>
+                <div class="feature-content">
+                    <div class="feature-label">Evidence</div>
+                    <div class="feature-title">View Projects</div>
+                    <span class="feature-button">Open</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'career_transition_analysis' %}"
+               class="feature-card"
+               style="background-image: url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80');">
+                <div class="feature-overlay"></div>
+                <div class="feature-content">
+                    <div class="feature-label">Career Movement</div>
+                    <div class="feature-title">Transition</div>
+                    <span class="feature-button">Analyse</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'logout' %}"
+               class="feature-card logout-card"
+               style="background-image: url('https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=900&q=80');">
+                <div class="feature-overlay"></div>
+                <div class="feature-content">
+                    <div class="feature-label">Session</div>
+                    <div class="feature-title">Logout</div>
+                    <span class="feature-button">Logout</span>
+                </div>
+            </a>
+        </div>
+
+    </div>
 
 </div>
+
 {% endblock %}

@@ -1,81 +1,290 @@
 {% extends 'career_app/base.html' %}
 
 {% block content %}
-<div class="container mt-4">
 
-    <h2>Admin Dashboard</h2>
-    <p>Welcome Admin, {{ request.user.username }}</p>
+<style>
+    .dashboard-card {
+        height: 230px;
+        border-radius: 6px;
+        overflow: hidden;
+        text-decoration: none;
+        display: block;
+        position: relative;
+        background-size: cover;
+        background-position: center;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+        transition: 0.25s ease;
+    }
 
-    <div class="list-group mt-4">
+    .dashboard-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 18px 35px rgba(0, 0, 0, 0.28);
+        text-decoration: none;
+    }
 
-        <a href="{% url 'add_job_role' %}" class="list-group-item list-group-item-action">
-            Add Job Role
-        </a>
+    .dashboard-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.75));
+    }
 
-        <a href="{% url 'view_job_roles' %}" class="list-group-item list-group-item-action">
-            View Job Roles
-        </a>
+    .dashboard-content {
+        position: absolute;
+        bottom: 24px;
+        left: 24px;
+        right: 24px;
+        color: white;
+        z-index: 2;
+    }
 
-        <a href="{% url 'add_skill' %}" class="list-group-item list-group-item-action">
-            Add Skill
-        </a>
+    .dashboard-label {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
 
-        <a href="{% url 'view_skills' %}" class="list-group-item list-group-item-action">
-            View Skills
-        </a>
+    .dashboard-title {
+        font-size: 28px;
+        font-weight: 900;
+        text-transform: uppercase;
+        line-height: 1;
+        margin-bottom: 15px;
+    }
 
-        <a href="{% url 'assign_skill_to_role' %}" class="list-group-item list-group-item-action">
-            Assign Skills to Roles
-        </a>
+    .dashboard-btn {
+        background: #ff6a00;
+        color: white;
+        padding: 10px 18px;
+        font-weight: 700;
+        font-size: 14px;
+        display: inline-block;
+        text-transform: uppercase;
+    }
 
-        <a href="{% url 'view_role_skills' %}" class="list-group-item list-group-item-action">
-            View Role-Skill Mapping
-        </a>
+    .logout-card .dashboard-btn {
+        background: #dc3545;
+    }
+</style>
 
-        <a href="{% url 'add_learning_resource' %}" class="list-group-item list-group-item-action">
-            Add Learning Resource
-        </a>
+<div class="container mt-5">
 
-        <a href="{% url 'view_learning_resources' %}" class="list-group-item list-group-item-action">
-            View Learning Resources
-        </a>
+    <div class="mb-4">
+        <h2 class="fw-bold">Admin Dashboard</h2>
+        <p class="text-muted">
+            Welcome Admin, {{ request.user.username }}. Manage platform data below.
+        </p>
+    </div>
 
-        <a href="{% url 'add_industry_tool' %}" class="list-group-item list-group-item-action">
-            Add Industry Tool
-        </a>
+    <div class="row g-4">
 
-        <a href="{% url 'view_industry_tools' %}" class="list-group-item list-group-item-action">
-            View Industry Tools
-        </a>
+        <div class="col-md-4">
+            <a href="{% url 'add_job_role' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Roles</div>
+                    <div class="dashboard-title">Add Job Role</div>
+                    <span class="dashboard-btn">Open</span>
+                </div>
+            </a>
+        </div>
 
-        <a href="{% url 'assign_tool_to_role' %}" class="list-group-item list-group-item-action">
-            Assign Tools to Roles
-        </a>
+        <div class="col-md-4">
+            <a href="{% url 'view_job_roles' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Roles</div>
+                    <div class="dashboard-title">View Roles</div>
+                    <span class="dashboard-btn">Manage</span>
+                </div>
+            </a>
+        </div>
 
-        <a href="{% url 'view_role_tools' %}" class="list-group-item list-group-item-action">
-            View Role-Tool Mapping
-        </a>
+        <div class="col-md-4">
+            <a href="{% url 'add_skill' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Skills</div>
+                    <div class="dashboard-title">Add Skill</div>
+                    <span class="dashboard-btn">Open</span>
+                </div>
+            </a>
+        </div>
 
-        <a href="{% url 'add_competency_group' %}" class="list-group-item list-group-item-action">
-            Add Competency Group
-        </a>
+        <div class="col-md-4">
+            <a href="{% url 'view_skills' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Skills</div>
+                    <div class="dashboard-title">View Skills</div>
+                    <span class="dashboard-btn">Manage</span>
+                </div>
+            </a>
+        </div>
 
-        <a href="{% url 'add_competency_group_members' %}" class="list-group-item list-group-item-action">
-            Add Skills to Competency Group
-        </a>
+        <div class="col-md-4">
+            <a href="{% url 'assign_skill_to_role' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Mapping</div>
+                    <div class="dashboard-title">Role Skills</div>
+                    <span class="dashboard-btn">Assign</span>
+                </div>
+            </a>
+        </div>
 
-        <a href="{% url 'view_competency_groups' %}" class="list-group-item list-group-item-action">
-            View Competency Groups
-        </a>
+        <div class="col-md-4">
+            <a href="{% url 'view_role_skills' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Mapping</div>
+                    <div class="dashboard-title">View Role Skills</div>
+                    <span class="dashboard-btn">Open</span>
+                </div>
+            </a>
+        </div>
 
-        <a href="{% url 'import_dataset' %}" class="list-group-item list-group-item-action">
-            Import Dataset
-        </a>
+        <div class="col-md-4">
+            <a href="{% url 'add_industry_tool' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Tools</div>
+                    <div class="dashboard-title">Add Tool</div>
+                    <span class="dashboard-btn">Open</span>
+                </div>
+            </a>
+        </div>
 
-        <a href="{% url 'logout' %}" class="list-group-item list-group-item-action text-danger">
-            Logout
-        </a>
+        <div class="col-md-4">
+            <a href="{% url 'view_industry_tools' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Tools</div>
+                    <div class="dashboard-title">View Tools</div>
+                    <span class="dashboard-btn">Manage</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'assign_tool_to_role' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Mapping</div>
+                    <div class="dashboard-title">Role Tools</div>
+                    <span class="dashboard-btn">Assign</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'view_role_tools' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Mapping</div>
+                    <div class="dashboard-title">View Role Tools</div>
+                    <span class="dashboard-btn">Open</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'add_learning_resource' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Resources</div>
+                    <div class="dashboard-title">Add Resource</div>
+                    <span class="dashboard-btn">Open</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'view_learning_resources' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Resources</div>
+                    <div class="dashboard-title">View Resources</div>
+                    <span class="dashboard-btn">Manage</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'add_competency_group' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Competency</div>
+                    <div class="dashboard-title">Add Group</div>
+                    <span class="dashboard-btn">Open</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'view_competency_groups' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Competency</div>
+                    <div class="dashboard-title">View Groups</div>
+                    <span class="dashboard-btn">Manage</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'add_competency_group_members' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Competency</div>
+                    <div class="dashboard-title">Group Members</div>
+                    <span class="dashboard-btn">Assign</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'import_dataset' %}" class="dashboard-card"
+               style="background-image:url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Dataset</div>
+                    <div class="dashboard-title">Import Data</div>
+                    <span class="dashboard-btn">Upload</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'logout' %}" class="dashboard-card logout-card"
+               style="background-image:url('https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=900&q=80');">
+                <div class="dashboard-overlay"></div>
+                <div class="dashboard-content">
+                    <div class="dashboard-label">Session</div>
+                    <div class="dashboard-title">Logout</div>
+                    <span class="dashboard-btn">Logout</span>
+                </div>
+            </a>
+        </div>
 
     </div>
+
 </div>
+
 {% endblock %}
