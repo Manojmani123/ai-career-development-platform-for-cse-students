@@ -1,33 +1,194 @@
-<h1>Admin Request Form</h1>
+{% extends "career_app/auth_base.html" %}
 
-{% for message in messages %}
-    <p>{{ message }}</p>
-{% endfor %}
+{% block title %}Admin Request | CareerReady AI{% endblock %}
 
-<form method="POST">
+{% block auth_content %}
+
+<div class="auth-header">
+    <div class="auth-icon">
+        <i class="bi bi-shield-lock"></i>
+    </div>
+
+    <h1>Request Admin Access</h1>
+
+    <p>
+        Submit your details and a valid invitation code for Super Admin approval.
+    </p>
+</div>
+
+{% if messages %}
+    <div class="auth-messages">
+        {% for message in messages %}
+            <div
+                class="alert
+                {% if message.tags == 'error' %}
+                    alert-danger
+                {% else %}
+                    alert-{{ message.tags }}
+                {% endif %}
+                alert-dismissible fade show"
+                role="alert"
+            >
+                {{ message }}
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close"
+                ></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">
+        {% for error in form.non_field_errors %}
+            <div>{{ error }}</div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<form method="POST" class="auth-form" novalidate>
     {% csrf_token %}
 
-    {{ form.non_field_errors }}
+    {% for field in form %}
+        <div class="form-group">
 
-    <p>
-        {{ form.full_name.label_tag }}
-        {{ form.full_name }}
-        {{ form.full_name.errors }}
-    </p>
+            <label
+                for="{{ field.id_for_label }}"
+                class="form-label"
+            >
+                {{ field.label }}
+            </label>
 
-    <p>
-        {{ form.email.label_tag }}
-        {{ form.email }}
-        {{ form.email.errors }}
-    </p>
+            <div class="input-wrapper">
+                <span class="input-icon">
+                    {% if field.name == "full_name" %}
+                        <i class="bi bi-person-badge"></i>
+                    {% elif field.name == "email" %}
+                        <i class="bi bi-envelope"></i>
+                    {% elif field.name == "invite_code" %}
+                        <i class="bi bi-key"></i>
+                    {% else %}
+                        <i class="bi bi-pencil"></i>
+                    {% endif %}
+                </span>
 
-    <p>
-        {{ form.invite_code.label_tag }}
-        {{ form.invite_code }}
-        {{ form.invite_code.errors }}
-    </p>
+                <input
+                    type="{% if field.name == 'email' %}email{% else %}text{% endif %}"
+                    name="{{ field.html_name }}"
+                    id="{{ field.id_for_label }}"
+                    class="form-control auth-input {% if field.errors %}is-invalid{% endif %}"
+                    value="{{ field.value|default:'' }}"
+                    placeholder="{% if field.name == 'full_name' %}Enter your full name{% elif field.name == 'email' %}Enter your email address{% elif field.name == 'invite_code' %}Enter your invitation code{% else %}Enter {{ field.label|lower }}{% endif %}"
+                    autocomplete="{% if field.name == 'full_name' %}name{% elif field.name == 'email' %}email{% else %}off{% endif %}"
+                    {% if field.field.required %}required{% endif %}
+                >
+            </div>
 
-    <button type="submit">Submit Request</button>
+            {% if field.help_text %}
+                <div class="admin-request-help">
+                    {{ field.help_text|safe }}
+                </div>
+            {% endif %}
+
+            {% if field.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in field.errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+        </div>
+    {% endfor %}
+
+    <div class="admin-request-notice">
+        <div class="admin-request-notice-icon">
+            <i class="bi bi-info-circle"></i>
+        </div>
+
+        <div>
+            <strong>Approval required</strong>
+
+            <p>
+                Submitting this form does not create an admin account immediately.
+                Your request must first be reviewed and approved by the Super Admin.
+            </p>
+        </div>
+    </div>
+
+    <button type="submit" class="auth-submit-button">
+        <span>Submit Admin Request</span>
+        <i class="bi bi-send"></i>
+    </button>
 </form>
 
-<a href="{% url 'login' %}">Back to Login</a>
+<div class="auth-divider">
+    <span>Already have an account?</span>
+</div>
+
+<div class="auth-footer">
+    <p>
+        Return to the login page to access your dashboard.
+    </p>
+
+    <a
+        href="{% url 'login' %}"
+        class="auth-secondary-button"
+    >
+        <i class="bi bi-box-arrow-in-right"></i>
+        <span>Back to Login</span>
+    </a>
+</div>
+
+<style>
+    .admin-request-help {
+        margin-top: 8px;
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.55;
+    }
+
+    .admin-request-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px;
+        margin: 4px 0 22px;
+        border: 1px solid #c7d2fe;
+        border-radius: 14px;
+        background: #eef2ff;
+    }
+
+    .admin-request-notice-icon {
+        width: 35px;
+        height: 35px;
+        min-width: 35px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #2563eb, #4f46e5);
+        color: white;
+        font-size: 16px;
+    }
+
+    .admin-request-notice strong {
+        display: block;
+        margin-bottom: 5px;
+        color: #312e81;
+        font-size: 14px;
+    }
+
+    .admin-request-notice p {
+        margin: 0;
+        color: #475569;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+</style>
+
+{% endblock %}

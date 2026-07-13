@@ -3,32 +3,59 @@
 {% block content %}
 
 <style>
-    .dashboard-card {
+    body {
+        background: #f8fafc;
+    }
+
+    .dashboard-header {
+        background: linear-gradient(135deg, #0f172a, #1e3a8a, #4f46e5);
+        color: white;
+        padding: 45px;
+        border-radius: 24px;
+        margin-bottom: 35px;
+        box-shadow: 0 18px 40px rgba(30, 58, 138, 0.25);
+    }
+
+    .dashboard-header h2 {
+        font-weight: 900;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-header p {
+        color: #dbeafe;
+        margin-bottom: 0;
+    }
+
+    .feature-card {
         height: 250px;
-        border-radius: 6px;
+        border-radius: 22px;
         overflow: hidden;
         text-decoration: none;
         display: block;
         position: relative;
         background-size: cover;
         background-position: center;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
-        transition: 0.25s ease;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
 
-    .dashboard-card:hover {
+    .feature-card:hover {
         transform: translateY(-6px);
-        box-shadow: 0 18px 35px rgba(0, 0, 0, 0.28);
+        box-shadow: 0 22px 42px rgba(15, 23, 42, 0.28);
         text-decoration: none;
     }
 
-    .dashboard-overlay {
+    .feature-overlay {
         position: absolute;
         inset: 0;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.75));
+        background: linear-gradient(
+            to bottom,
+            rgba(15, 23, 42, 0.15),
+            rgba(15, 23, 42, 0.90)
+        );
     }
 
-    .dashboard-content {
+    .feature-content {
         position: absolute;
         bottom: 24px;
         left: 24px;
@@ -37,121 +64,160 @@
         z-index: 2;
     }
 
-    .dashboard-label {
+    .feature-label {
         font-size: 13px;
-        font-weight: 700;
+        font-weight: 800;
         letter-spacing: 1.5px;
         text-transform: uppercase;
         margin-bottom: 6px;
+        color: #bfdbfe;
     }
 
-    .dashboard-title {
-        font-size: 28px;
+    .feature-title {
+        font-size: 25px;
         font-weight: 900;
         text-transform: uppercase;
-        line-height: 1;
+        line-height: 1.1;
         margin-bottom: 15px;
     }
 
-    .dashboard-btn {
-        background: #ff6a00;
+    .feature-button {
+        background: #4f46e5;
         color: white;
-        padding: 10px 18px;
-        font-weight: 700;
-        font-size: 14px;
+        padding: 10px 20px;
+        font-weight: 800;
+        font-size: 13px;
         display: inline-block;
         text-transform: uppercase;
+        border-radius: 14px;
     }
 
-    .logout-card .dashboard-btn {
+    .feature-card:hover .feature-button {
+        background: #1e3a8a;
+        color: white;
+    }
+
+    .logout-card .feature-button {
         background: #dc3545;
+    }
+
+    .logout-card:hover .feature-button {
+        background: #b91c1c;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-header {
+            padding: 30px;
+        }
+
+        .feature-card {
+            height: 220px;
+        }
+
+        .feature-title {
+            font-size: 22px;
+        }
     }
 </style>
 
-<div class="container mt-5">
+<div class="dashboard-header">
+    <h2>Super Admin Dashboard</h2>
+    <p>
+        Welcome, {{ request.user.username }}.
+        Manage administrators, users, approvals and platform analytics.
+    </p>
+</div>
 
-    <div class="mb-4">
-        <h2 class="fw-bold">Super Admin Dashboard</h2>
-        <p class="text-muted">
-            Welcome Super Admin, {{ request.user.first_name|default:request.user.username }}.
-            Manage platform access and analytics below.
-        </p>
+<div class="row g-4">
+
+    <div class="col-lg-4 col-md-6">
+        <a href="{% url 'generate_admin_invite' %}"
+           class="feature-card"
+           style="background-image: url('https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=80');">
+
+            <div class="feature-overlay"></div>
+
+            <div class="feature-content">
+                <div class="feature-label">Administrator Access</div>
+                <div class="feature-title">Generate Invite</div>
+                <span class="feature-button">Create Code</span>
+            </div>
+        </a>
     </div>
 
-    <div class="row g-4">
+    <div class="col-lg-4 col-md-6">
+        <a href="{% url 'view_admin_requests' %}"
+           class="feature-card"
+           style="background-image: url('https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=900&q=80');">
 
-        <div class="col-md-4">
-            <a href="{% url 'generate_admin_invite' %}" class="dashboard-card"
-               style="background-image:url('https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&w=900&q=80');">
-                <div class="dashboard-overlay"></div>
-                <div class="dashboard-content">
-                    <div class="dashboard-label">Access Control</div>
-                    <div class="dashboard-title">Generate Invite</div>
-                    <span class="dashboard-btn">Generate</span>
-                </div>
-            </a>
-        </div>
+            <div class="feature-overlay"></div>
 
-        <div class="col-md-4">
-            <a href="{% url 'view_admin_requests' %}" class="dashboard-card"
-               style="background-image:url('https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=900&q=80');">
-                <div class="dashboard-overlay"></div>
-                <div class="dashboard-content">
-                    <div class="dashboard-label">Admin Approval</div>
-                    <div class="dashboard-title">Admin Requests</div>
-                    <span class="dashboard-btn">Review</span>
-                </div>
-            </a>
-        </div>
+            <div class="feature-content">
+                <div class="feature-label">Approval Workflow</div>
+                <div class="feature-title">Admin Requests</div>
+                <span class="feature-button">Review Requests</span>
+            </div>
+        </a>
+    </div>
 
-        <div class="col-md-4">
-            <a href="{% url 'view_users' %}" class="dashboard-card"
-               style="background-image:url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80');">
-                <div class="dashboard-overlay"></div>
-                <div class="dashboard-content">
-                    <div class="dashboard-label">Students</div>
-                    <div class="dashboard-title">View Users</div>
-                    <span class="dashboard-btn">Open</span>
-                </div>
-            </a>
-        </div>
+    <div class="col-lg-4 col-md-6">
+        <a href="{% url 'view_users' %}"
+           class="feature-card"
+           style="background-image: url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=900&q=80');">
 
-        <div class="col-md-4">
-            <a href="{% url 'view_admins' %}" class="dashboard-card"
-               style="background-image:url('https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=80');">
-                <div class="dashboard-overlay"></div>
-                <div class="dashboard-content">
-                    <div class="dashboard-label">Admins</div>
-                    <div class="dashboard-title">View Admins</div>
-                    <span class="dashboard-btn">Open</span>
-                </div>
-            </a>
-        </div>
+            <div class="feature-overlay"></div>
 
-        <div class="col-md-4">
-            <a href="{% url 'platform_analytics' %}" class="dashboard-card"
-               style="background-image:url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80');">
-                <div class="dashboard-overlay"></div>
-                <div class="dashboard-content">
-                    <div class="dashboard-label">Insights</div>
-                    <div class="dashboard-title">Analytics</div>
-                    <span class="dashboard-btn">View</span>
-                </div>
-            </a>
-        </div>
+            <div class="feature-content">
+                <div class="feature-label">Platform Accounts</div>
+                <div class="feature-title">View Users</div>
+                <span class="feature-button">Open Users</span>
+            </div>
+        </a>
+    </div>
 
-        <div class="col-md-4">
-            <a href="{% url 'logout' %}" class="dashboard-card logout-card"
-               style="background-image:url('https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=900&q=80');">
-                <div class="dashboard-overlay"></div>
-                <div class="dashboard-content">
-                    <div class="dashboard-label">Session</div>
-                    <div class="dashboard-title">Logout</div>
-                    <span class="dashboard-btn">Logout</span>
-                </div>
-            </a>
-        </div>
+    <div class="col-lg-4 col-md-6">
+        <a href="{% url 'view_admins' %}"
+           class="feature-card"
+           style="background-image: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=900&q=80');">
 
+            <div class="feature-overlay"></div>
+
+            <div class="feature-content">
+                <div class="feature-label">Administrator Accounts</div>
+                <div class="feature-title">View Admins</div>
+                <span class="feature-button">Open Admins</span>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-lg-4 col-md-6">
+        <a href="{% url 'platform_analytics' %}"
+           class="feature-card"
+           style="background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80');">
+
+            <div class="feature-overlay"></div>
+
+            <div class="feature-content">
+                <div class="feature-label">System Insights</div>
+                <div class="feature-title">Platform Analytics</div>
+                <span class="feature-button">View Analytics</span>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-lg-4 col-md-6">
+        <a href="{% url 'logout' %}"
+           class="feature-card logout-card"
+           style="background-image: url('https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=900&q=80');">
+
+            <div class="feature-overlay"></div>
+
+            <div class="feature-content">
+                <div class="feature-label">Session</div>
+                <div class="feature-title">Logout</div>
+                <span class="feature-button">Logout</span>
+            </div>
+        </a>
     </div>
 
 </div>
