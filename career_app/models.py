@@ -343,3 +343,227 @@ class CareerTransitionAnalysis(models.Model):
 
     def __str__(self):
         return f"{self.user.username}: {self.current_role.role_name} to {self.target_role.role_name}"
+    
+class InterviewSession(models.Model):
+    STATUS_CHOICES = [
+        ('CREATED', 'Created'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('COMPLETED', 'Completed'),
+        ('FAILED', 'Failed'),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='interview_sessions'
+    )
+
+    project = models.ForeignKey(
+        UserProject,
+        on_delete=models.CASCADE,
+        related_name='interview_sessions'
+    )
+
+    job_role = models.ForeignKey(
+        JobRole,
+        on_delete=models.CASCADE,
+        related_name='interview_sessions'
+    )
+
+    readiness_assessment = models.ForeignKey(
+        ReadinessAssessment,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='interview_sessions'
+    )
+
+    bottleneck = models.ForeignKey(
+        EmployabilityBottleneck,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='interview_sessions'
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='CREATED'
+    )
+
+    overall_score = models.FloatField(
+        blank=True,
+        null=True
+    )
+
+    started_at = models.DateTimeField(
+        blank=True,
+        null=True
+    )
+
+    completed_at = models.DateTimeField(
+        blank=True,
+        null=True
+    )
+
+    created_at = models.DateTimeField(
+        default=timezone.now
+    )
+
+    def __str__(self):
+        return (
+            f"{self.user.username} - "
+            f"{self.project.title} - "
+            f"{self.job_role.role_name}"
+        )
+
+
+class InterviewQuestion(models.Model):
+    QUESTION_TYPE_CHOICES = [
+        ('PROJECT', 'Project Specific'),
+        ('TECHNICAL', 'Technical'),
+        ('TOOL', 'Tool Specific'),
+        ('COMPETENCY', 'Competency Based'),
+        ('WEAKNESS', 'Weakness Focused'),
+        ('SYSTEM_DESIGN', 'System Design'),
+        ('BEHAVIOURAL', 'Behavioural'),
+    ]
+
+    DIFFICULTY_CHOICES = [
+        ('EASY', 'Easy'),
+        ('MEDIUM', 'Medium'),
+        ('HARD', 'Hard'),
+    ]
+
+    session = models.ForeignKey(
+        InterviewSession,
+        on_delete=models.CASCADE,
+        related_name='questions'
+    )
+
+    question_type = models.CharField(
+        max_length=30,
+        choices=QUESTION_TYPE_CHOICES
+    )
+
+    question_text = models.TextField()
+
+    expected_skill = models.ForeignKey(
+        Skill,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='interview_questions'
+    )
+
+    expected_tool = models.ForeignKey(
+        IndustryTool,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='interview_questions'
+    )
+
+    competency_group = models.ForeignKey(
+        CompetencyGroup,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='interview_questions'
+    )
+
+    difficulty = models.CharField(
+        max_length=20,
+        choices=DIFFICULTY_CHOICES,
+        default='MEDIUM'
+    )
+
+    display_order = models.PositiveIntegerField(
+        default=1
+    )
+
+    created_at = models.DateTimeField(
+        default=timezone.now
+    )
+
+    class Meta:
+        ordering = ['display_order', 'id']
+
+    def __str__(self):
+        return (
+            f"{self.session.user.username} - "
+            f"{self.question_type} - "
+            f"Question {self.display_order}"
+        )
+
+
+class InterviewAnswer(models.Model):
+    question = models.OneToOneField(
+        InterviewQuestion,
+        on_delete=models.CASCADE,
+        related_name='answer'
+    )
+
+    answer_text = models.TextField()
+
+    technical_accuracy_score = models.FloatField(
+        blank=True,
+        null=True
+    )
+
+    evidence_consistency_score = models.FloatField(
+        blank=True,
+        null=True
+    )
+
+    competency_score = models.FloatField(
+        blank=True,
+        null=True
+    )
+
+    communication_score = models.FloatField(
+        blank=True,
+        null=True
+    )
+
+    overall_score = models.FloatField(
+        blank=True,
+        null=True
+    )
+
+    strengths = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    weaknesses = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    feedback = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    recommendation = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    submitted_at = models.DateTimeField(
+        default=timezone.now
+    )
+
+    evaluated_at = models.DateTimeField(
+        blank=True,
+        null=True
+    )
+
+    def __str__(self):
+        return (
+            f"Answer for question "
+            f"{self.question.display_order} - "
+            f"{self.question.session.user.username}"
+        )
