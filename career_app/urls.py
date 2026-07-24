@@ -179,4 +179,16 @@ path(
     views.platform_analytics,
     name='platform_analytics'
 ),
+
+path(
+    'interview/setup/',
+    views.interview_setup,
+    name='interview_setup'
+),
+
+path(
+    'interview/session/<int:session_id>/',
+    views.interview_session,
+    name='interview_session'
+),
 ]

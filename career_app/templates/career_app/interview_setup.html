@@ -1,0 +1,228 @@
+{% extends 'career_app/base.html' %}
+
+{% block title %}
+Interview Setup | CareerReady AI
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .interview-setup-container {
+        max-width: 760px;
+        margin: 40px auto;
+    }
+
+    .interview-setup-card {
+        background: #ffffff;
+        border-radius: 18px;
+        padding: 36px;
+        box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
+        border: 1px solid #e5e7eb;
+    }
+
+    .interview-setup-header {
+        margin-bottom: 30px;
+    }
+
+    .interview-setup-header h1 {
+        font-size: 30px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 10px;
+    }
+
+    .interview-setup-header p {
+        color: #6b7280;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .project-summary {
+        margin-top: 20px;
+        padding: 14px 18px;
+        background: #eef2ff;
+        border-radius: 10px;
+        color: #3730a3;
+        font-weight: 500;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 9px;
+        color: #1f2937;
+        font-weight: 600;
+    }
+
+    .form-control {
+        width: 100%;
+        min-height: 48px;
+        padding: 11px 14px;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        background: #ffffff;
+        color: #111827;
+        font-size: 15px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    .field-error {
+        margin-top: 7px;
+        color: #dc2626;
+        font-size: 14px;
+    }
+
+    .form-errors {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 22px;
+    }
+
+    .setup-information {
+        margin: 28px 0;
+        padding: 20px;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .setup-information h3 {
+        margin-top: 0;
+        margin-bottom: 12px;
+        color: #1e293b;
+        font-size: 17px;
+    }
+
+    .setup-information ul {
+        margin: 0;
+        padding-left: 20px;
+        color: #64748b;
+        line-height: 1.8;
+    }
+
+    .start-interview-button {
+        width: 100%;
+        border: none;
+        border-radius: 10px;
+        padding: 14px 20px;
+        background: #4f46e5;
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+    }
+
+    .start-interview-button:hover {
+        background: #4338ca;
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+        .interview-setup-container {
+            margin: 20px auto;
+        }
+
+        .interview-setup-card {
+            padding: 24px;
+        }
+
+        .interview-setup-header h1 {
+            font-size: 25px;
+        }
+    }
+</style>
+
+<div class="interview-setup-container">
+    <div class="interview-setup-card">
+
+        <div class="interview-setup-header">
+            <h1>AI Interview Coach</h1>
+
+            <p>
+                Select your target job role and one of your projects.
+                CareerReady AI will use your project evidence, skills,
+                tools, readiness results and employability gaps to prepare
+                a personalised interview.
+            </p>
+
+            <div class="project-summary">
+                Available projects: {{ project_count }}
+            </div>
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="form-errors">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="{{ form.job_role.id_for_label }}">
+                    {{ form.job_role.label }}
+                </label>
+
+                {{ form.job_role }}
+
+                {% for error in form.job_role.errors %}
+                    <div class="field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.project.id_for_label }}">
+                    {{ form.project.label }}
+                </label>
+
+                {{ form.project }}
+
+                {% for error in form.project.errors %}
+                    <div class="field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="setup-information">
+                <h3>How the interview will be personalised</h3>
+
+                <ul>
+                    <li>Questions based on your selected project.</li>
+                    <li>Technical questions for your target job role.</li>
+                    <li>Questions covering relevant skills and tools.</li>
+                    <li>Questions based on readiness weaknesses.</li>
+                    <li>Feedback linked to evidence from your portfolio.</li>
+                </ul>
+            </div>
+
+            <button
+                type="submit"
+                class="start-interview-button"
+            >
+                Create Interview Session
+            </button>
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

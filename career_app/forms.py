@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 import os
-
+from .models import InterviewAnswer
 from .models import (
     AdminRequest,
     JobRole,
@@ -17,7 +17,9 @@ from .models import (
     UserProject,
     CareerTransitionAnalysis,
     CompetencyGroup,
-    CompetencyGroupMember
+    CompetencyGroupMember,
+     InterviewSession,
+   
 )
 
 
@@ -373,3 +375,71 @@ class RegisterForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
+
+
+
+
+
+class InterviewSetupForm(forms.ModelForm):
+    class Meta:
+        model = InterviewSession
+        fields = ['job_role', 'project']
+
+        widgets = {
+            'job_role': forms.Select(
+                attrs={
+                    'class': 'form-control',
+                }
+            ),
+            'project': forms.Select(
+                attrs={
+                    'class': 'form-control',
+                }
+            ),
+        }
+
+        labels = {
+            'job_role': 'Target Job Role',
+            'project': 'Project Evidence',
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['job_role'].queryset = JobRole.objects.all().order_by(
+            'role_name'
+        )
+
+        if user:
+            self.fields['project'].queryset = UserProject.objects.filter(
+                user=user
+            ).order_by('-created_at')
+        else:
+            self.fields['project'].queryset = UserProject.objects.none()
+
+        self.fields['job_role'].empty_label = 'Select a job role'
+        self.fields['project'].empty_label = 'Select one of your projects'
+
+
+class InterviewAnswerForm(forms.ModelForm):
+    class Meta:
+        model = InterviewAnswer
+        fields = ['answer_text']
+
+        widgets = {
+            'answer_text': forms.Textarea(
+                attrs={
+                    'class': 'answer-textarea',
+                    'placeholder': (
+                        'Type your answer here. Include specific examples, '
+                        'technical decisions, challenges and outcomes.'
+                    ),
+                    'rows': 10,
+                    'required': True,
+                }
+            )
+        }
+
+        labels = {
+            'answer_text': ''
+        }

@@ -1,0 +1,581 @@
+{% extends 'career_app/base.html' %}
+
+{% block title %}
+Interview Session | CareerReady AI
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .interview-page {
+        max-width: 950px;
+        margin: 35px auto;
+        padding: 0 20px 50px;
+    }
+
+    .interview-header {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 28px;
+        margin-bottom: 22px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .interview-header h1 {
+        margin: 0 0 12px;
+        color: #111827;
+        font-size: 30px;
+    }
+
+    .interview-header p {
+        margin: 7px 0;
+        color: #64748b;
+    }
+
+    .interview-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+    }
+
+    .meta-badge {
+        background: #eef2ff;
+        color: #4338ca;
+        padding: 8px 13px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .progress-section {
+        margin-top: 22px;
+    }
+
+    .progress-details {
+        display: flex;
+        justify-content: space-between;
+        color: #64748b;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    .progress-bar {
+        display: block;
+        width: 100%;
+        height: 10px;
+        border: none;
+        border-radius: 999px;
+        overflow: hidden;
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    .progress-bar::-webkit-progress-bar {
+        background: #e5e7eb;
+        border-radius: 999px;
+    }
+
+    .progress-bar::-webkit-progress-value {
+        background: linear-gradient(
+            90deg,
+            #4f46e5,
+            #7c3aed
+        );
+        border-radius: 999px;
+    }
+
+    .progress-bar::-moz-progress-bar {
+        background: linear-gradient(
+            90deg,
+            #4f46e5,
+            #7c3aed
+        );
+        border-radius: 999px;
+    }
+
+    .question-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .question-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+
+    .question-number {
+        color: #4f46e5;
+        font-size: 15px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .question-tags {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .question-tag {
+        background: #f1f5f9;
+        color: #475569;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .difficulty-easy {
+        background: #ecfdf5;
+        color: #047857;
+    }
+
+    .difficulty-medium {
+        background: #fff7ed;
+        color: #c2410c;
+    }
+
+    .difficulty-hard {
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    .question-text {
+        margin: 0;
+        color: #1f2937;
+        font-size: 20px;
+        line-height: 1.65;
+    }
+
+    .question-evidence {
+        margin-top: 18px;
+        padding: 14px 16px;
+        border-radius: 10px;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .answer-section {
+        margin-top: 28px;
+    }
+
+    .answer-section label {
+        display: block;
+        margin-bottom: 10px;
+        color: #111827;
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    .answer-textarea {
+        width: 100%;
+        min-height: 240px;
+        padding: 16px;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        resize: vertical;
+        font-family: inherit;
+        font-size: 16px;
+        line-height: 1.6;
+        color: #1f2937;
+        background: #ffffff;
+        box-sizing: border-box;
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .answer-textarea:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+    }
+
+    .form-error {
+        margin-top: 8px;
+        color: #b91c1c;
+        font-size: 14px;
+    }
+
+    .navigation-buttons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        margin-top: 24px;
+    }
+
+    .right-buttons {
+        display: flex;
+        gap: 12px;
+        margin-left: auto;
+    }
+
+    .button {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 45px;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 10px;
+        text-decoration: none;
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .button-secondary {
+        background: #f1f5f9;
+        color: #334155;
+    }
+
+    .button-secondary:hover {
+        background: #e2e8f0;
+    }
+
+    .button-primary {
+        background: #4f46e5;
+        color: #ffffff;
+    }
+
+    .button-primary:hover {
+        background: #4338ca;
+    }
+
+    .button-finish {
+        background: #059669;
+        color: #ffffff;
+    }
+
+    .button-finish:hover {
+        background: #047857;
+    }
+
+    .message {
+        margin-bottom: 18px;
+        padding: 14px 16px;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .message-success {
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid #a7f3d0;
+    }
+
+    .message-error {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+    }
+
+    .completion-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 45px 30px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .completion-icon {
+        width: 75px;
+        height: 75px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        background: #ecfdf5;
+        color: #059669;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 34px;
+        font-weight: 900;
+    }
+
+    .completion-card h2 {
+        margin: 0 0 12px;
+        color: #111827;
+        font-size: 28px;
+    }
+
+    .completion-card p {
+        color: #64748b;
+        line-height: 1.7;
+    }
+
+    @media (max-width: 700px) {
+        .question-top {
+            flex-direction: column;
+        }
+
+        .question-tags {
+            justify-content: flex-start;
+        }
+
+        .navigation-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .right-buttons {
+            width: 100%;
+            margin-left: 0;
+            flex-direction: column;
+        }
+
+        .button {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .question-card {
+            padding: 22px;
+        }
+
+        .question-text {
+            font-size: 18px;
+        }
+    }
+</style>
+
+<div class="interview-page">
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="
+                message
+                {% if message.tags == 'success' %}
+                    message-success
+                {% else %}
+                    message-error
+                {% endif %}
+            ">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="interview-header">
+        <h1>Personalised Interview</h1>
+
+        <p>
+            <strong>Target role:</strong>
+            {{ session.job_role.role_name }}
+        </p>
+
+        <p>
+            <strong>Project evidence:</strong>
+            {{ session.project.title }}
+        </p>
+
+        <div class="interview-meta">
+            <span class="meta-badge">
+                {{ total_questions }} Questions
+            </span>
+
+            <span class="meta-badge">
+                Status: {{ session.get_status_display }}
+            </span>
+        </div>
+
+        {% if not completed %}
+            <div class="progress-section">
+                <div class="progress-details">
+                    <span>
+                        {{ answered_count }} of
+                        {{ total_questions }} answered
+                    </span>
+
+                    <span>
+                        {{ progress_percentage }}%
+                    </span>
+                </div>
+
+                <progress
+                    class="progress-bar"
+                    value="{{ progress_percentage }}"
+                    max="100"
+                >
+                    {{ progress_percentage }}%
+                </progress>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if completed %}
+
+        <div class="completion-card">
+            <div class="completion-icon">
+                ✓
+            </div>
+
+            <h2>Interview Completed</h2>
+
+            <p>
+                You answered {{ answered_count }} of
+                {{ total_questions }} questions for the
+                <strong>{{ session.job_role.role_name }}</strong>
+                interview.
+            </p>
+
+            <p>
+                Your answers have been saved successfully.
+                
+            </p>
+
+            <a
+    href="{% url 'user_dashboard' %}"
+    class="button button-primary"
+>
+    Return to Dashboard
+</a>
+        </div>
+
+    {% else %}
+
+        <div class="question-card">
+
+            <div class="question-top">
+
+                <div class="question-number">
+                    Question {{ current_position }}
+                    of {{ total_questions }}
+                </div>
+
+                <div class="question-tags">
+
+                    <span class="question-tag">
+                        {{ current_question.get_question_type_display }}
+                    </span>
+
+                    <span class="
+                        question-tag
+                        {% if current_question.difficulty == 'EASY' %}
+                            difficulty-easy
+                        {% elif current_question.difficulty == 'HARD' %}
+                            difficulty-hard
+                        {% else %}
+                            difficulty-medium
+                        {% endif %}
+                    ">
+                        {{ current_question.get_difficulty_display }}
+                    </span>
+
+                </div>
+
+            </div>
+
+            <p class="question-text">
+                {{ current_question.question_text }}
+            </p>
+
+            {% if current_question.expected_skill or current_question.expected_tool or current_question.competency_group %}
+                <div class="question-evidence">
+
+                    {% if current_question.expected_skill %}
+                        <strong>Skill being assessed:</strong>
+                        {{ current_question.expected_skill.skill_name }}
+                    {% endif %}
+
+                    {% if current_question.expected_tool %}
+                        {% if current_question.expected_skill %}
+                            &nbsp; | &nbsp;
+                        {% endif %}
+
+                        <strong>Tool being assessed:</strong>
+                        {{ current_question.expected_tool.tool_name }}
+                    {% endif %}
+
+                    {% if current_question.competency_group %}
+                        {% if current_question.expected_skill or current_question.expected_tool %}
+                            &nbsp; | &nbsp;
+                        {% endif %}
+
+                        <strong>Competency:</strong>
+                        {{ current_question.competency_group.group_name }}
+                    {% endif %}
+
+                </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    name="question_id"
+                    value="{{ current_question.id }}"
+                >
+
+                <div class="answer-section">
+                    <label for="{{ form.answer_text.id_for_label }}">
+                        Your answer
+                    </label>
+
+                    {{ form.answer_text }}
+
+                    {% for error in form.answer_text.errors %}
+                        <div class="form-error">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="navigation-buttons">
+
+                    {% if previous_position %}
+                        <a
+                            href="{% url 'interview_session' session.id %}?question={{ previous_position }}"
+                            class="button button-secondary"
+                        >
+                            Previous
+                        </a>
+                    {% else %}
+                        <span></span>
+                    {% endif %}
+
+                    <div class="right-buttons">
+
+                        {% if is_last_question %}
+                            <button
+                                type="submit"
+                                class="button button-finish"
+                            >
+                                Save & Finish Interview
+                            </button>
+                        {% else %}
+                            <button
+                                type="submit"
+                                class="button button-primary"
+                            >
+                                Save & Next
+                            </button>
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

@@ -2,102 +2,724 @@
 
 {% block content %}
 
-<h2>Career Match Result</h2>
-<p class="text-muted">Target Role: {{ result.job_role.role_name }}</p>
+<style>
+    body {
+        background: #f8fafc;
+    }
 
-<div class="card mt-4">
-    <div class="card-body">
-        <h4>Match Score</h4>
-        <h1>{{ result.match_score }}%</h1>
+    .result-page {
+        padding: 10px 0 40px;
+    }
+
+    .result-header {
+        background: linear-gradient(
+            135deg,
+            #0f172a,
+            #1e3a8a,
+            #4f46e5
+        );
+        color: white;
+        padding: 38px;
+        border-radius: 24px;
+        margin-bottom: 28px;
+        box-shadow: 0 18px 40px rgba(30, 58, 138, 0.24);
+    }
+
+    .result-header h2 {
+        margin: 0 0 8px;
+        font-size: 34px;
+        font-weight: 900;
+    }
+
+    .result-header p {
+        margin: 0;
+        color: #dbeafe;
+        font-size: 16px;
+    }
+
+    .score-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(220px, 1fr)
+        );
+        gap: 18px;
+        margin-bottom: 28px;
+    }
+
+    .score-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    .score-label {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.9px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    .score-value {
+        color: #0f172a;
+        font-size: 36px;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .section-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 22px;
+        overflow: hidden;
+        margin-bottom: 26px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    .section-header {
+        padding: 21px 24px;
+        border-bottom: 1px solid #e2e8f0;
+        background: linear-gradient(
+            135deg,
+            #eff6ff,
+            #eef2ff
+        );
+    }
+
+    .section-header h3 {
+        margin: 0 0 5px;
+        color: #0f172a;
+        font-size: 22px;
+        font-weight: 900;
+    }
+
+    .section-header p {
+        margin: 0;
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .section-body {
+        padding: 24px;
+    }
+
+    .competency-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(330px, 1fr)
+        );
+        gap: 18px;
+    }
+
+    .competency-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        padding: 20px;
+        background: #ffffff;
+    }
+
+    .competency-card.satisfied {
+        border-left: 6px solid #16a34a;
+    }
+
+    .competency-card.partial {
+        border-left: 6px solid #f59e0b;
+    }
+
+    .competency-card.missing {
+        border-left: 6px solid #dc2626;
+    }
+
+    .competency-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .competency-name {
+        color: #0f172a;
+        font-size: 18px;
+        font-weight: 900;
+        line-height: 1.35;
+    }
+
+    .rule-label {
+        margin-top: 5px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+
+    .status-badge {
+        flex-shrink: 0;
+        padding: 7px 11px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+    }
+
+    .status-satisfied {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-partial {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-missing {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .detail-label {
+        margin: 15px 0 8px;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+    }
+
+    .badge-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .skill-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .skill-matched {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .skill-missing {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .skill-option {
+        background: #eef2ff;
+        color: #3730a3;
+        border: 1px solid #c7d2fe;
+    }
+
+    .recommendation-box {
+        margin-top: 14px;
+        padding: 13px 15px;
+        border-radius: 12px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        font-size: 13px;
+        line-height: 1.6;
+        font-weight: 700;
+    }
+
+    .standalone-list {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(240px, 1fr)
+        );
+        gap: 12px;
+    }
+
+    .standalone-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 13px;
+    }
+
+    .standalone-item.matched {
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .standalone-item.missing {
+        background: #fef2f2;
+        color: #991b1b;
+    }
+
+    .resource-table {
+        margin-bottom: 0;
+    }
+
+    .resource-table th {
+        background: #f8fafc;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 900;
+    }
+
+    .resource-table td {
+        vertical-align: middle;
+    }
+
+    .action-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .action-button {
+        min-height: 46px;
+        padding: 11px 18px;
+        border-radius: 13px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+        font-weight: 800;
+    }
+
+    .action-primary {
+        background: #4f46e5;
+        color: white;
+    }
+
+    .action-primary:hover {
+        background: #3730a3;
+        color: white;
+    }
+
+    .action-secondary {
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    .action-secondary:hover {
+        background: #cbd5e1;
+        color: #0f172a;
+    }
+
+    .action-dark {
+        background: #0f172a;
+        color: white;
+    }
+
+    .action-dark:hover {
+        background: #1e293b;
+        color: white;
+    }
+
+    .empty-text {
+        margin: 0;
+        color: #64748b;
+    }
+
+    @media (max-width: 768px) {
+        .result-header {
+            padding: 30px 24px;
+        }
+
+        .result-header h2 {
+            font-size: 28px;
+        }
+
+        .competency-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-button {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="result-page">
+
+    <div class="result-header">
+        <h2>Career Match Result</h2>
+
+        <p>
+            Target role:
+            <strong>{{ result.job_role.role_name }}</strong>
+        </p>
     </div>
-</div>
 
-<div class="row mt-4">
+    <div class="score-grid">
 
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                Matched Skills
+        <div class="score-card">
+            <div class="score-label">
+                Overall Match Score
             </div>
-            <div class="card-body">
-                {% for skill in result.matched_skills.all %}
-                    <span class="badge bg-success me-1 mb-1">{{ skill.skill_name }}</span>
-                {% empty %}
-                    <p>No matched skills found.</p>
-                {% endfor %}
+
+            <div class="score-value">
+                {{ result.match_score }}%
             </div>
         </div>
-    </div>
 
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-danger text-white">
-                Missing Skills
+        <div class="score-card">
+            <div class="score-label">
+                Competencies Satisfied
             </div>
-            <div class="card-body">
-                {% for skill in result.missing_skills.all %}
-                    <span class="badge bg-danger me-1 mb-1">{{ skill.skill_name }}</span>
-                {% empty %}
-                    <p>No missing skills found.</p>
-                {% endfor %}
+
+            <div class="score-value">
+                {{ satisfied_competencies }}
+                /
+                {{ total_competencies }}
             </div>
         </div>
+
+        <div class="score-card">
+            <div class="score-label">
+                Target Role
+            </div>
+
+            <div
+                class="score-value"
+                style="font-size:24px; line-height:1.25;"
+            >
+                {{ result.job_role.role_name }}
+            </div>
+        </div>
+
     </div>
 
-</div>
+    <div class="section-card">
 
-<div class="card mt-4">
-    <div class="card-header">
-        Recommended Learning Resources
-    </div>
+        <div class="section-header">
+            <h3>Competency Status</h3>
 
-    <div class="card-body">
+            <p>
+                Alternative skills are evaluated as one competency,
+                while mandatory skills are checked individually.
+            </p>
+        </div>
 
-        {% if resources %}
-            <table class="table table-bordered table-striped">
-                <thead>
-                    <tr>
-                        <th>Missing Skill</th>
-                        <th>Resource Title</th>
-                        <th>Type</th>
-                        <th>Link</th>
-                    </tr>
-                </thead>
+        <div class="section-body">
 
-                <tbody>
-                    {% for resource in resources %}
-                    <tr>
-                        <td>{{ resource.skill.skill_name }}</td>
-                        <td>{{ resource.title }}</td>
-                        <td>{{ resource.resource_type }}</td>
-                        <td>
-                            <a href="{{ resource.url }}" target="_blank" class="btn btn-sm btn-primary">
-                                Open Resource
-                            </a>
-                        </td>
-                    </tr>
+            {% if competency_results %}
+
+                <div class="competency-grid">
+
+                    {% for competency in competency_results %}
+
+                        <div
+                            class="competency-card
+                            {% if competency.is_satisfied %}
+                                satisfied
+                            {% elif competency.is_partial %}
+                                partial
+                            {% else %}
+                                missing
+                            {% endif %}"
+                        >
+
+                            <div class="competency-top">
+
+                                <div>
+                                    <div class="competency-name">
+                                        {{ competency.group_name }}
+                                    </div>
+
+                                    <div class="rule-label">
+                                        {{ competency.rule_label }}
+                                    </div>
+                                </div>
+
+                                {% if competency.is_satisfied %}
+                                    <span
+                                        class="status-badge
+                                        status-satisfied"
+                                    >
+                                        Satisfied
+                                    </span>
+
+                                {% elif competency.is_partial %}
+                                    <span
+                                        class="status-badge
+                                        status-partial"
+                                    >
+                                        Partial
+                                    </span>
+
+                                {% else %}
+                                    <span
+                                        class="status-badge
+                                        status-missing"
+                                    >
+                                        Missing
+                                    </span>
+                                {% endif %}
+
+                            </div>
+
+                            {% if competency.matched_skills %}
+
+                                <div class="detail-label">
+                                    You already have
+                                </div>
+
+                                <div class="badge-list">
+
+                                    {% for skill in competency.matched_skills %}
+                                        <span
+                                            class="skill-badge
+                                            skill-matched"
+                                        >
+                                            <i class="bi bi-check-circle"></i>
+                                            {{ skill.skill_name }}
+                                        </span>
+                                    {% endfor %}
+
+                                </div>
+
+                            {% endif %}
+
+                            {% if competency.rule == 'ANY_ONE' %}
+
+                                {% if not competency.is_satisfied %}
+
+                                    <div class="detail-label">
+                                        Choose any one option
+                                    </div>
+
+                                    <div class="badge-list">
+
+                                        {% for skill in competency.options %}
+                                            <span
+                                                class="skill-badge
+                                                skill-option"
+                                            >
+                                                {{ skill.skill_name }}
+                                            </span>
+                                        {% endfor %}
+
+                                    </div>
+
+                                    <div class="recommendation-box">
+                                        Learn and demonstrate any one option
+                                        from this competency group.
+                                    </div>
+
+                                {% endif %}
+
+                            {% else %}
+
+                                {% if competency.missing_skills %}
+
+                                    <div class="detail-label">
+                                        Still required
+                                    </div>
+
+                                    <div class="badge-list">
+
+                                        {% for skill in competency.missing_skills %}
+                                            <span
+                                                class="skill-badge
+                                                skill-missing"
+                                            >
+                                                <i class="bi bi-x-circle"></i>
+                                                {{ skill.skill_name }}
+                                            </span>
+                                        {% endfor %}
+
+                                    </div>
+
+                                {% endif %}
+
+                            {% endif %}
+
+                        </div>
+
                     {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No learning resources found for missing skills yet.</p>
-        {% endif %}
+
+                </div>
+
+            {% else %}
+
+                <p class="empty-text">
+                    No competency groups are configured for this role.
+                </p>
+
+            {% endif %}
+
+        </div>
+    </div>
+
+    {% if standalone_results %}
+
+        <div class="section-card">
+
+            <div class="section-header">
+                <h3>Standalone Requirements</h3>
+
+                <p>
+                    These skills are required individually and are not
+                    part of a competency group.
+                </p>
+            </div>
+
+            <div class="section-body">
+
+                <div class="standalone-list">
+
+                    {% for item in standalone_results %}
+
+                        <div
+                            class="standalone-item
+                            {% if item.is_satisfied %}
+                                matched
+                            {% else %}
+                                missing
+                            {% endif %}"
+                        >
+
+                            {% if item.is_satisfied %}
+                                <i class="bi bi-check-circle-fill"></i>
+                            {% else %}
+                                <i class="bi bi-x-circle-fill"></i>
+                            {% endif %}
+
+                            <strong>
+                                {{ item.skill.skill_name }}
+                            </strong>
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+        </div>
+
+    {% endif %}
+
+    <div class="section-card">
+
+        <div class="section-header">
+            <h3>Recommended Learning Resources</h3>
+
+            <p>
+                Resources are shown for genuinely missing mandatory
+                or standalone skills.
+            </p>
+        </div>
+
+        <div class="section-body">
+
+            {% if resources %}
+
+                <div class="table-responsive">
+
+                    <table
+                        class="table table-bordered
+                        table-striped resource-table"
+                    >
+                        <thead>
+                            <tr>
+                                <th>Skill</th>
+                                <th>Resource</th>
+                                <th>Type</th>
+                                <th>Link</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for resource in resources %}
+
+                                <tr>
+                                    <td>
+                                        {{ resource.skill.skill_name }}
+                                    </td>
+
+                                    <td>
+                                        {{ resource.title }}
+                                    </td>
+
+                                    <td>
+                                        {{ resource.resource_type }}
+                                    </td>
+
+                                    <td>
+                                        <a
+                                            href="{{ resource.url }}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="btn btn-sm btn-primary"
+                                        >
+                                            Open Resource
+                                        </a>
+                                    </td>
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+                    </table>
+
+                </div>
+
+            {% else %}
+
+                <p class="empty-text">
+                    No learning resources were found for the current
+                    mandatory skill gaps.
+                </p>
+
+            {% endif %}
+
+        </div>
+    </div>
+
+    <div class="action-row">
+
+        <a
+            href="{% url 'learning_roadmap' result.id %}"
+            class="action-button action-primary"
+        >
+            <i class="bi bi-map"></i>
+            Generate Learning Roadmap
+        </a>
+
+        <a
+            href="{% url 'career_match' %}"
+            class="action-button action-secondary"
+        >
+            <i class="bi bi-arrow-repeat"></i>
+            Try Again
+        </a>
+
+        <a
+            href="{% url 'user_dashboard' %}"
+            class="action-button action-dark"
+        >
+            <i class="bi bi-grid"></i>
+            Back to Dashboard
+        </a>
 
     </div>
-</div>
 
-<div class="mt-4">
-    <a href="{% url 'learning_roadmap' result.id %}" class="btn btn-primary">
-        Generate Learning Roadmap
-    </a>
-
-    <a href="{% url 'career_match' %}" class="btn btn-secondary">
-        Try Again
-    </a>
-
-    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
-        Back to Dashboard
-    </a>
 </div>
 
 {% endblock %}

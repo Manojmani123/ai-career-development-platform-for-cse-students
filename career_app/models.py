@@ -344,6 +344,7 @@ class CareerTransitionAnalysis(models.Model):
     def __str__(self):
         return f"{self.user.username}: {self.current_role.role_name} to {self.target_role.role_name}"
     
+
 class InterviewSession(models.Model):
     STATUS_CHOICES = [
         ('CREATED', 'Created'),
@@ -358,14 +359,14 @@ class InterviewSession(models.Model):
         related_name='interview_sessions'
     )
 
-    project = models.ForeignKey(
-        UserProject,
+    job_role = models.ForeignKey(
+        JobRole,
         on_delete=models.CASCADE,
         related_name='interview_sessions'
     )
 
-    job_role = models.ForeignKey(
-        JobRole,
+    project = models.ForeignKey(
+        UserProject,
         on_delete=models.CASCADE,
         related_name='interview_sessions'
     )
@@ -373,17 +374,17 @@ class InterviewSession(models.Model):
     readiness_assessment = models.ForeignKey(
         ReadinessAssessment,
         on_delete=models.SET_NULL,
+        related_name='interview_sessions',
         blank=True,
-        null=True,
-        related_name='interview_sessions'
+        null=True
     )
 
     bottleneck = models.ForeignKey(
         EmployabilityBottleneck,
         on_delete=models.SET_NULL,
+        related_name='interview_sessions',
         blank=True,
-        null=True,
-        related_name='interview_sessions'
+        null=True
     )
 
     status = models.CharField(
@@ -414,8 +415,8 @@ class InterviewSession(models.Model):
     def __str__(self):
         return (
             f"{self.user.username} - "
-            f"{self.project.title} - "
-            f"{self.job_role.role_name}"
+            f"{self.job_role.role_name} - "
+            f"{self.status}"
         )
 
 
@@ -449,30 +450,6 @@ class InterviewQuestion(models.Model):
 
     question_text = models.TextField()
 
-    expected_skill = models.ForeignKey(
-        Skill,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name='interview_questions'
-    )
-
-    expected_tool = models.ForeignKey(
-        IndustryTool,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name='interview_questions'
-    )
-
-    competency_group = models.ForeignKey(
-        CompetencyGroup,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name='interview_questions'
-    )
-
     difficulty = models.CharField(
         max_length=20,
         choices=DIFFICULTY_CHOICES,
@@ -481,6 +458,30 @@ class InterviewQuestion(models.Model):
 
     display_order = models.PositiveIntegerField(
         default=1
+    )
+
+    expected_skill = models.ForeignKey(
+        Skill,
+        on_delete=models.SET_NULL,
+        related_name='interview_questions',
+        blank=True,
+        null=True
+    )
+
+    expected_tool = models.ForeignKey(
+        IndustryTool,
+        on_delete=models.SET_NULL,
+        related_name='interview_questions',
+        blank=True,
+        null=True
+    )
+
+    competency_group = models.ForeignKey(
+        CompetencyGroup,
+        on_delete=models.SET_NULL,
+        related_name='interview_questions',
+        blank=True,
+        null=True
     )
 
     created_at = models.DateTimeField(
@@ -492,7 +493,7 @@ class InterviewQuestion(models.Model):
 
     def __str__(self):
         return (
-            f"{self.session.user.username} - "
+            f"{self.session.job_role.role_name} - "
             f"{self.question_type} - "
             f"Question {self.display_order}"
         )
@@ -563,7 +564,6 @@ class InterviewAnswer(models.Model):
 
     def __str__(self):
         return (
-            f"Answer for question "
-            f"{self.question.display_order} - "
-            f"{self.question.session.user.username}"
+            f"{self.question.session.user.username} - "
+            f"Question {self.question.display_order}"
         )
