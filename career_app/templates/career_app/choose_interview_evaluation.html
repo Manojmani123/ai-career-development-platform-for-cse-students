@@ -1,0 +1,370 @@
+{% extends 'career_app/base.html' %}
+
+{% block content %}
+
+<div class="evaluation-page">
+
+    <div class="evaluation-card">
+
+        <div id="choice-content">
+
+            <p class="evaluation-label">
+                CareerReady AI
+            </p>
+
+            <h1>
+                Choose Evaluation Method
+            </h1>
+
+            <p class="evaluation-description">
+                Your interview answers have been saved successfully.
+                Choose how you want your answers to be evaluated.
+            </p>
+
+            <div class="interview-summary">
+                <div>
+                    <span>Target role</span>
+                    <strong>
+                        {{ session.job_role.role_name }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Project evidence</span>
+                    <strong>
+                        {{ session.project.title }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Answers submitted</span>
+                    <strong>
+                        {{ answered_count }} of {{ total_questions }}
+                    </strong>
+                </div>
+            </div>
+
+            <form
+                method="post"
+                id="evaluation-form"
+            >
+                {% csrf_token %}
+
+                <div class="evaluation-options">
+
+                    <label class="evaluation-option">
+                        <input
+                            type="radio"
+                            name="evaluation_method"
+                            value="rule"
+                            required
+                        >
+
+                        <div class="option-content">
+                            <h3>
+                                Rule-Based Evaluation
+                            </h3>
+
+                            <p>
+                                Uses the CareerReady AI scoring algorithm.
+                                It is faster, free and works without external AI.
+                            </p>
+
+                            <ul>
+                                <li>Fast evaluation</li>
+                                <li>No API cost</li>
+                                <li>Consistent scoring rules</li>
+                            </ul>
+                        </div>
+                    </label>
+
+                    <label class="evaluation-option">
+                        <input
+                            type="radio"
+                            name="evaluation_method"
+                            value="ai"
+                            required
+                        >
+
+                        <div class="option-content">
+                            <h3>
+                                AI-Powered Evaluation
+                            </h3>
+
+                            <p>
+                                Uses AI to provide more contextual feedback,
+                                detailed recommendations and answer-specific analysis.
+                            </p>
+
+                            <ul>
+                                <li>Context-aware feedback</li>
+                                <li>More detailed recommendations</li>
+                                <li>May take longer to complete</li>
+                            </ul>
+                        </div>
+                    </label>
+
+                </div>
+
+                <button
+                    type="submit"
+                    class="evaluate-button"
+                    id="evaluate-button"
+                >
+                    Start Evaluation
+                </button>
+
+            </form>
+
+        </div>
+
+        <div
+            id="loading-content"
+            class="loading-content"
+            style="display: none;"
+        >
+            <div class="spinner"></div>
+
+            <h2>
+                Evaluation in progress
+            </h2>
+
+            <p id="loading-message">
+                CareerReady AI is evaluating your interview answers.
+            </p>
+
+            <p class="loading-warning">
+                Please do not refresh the page or click the button again.
+            </p>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    .evaluation-page {
+        min-height: 80vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px 20px;
+        background: #f5f7fb;
+    }
+
+    .evaluation-card {
+        width: 100%;
+        max-width: 900px;
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
+    }
+
+    .evaluation-label {
+        margin: 0 0 10px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #2563eb;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .evaluation-card h1 {
+        margin: 0;
+        font-size: 34px;
+        color: #111827;
+    }
+
+    .evaluation-description {
+        margin: 14px 0 28px;
+        color: #6b7280;
+        line-height: 1.7;
+    }
+
+    .interview-summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+
+    .interview-summary div {
+        padding: 18px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+    }
+
+    .interview-summary span {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    .interview-summary strong {
+        color: #111827;
+    }
+
+    .evaluation-options {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    .evaluation-option {
+        position: relative;
+        display: block;
+        cursor: pointer;
+    }
+
+    .evaluation-option input {
+        position: absolute;
+        opacity: 0;
+    }
+
+    .option-content {
+        height: 100%;
+        padding: 24px;
+        border: 2px solid #e5e7eb;
+        border-radius: 16px;
+        transition: 0.2s ease;
+        background: #ffffff;
+    }
+
+    .evaluation-option input:checked + .option-content {
+        border-color: #2563eb;
+        background: #eff6ff;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+    }
+
+    .option-content h3 {
+        margin: 0 0 10px;
+        color: #111827;
+    }
+
+    .option-content p {
+        color: #6b7280;
+        line-height: 1.6;
+    }
+
+    .option-content ul {
+        padding-left: 18px;
+        color: #374151;
+        line-height: 1.8;
+    }
+
+    .evaluate-button {
+        width: 100%;
+        margin-top: 28px;
+        padding: 15px 22px;
+        border: none;
+        border-radius: 12px;
+        background: #2563eb;
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .evaluate-button:hover {
+        background: #1d4ed8;
+    }
+
+    .loading-content {
+        text-align: center;
+        padding: 50px 20px;
+    }
+
+    .spinner {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 24px;
+        border: 7px solid #dbeafe;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .loading-content h2 {
+        margin-bottom: 12px;
+        color: #111827;
+    }
+
+    .loading-content p {
+        color: #6b7280;
+    }
+
+    .loading-warning {
+        margin-top: 18px;
+        font-size: 14px;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .interview-summary,
+        .evaluation-options {
+            grid-template-columns: 1fr;
+        }
+
+        .evaluation-card {
+            padding: 25px;
+        }
+    }
+</style>
+
+<script>
+    const evaluationForm = document.getElementById(
+        'evaluation-form'
+    );
+
+    const choiceContent = document.getElementById(
+        'choice-content'
+    );
+
+    const loadingContent = document.getElementById(
+        'loading-content'
+    );
+
+    const loadingMessage = document.getElementById(
+        'loading-message'
+    );
+
+    const evaluateButton = document.getElementById(
+        'evaluate-button'
+    );
+
+    evaluationForm.addEventListener(
+        'submit',
+        function () {
+            const selectedMethod = document.querySelector(
+                'input[name="evaluation_method"]:checked'
+            );
+
+            if (!selectedMethod) {
+                return;
+            }
+
+            evaluateButton.disabled = true;
+
+            if (selectedMethod.value === 'ai') {
+                loadingMessage.textContent =
+                    'AI is evaluating your interview answers. This may take a little longer.';
+            } else {
+                loadingMessage.textContent =
+                    'CareerReady AI is applying the rule-based evaluation algorithm.';
+            }
+
+            choiceContent.style.display = 'none';
+            loadingContent.style.display = 'block';
+        }
+    );
+</script>
+
+{% endblock %}

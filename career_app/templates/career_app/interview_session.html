@@ -438,6 +438,14 @@ Interview Session | CareerReady AI
             </p>
 
             <a
+    href="{% url 'interview_results' session.id %}"
+    class="button button-finish"
+>
+    View Interview Evaluation
+</a>
+
+
+            <a
     href="{% url 'user_dashboard' %}"
     class="button button-primary"
 >

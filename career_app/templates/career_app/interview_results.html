@@ -1,0 +1,757 @@
+{% extends 'career_app/base.html' %}
+
+{% block title %}
+Interview Evaluation | CareerReady AI
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .results-page {
+        max-width: 1100px;
+        margin: 35px auto;
+        padding: 0 20px 60px;
+    }
+
+    .results-header {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 30px;
+        margin-bottom: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .results-header h1 {
+        margin: 0 0 12px;
+        color: #111827;
+        font-size: 30px;
+    }
+
+    .results-header p {
+        margin: 8px 0;
+        color: #64748b;
+    }
+
+    .status-badge {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: #ecfdf5;
+        color: #047857;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    .overall-score-section {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 24px;
+        align-items: center;
+        margin-top: 26px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .overall-score-circle {
+        width: 180px;
+        height: 180px;
+        margin: auto;
+        border-radius: 50%;
+        background: linear-gradient(
+            135deg,
+            #4f46e5,
+            #7c3aed
+        );
+        color: #ffffff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 14px 30px rgba(79, 70, 229, 0.25);
+    }
+
+    .overall-score-circle strong {
+        font-size: 44px;
+        line-height: 1;
+    }
+
+    .overall-score-circle span {
+        margin-top: 8px;
+        font-size: 14px;
+        opacity: 0.9;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(170px, 1fr)
+        );
+        gap: 14px;
+    }
+
+    .summary-card {
+        padding: 17px;
+        border-radius: 12px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+
+    .summary-label {
+        display: block;
+        margin-bottom: 7px;
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .summary-value {
+        color: #111827;
+        font-size: 20px;
+        font-weight: 800;
+    }
+
+    .answer-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .question-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .question-number {
+        margin: 0;
+        color: #4f46e5;
+        font-size: 16px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .question-tags {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .question-tag {
+        padding: 7px 11px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .difficulty-easy {
+        background: #ecfdf5;
+        color: #047857;
+    }
+
+    .difficulty-medium {
+        background: #fff7ed;
+        color: #c2410c;
+    }
+
+    .difficulty-hard {
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    .question-text {
+        color: #1f2937;
+        font-size: 19px;
+        line-height: 1.65;
+    }
+
+    .assessment-evidence {
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-radius: 10px;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.7;
+    }
+
+    .content-section {
+        margin-top: 24px;
+    }
+
+    .content-section h3 {
+        margin: 0 0 10px;
+        color: #111827;
+        font-size: 18px;
+    }
+
+    .content-box {
+        padding: 17px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        color: #334155;
+        line-height: 1.75;
+    }
+
+    .candidate-answer-box {
+        background: #ffffff;
+    }
+
+    .scores-heading {
+        margin-top: 26px;
+        margin-bottom: 14px;
+        color: #111827;
+        font-size: 19px;
+    }
+
+    .scores-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(160px, 1fr)
+        );
+        gap: 14px;
+    }
+
+    .score-card {
+        padding: 17px;
+        border: 1px solid #dbeafe;
+        border-radius: 12px;
+        background: #eff6ff;
+        text-align: center;
+        color: #475569;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .score-card strong {
+        display: block;
+        margin-top: 8px;
+        color: #1e3a8a;
+        font-size: 24px;
+    }
+
+    .overall-question-score {
+        border-color: #a7f3d0;
+        background: #ecfdf5;
+    }
+
+    .overall-question-score strong {
+        color: #047857;
+    }
+
+    .feedback-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(310px, 1fr)
+        );
+        gap: 16px;
+        margin-top: 24px;
+    }
+
+    .feedback-card {
+        padding: 19px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        color: #475569;
+        line-height: 1.7;
+    }
+
+    .feedback-card h3 {
+        margin: 0 0 11px;
+        color: #111827;
+        font-size: 17px;
+    }
+
+    .strengths-card {
+        border-color: #bbf7d0;
+        background: #f0fdf4;
+    }
+
+    .weaknesses-card {
+        border-color: #fed7aa;
+        background: #fff7ed;
+    }
+
+    .recommendation-card {
+        border-color: #c7d2fe;
+        background: #eef2ff;
+    }
+
+    .improved-answer-box {
+        border-color: #fde68a;
+        background: #fffbeb;
+    }
+
+    .not-evaluated {
+        margin-top: 20px;
+        padding: 16px;
+        border: 1px solid #fed7aa;
+        border-radius: 12px;
+        background: #fff7ed;
+        color: #c2410c;
+        font-weight: 700;
+    }
+
+    .results-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 28px;
+    }
+
+    .button {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 45px;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 10px;
+        text-decoration: none;
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .button-primary {
+        background: #4f46e5;
+        color: #ffffff;
+    }
+
+    .button-primary:hover {
+        background: #4338ca;
+    }
+
+    .button-secondary {
+        background: #f1f5f9;
+        color: #334155;
+    }
+
+    .button-secondary:hover {
+        background: #e2e8f0;
+    }
+
+    .empty-state {
+        padding: 40px 25px;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        background: #ffffff;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .empty-state h2 {
+        margin-top: 0;
+        color: #111827;
+    }
+
+    .empty-state p {
+        color: #64748b;
+    }
+
+    @media (max-width: 750px) {
+        .results-header,
+        .answer-card {
+            padding: 22px;
+        }
+
+        .overall-score-section {
+            grid-template-columns: 1fr;
+        }
+
+        .question-header {
+            flex-direction: column;
+        }
+
+        .question-tags {
+            justify-content: flex-start;
+        }
+
+        .overall-score-circle {
+            width: 155px;
+            height: 155px;
+        }
+
+        .overall-score-circle strong {
+            font-size: 38px;
+        }
+
+        .results-actions {
+            flex-direction: column;
+        }
+
+        .button {
+            width: 100%;
+            box-sizing: border-box;
+        }
+    }
+</style>
+
+<div class="results-page">
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="not-evaluated">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <section class="results-header">
+
+        <h1>Interview Evaluation</h1>
+
+        <p>
+            <strong>Target role:</strong>
+            {{ session.job_role.role_name }}
+        </p>
+
+        <p>
+            <strong>Project evidence:</strong>
+            {{ session.project.title }}
+        </p>
+
+        {% if session.completed_at %}
+            <p>
+                <strong>Completed:</strong>
+                {{ session.completed_at|date:"d M Y, H:i" }}
+            </p>
+        {% endif %}
+
+        <span class="status-badge">
+            {{ session.get_status_display }}
+        </span>
+
+        <div class="overall-score-section">
+
+            <div class="overall-score-circle">
+
+                {% if session.overall_score is not None %}
+                    <strong>
+                        {{ session.overall_score|floatformat:2 }}
+                    </strong>
+
+                    <span>out of 10</span>
+                {% else %}
+                    <strong>--</strong>
+
+                    <span>Not evaluated</span>
+                {% endif %}
+
+            </div>
+
+            <div class="summary-grid">
+
+                <div class="summary-card">
+                    <span class="summary-label">
+                        Answers submitted
+                    </span>
+
+                    <span class="summary-value">
+                        {{ answered_count }}
+                    </span>
+                </div>
+
+                <div class="summary-card">
+                    <span class="summary-label">
+                        Answers evaluated
+                    </span>
+
+                    <span class="summary-value">
+                        {{ evaluated_count }}
+                    </span>
+                </div>
+
+                {% if session.readiness_assessment %}
+                    <div class="summary-card">
+                        <span class="summary-label">
+                            Previous readiness
+                        </span>
+
+                        <span class="summary-value">
+                            {{ session.readiness_assessment.overall_readiness_score|floatformat:2 }}%
+                        </span>
+                    </div>
+                {% endif %}
+
+                {% if session.bottleneck %}
+                    <div class="summary-card">
+                        <span class="summary-label">
+                            Main bottleneck
+                        </span>
+
+                        <span class="summary-value">
+                            {{ session.bottleneck.main_bottleneck }}
+                        </span>
+                    </div>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </section>
+
+    {% for answer in answers %}
+
+        <article class="answer-card">
+
+            <div class="question-header">
+
+                <h2 class="question-number">
+                    Question {{ answer.question.display_order }}
+                </h2>
+
+                <div class="question-tags">
+
+                    <span class="question-tag">
+                        {{ answer.question.get_question_type_display }}
+                    </span>
+
+                    <span class="
+                        question-tag
+                        {% if answer.question.difficulty == 'EASY' %}
+                            difficulty-easy
+                        {% elif answer.question.difficulty == 'HARD' %}
+                            difficulty-hard
+                        {% else %}
+                            difficulty-medium
+                        {% endif %}
+                    ">
+                        {{ answer.question.get_difficulty_display }}
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="question-text">
+                {{ answer.question.question_text|linebreaksbr }}
+            </div>
+
+            {% if answer.question.expected_skill or answer.question.expected_tool or answer.question.competency_group %}
+
+                <div class="assessment-evidence">
+
+                    {% if answer.question.expected_skill %}
+                        <strong>Expected skill:</strong>
+                        {{ answer.question.expected_skill.skill_name }}
+                    {% endif %}
+
+                    {% if answer.question.expected_tool %}
+                        {% if answer.question.expected_skill %}
+                            &nbsp; | &nbsp;
+                        {% endif %}
+
+                        <strong>Expected tool:</strong>
+                        {{ answer.question.expected_tool.tool_name }}
+                    {% endif %}
+
+                    {% if answer.question.competency_group %}
+                        {% if answer.question.expected_skill or answer.question.expected_tool %}
+                            &nbsp; | &nbsp;
+                        {% endif %}
+
+                        <strong>Competency:</strong>
+                        {{ answer.question.competency_group.group_name }}
+                    {% endif %}
+
+                </div>
+
+            {% endif %}
+
+            <section class="content-section">
+
+                <h3>Your answer</h3>
+
+                <div class="content-box candidate-answer-box">
+                    {{ answer.answer_text|linebreaksbr }}
+                </div>
+
+            </section>
+
+            {% if answer.evaluated_at %}
+
+                <h3 class="scores-heading">
+                    Evaluation scores
+                </h3>
+
+                <div class="scores-grid">
+
+                    <div class="score-card">
+                        Technical accuracy
+
+                        <strong>
+                            {{ answer.technical_accuracy_score|floatformat:2 }}/10
+                        </strong>
+                    </div>
+
+                    <div class="score-card">
+                        Evidence consistency
+
+                        <strong>
+                            {{ answer.evidence_consistency_score|floatformat:2 }}/10
+                        </strong>
+                    </div>
+
+                    <div class="score-card">
+                        Competency
+
+                        <strong>
+                            {{ answer.competency_score|floatformat:2 }}/10
+                        </strong>
+                    </div>
+
+                    <div class="score-card">
+                        Communication
+
+                        <strong>
+                            {{ answer.communication_score|floatformat:2 }}/10
+                        </strong>
+                    </div>
+
+                    <div class="score-card overall-question-score">
+                        Overall score
+
+                        <strong>
+                            {{ answer.overall_score|floatformat:2 }}/10
+                        </strong>
+                    </div>
+
+                </div>
+
+                <div class="feedback-grid">
+
+                    <section class="feedback-card">
+
+                        <h3>Technical feedback</h3>
+
+                        <div>
+                            {{ answer.technical_feedback|linebreaksbr }}
+                        </div>
+
+                    </section>
+
+                    <section class="feedback-card">
+
+                        <h3>Communication feedback</h3>
+
+                        <div>
+                            {{ answer.communication_feedback|linebreaksbr }}
+                        </div>
+
+                    </section>
+
+                    <section class="feedback-card strengths-card">
+
+                        <h3>Strengths</h3>
+
+                        <div>
+                            {{ answer.strengths|linebreaksbr }}
+                        </div>
+
+                    </section>
+
+                    <section class="feedback-card weaknesses-card">
+
+                        <h3>Areas for improvement</h3>
+
+                        <div>
+                            {{ answer.weaknesses|linebreaksbr }}
+                        </div>
+
+                    </section>
+
+                    <section class="feedback-card">
+
+                        <h3>Overall feedback</h3>
+
+                        <div>
+                            {{ answer.feedback|linebreaksbr }}
+                        </div>
+
+                    </section>
+
+                    <section class="feedback-card recommendation-card">
+
+                        <h3>Recommendation</h3>
+
+                        <div>
+                            {{ answer.recommendation|linebreaksbr }}
+                        </div>
+
+                    </section>
+
+                </div>
+
+                <section class="content-section">
+
+                    <h3>Improved answer example</h3>
+
+                    <div class="content-box improved-answer-box">
+                        {{ answer.improved_answer|linebreaksbr }}
+                    </div>
+
+                </section>
+
+            {% else %}
+
+                <div class="not-evaluated">
+                    This answer has not been evaluated yet.
+                </div>
+
+            {% endif %}
+
+        </article>
+
+    {% empty %}
+
+        <div class="empty-state">
+
+            <h2>No interview answers found</h2>
+
+            <p>
+                There are no submitted answers for this interview session.
+            </p>
+
+        </div>
+
+    {% endfor %}
+
+    <div class="results-actions">
+
+        <a
+            href="{% url 'user_dashboard' %}"
+            class="button button-primary"
+        >
+            Return to Dashboard
+        </a>
+
+        <a
+            href="{% url 'interview_setup' %}"
+            class="button button-secondary"
+        >
+            Start Another Interview
+        </a>
+
+    </div>
+
+</div>
+
+{% endblock %}

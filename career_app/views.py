@@ -1,6 +1,7 @@
 import email
 from sqlite3 import IntegrityError
 from unittest import result
+from django.db import models, transaction
 from django.urls import reverse
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
@@ -11,8 +12,8 @@ from django.contrib.auth.models import User
 from django.utils.crypto import get_random_string
 from .models import AdminInviteCode, AdminRequest
 from .forms import AdminRequestForm
-from .forms import RegisterForm, AdminRequestForm, JobRoleForm, SkillForm, JobRoleSkillForm
-from .models import AdminInviteCode, AdminRequest, JobRole, Skill, JobRoleSkill
+from .forms import RegisterForm, JobRoleForm, SkillForm, JobRoleSkillForm
+from .models import  JobRole, Skill, JobRoleSkill
 from .forms import CareerMatchForm
 from .models import CareerMatchResult
 from .models import LearningResource
@@ -21,17 +22,19 @@ from django.shortcuts import  get_object_or_404
 from .forms import UserProfileForm
 from .models import UserProfile
 from .utils import extract_text_from_resume, is_valid_resume, extract_skills_from_text
-from .models import Skill
+
 from .forms import ReadinessAssessmentForm
 from .models import ReadinessAssessment
 from .forms import IndustryToolForm, JobRoleToolForm
-from .models import IndustryTool, JobRoleTool
+
 from .models import IndustryTool, JobRoleTool
 from .forms import (
-    UserProfileForm,
-    CareerMatchForm,
+ 
     ReadinessAssessmentForm
 )
+from django.db import transaction
+from django.db.models import Avg
+from .services.interview_evaluator import evaluate_answer
 from django.core.paginator import Paginator
 from django.db.models import Prefetch
 from .models import CompetencyGroup, CompetencyGroupMember
@@ -51,6 +54,17 @@ from .forms import InterviewSetupForm
 from .models import InterviewSession
 from .models import InterviewQuestion,InterviewAnswer
 from .forms import InterviewAnswerForm
+import logging
+
+from django.db.models import Avg
+from django.utils import timezone
+
+from .services.interview_evaluator import evaluate_answer
+from .services.ai_interview_evaluator import (
+    AIInterviewEvaluationError,
+    evaluate_answer_with_ai,
+)
+logger = logging.getLogger(__name__)
 @login_required
 def view_users(request):
     if not request.user.is_superuser:
@@ -3875,34 +3889,56 @@ def platform_analytics(request):
 
 def generate_interview_questions(session):
     """
-    Generate a personalised interview question set using:
+    Generate personalised interview questions using:
 
     - Selected project
     - Target job role
-    - Role skills
-    - Role tools
-    - User manual and extracted skills
+    - Project skills and tools
+    - User profile skills and tools
     - Competency groups
-    - Latest readiness assessment
-    - Latest employability bottleneck
+    - Readiness assessment
+    - Employability bottleneck
+
+    Important competency rule:
+
+    - ANY_ONE groups produce only one interview question.
+    - If the user knows one option, the whole group is satisfied.
+    - The remaining options are not treated as separate weaknesses.
+    - ALL_REQUIRED groups can generate questions for individual missing skills.
     """
 
+    # Do not create duplicate questions.
     if session.questions.exists():
-        return session.questions.all()
+        return session.questions.order_by(
+            'display_order',
+            'id'
+        )
 
     user = session.user
     job_role = session.job_role
     project = session.project
 
+    # -------------------------------------------------
+    # Latest assessment and bottleneck
+    # -------------------------------------------------
+
     latest_assessment = ReadinessAssessment.objects.filter(
         user=user,
         job_role=job_role
-    ).order_by('-created_at').first()
+    ).order_by(
+        '-created_at'
+    ).first()
 
     latest_bottleneck = EmployabilityBottleneck.objects.filter(
         user=user,
         job_role=job_role
-    ).order_by('-created_at').first()
+    ).order_by(
+        '-created_at'
+    ).first()
+
+    # -------------------------------------------------
+    # Role skills and tools
+    # -------------------------------------------------
 
     role_skills = list(
         JobRoleSkill.objects.filter(
@@ -3926,6 +3962,10 @@ def generate_interview_questions(session):
         )
     )
 
+    # -------------------------------------------------
+    # Project evidence
+    # -------------------------------------------------
+
     project_skill_ids = set(
         project.skills_used.values_list(
             'id',
@@ -3940,8 +3980,13 @@ def generate_interview_questions(session):
         )
     )
 
+    # Begin with project evidence.
     user_skill_ids = set(project_skill_ids)
     user_tool_ids = set(project_tool_ids)
+
+    # -------------------------------------------------
+    # User profile evidence
+    # -------------------------------------------------
 
     try:
         user_profile = user.userprofile
@@ -3988,6 +4033,10 @@ def generate_interview_questions(session):
 
     question_data = []
 
+    # -------------------------------------------------
+    # Helper for adding unique questions
+    # -------------------------------------------------
+
     def add_question(
         question_text,
         question_type,
@@ -4019,9 +4068,9 @@ def generate_interview_questions(session):
             'competency_group': competency_group,
         })
 
-    # -------------------------------------------------
+    # =================================================
     # 1. Project introduction
-    # -------------------------------------------------
+    # =================================================
 
     add_question(
         question_text=(
@@ -4033,9 +4082,9 @@ def generate_interview_questions(session):
         difficulty='EASY'
     )
 
-    # -------------------------------------------------
+    # =================================================
     # 2. Project architecture
-    # -------------------------------------------------
+    # =================================================
 
     add_question(
         question_text=(
@@ -4047,9 +4096,9 @@ def generate_interview_questions(session):
         difficulty='MEDIUM'
     )
 
-    # -------------------------------------------------
+    # =================================================
     # 3. Project challenge
-    # -------------------------------------------------
+    # =================================================
 
     add_question(
         question_text=(
@@ -4061,9 +4110,9 @@ def generate_interview_questions(session):
         difficulty='MEDIUM'
     )
 
-    # -------------------------------------------------
+    # =================================================
     # 4. Matched technical project skills
-    # -------------------------------------------------
+    # =================================================
 
     matched_technical_skills = [
         role_skill
@@ -4096,9 +4145,9 @@ def generate_interview_questions(session):
             expected_skill=skill
         )
 
-    # -------------------------------------------------
-    # 5. Matched professional skills
-    # -------------------------------------------------
+    # =================================================
+    # 5. Matched professional skill
+    # =================================================
 
     matched_professional_skills = [
         role_skill
@@ -4125,9 +4174,9 @@ def generate_interview_questions(session):
             expected_skill=skill
         )
 
-    # -------------------------------------------------
+    # =================================================
     # 6. Matched project tools
-    # -------------------------------------------------
+    # =================================================
 
     matched_project_tools = [
         role_tool
@@ -4135,7 +4184,7 @@ def generate_interview_questions(session):
         if role_tool.tool_id in project_tool_ids
     ]
 
-    for role_tool in matched_project_tools[:2]:
+    for role_tool in matched_project_tools[:1]:
         tool = role_tool.tool
 
         difficulty = (
@@ -4156,66 +4205,196 @@ def generate_interview_questions(session):
             expected_tool=tool
         )
 
-    # -------------------------------------------------
-    # 7. Find satisfied ANY_ONE competency groups
-    # -------------------------------------------------
+    # =================================================
+    # 7. Load competency groups
+    # =================================================
 
-    satisfied_any_one_skill_ids = set()
-
-    any_one_groups = CompetencyGroup.objects.filter(
-        job_role=job_role,
-        rule='ANY_ONE'
-    ).prefetch_related(
-        'members__job_role_skill__skill'
+    competency_groups = list(
+        CompetencyGroup.objects.filter(
+            job_role=job_role
+        ).prefetch_related(
+            'members__job_role_skill__skill'
+        ).order_by(
+            'group_name'
+        )
     )
 
-    for group in any_one_groups:
-        group_skill_ids = {
-            member.job_role_skill.skill_id
+    grouped_skill_ids = set()
+
+    satisfied_any_one_groups = []
+    unsatisfied_any_one_groups = []
+    missing_all_required_skills = []
+
+    for group in competency_groups:
+        group_members = [
+            member
             for member in group.members.all()
             if member.job_role_skill
+        ]
+
+        if not group_members:
+            continue
+
+        group_skill_ids = {
+            member.job_role_skill.skill_id
+            for member in group_members
         }
 
-        if group_skill_ids.intersection(user_skill_ids):
-            satisfied_any_one_skill_ids.update(
-                group_skill_ids
+        grouped_skill_ids.update(
+            group_skill_ids
+        )
+
+        matched_skill_ids = group_skill_ids.intersection(
+            user_skill_ids
+        )
+
+        # ---------------------------------------------
+        # ANY_ONE
+        # ---------------------------------------------
+
+        if group.rule == 'ANY_ONE':
+            if matched_skill_ids:
+                satisfied_any_one_groups.append({
+                    'group': group,
+                    'members': group_members,
+                    'matched_skill_ids': matched_skill_ids,
+                })
+            else:
+                unsatisfied_any_one_groups.append({
+                    'group': group,
+                    'members': group_members,
+                })
+
+        # ---------------------------------------------
+        # ALL_REQUIRED
+        # ---------------------------------------------
+
+        elif group.rule == 'ALL_REQUIRED':
+            for member in group_members:
+                role_skill = member.job_role_skill
+
+                if role_skill.skill_id not in user_skill_ids:
+                    missing_all_required_skills.append(
+                        role_skill
+                    )
+
+    # =================================================
+    # 8. Ask one question for a satisfied ANY_ONE group
+    # =================================================
+
+    for group_data in satisfied_any_one_groups[:1]:
+        group = group_data['group']
+        group_members = group_data['members']
+        matched_skill_ids = group_data['matched_skill_ids']
+
+        matched_skills = [
+            member.job_role_skill.skill
+            for member in group_members
+            if (
+                member.job_role_skill.skill_id
+                in matched_skill_ids
             )
+        ]
 
-    # -------------------------------------------------
-    # 8. Missing technical skills
-    # -------------------------------------------------
+        matched_skill_names = ', '.join(
+            skill.skill_name
+            for skill in matched_skills
+        )
 
-    missing_role_skills = [
+        representative_skill = (
+            matched_skills[0]
+            if matched_skills
+            else None
+        )
+
+        add_question(
+            question_text=(
+                f"You satisfy the competency group "
+                f"'{group.group_name}' through {matched_skill_names}. "
+                f"Which of these competencies are you strongest in? "
+                f"Explain how you applied it in '{project.title}' "
+                f"and why it was suitable."
+            ),
+            question_type='COMPETENCY',
+            difficulty='MEDIUM',
+            expected_skill=representative_skill,
+            competency_group=group
+        )
+
+    # =================================================
+    # 9. Ask one question per missing ANY_ONE group
+    # =================================================
+
+    for group_data in unsatisfied_any_one_groups[:2]:
+        group = group_data['group']
+        group_members = group_data['members']
+
+        skills = [
+            member.job_role_skill.skill
+            for member in group_members
+        ]
+
+        if not skills:
+            continue
+
+        skill_names = ', '.join(
+            skill.skill_name
+            for skill in skills
+        )
+
+        representative_skill = skills[0]
+
+        add_question(
+            question_text=(
+                f"The competency group '{group.group_name}' can be "
+                f"satisfied by learning any one of these options: "
+                f"{skill_names}. Which option would you choose for "
+                f"'{project.title}', and how would you apply it in a "
+                f"production environment?"
+            ),
+            question_type='WEAKNESS',
+            difficulty='HARD',
+            expected_skill=representative_skill,
+            competency_group=group
+        )
+
+    # Important:
+    # AWS, Azure and Google Cloud Platform will now generate only one
+    # question if they belong to the same ANY_ONE group.
+
+    # =================================================
+    # 10. Missing ALL_REQUIRED skills
+    # =================================================
+
+    technical_all_required_skills = [
         role_skill
-        for role_skill in role_skills
+        for role_skill in missing_all_required_skills
         if (
-            role_skill.skill_id not in user_skill_ids
-            and role_skill.skill_id not in satisfied_any_one_skill_ids
-            and role_skill.skill.skill_name.strip().lower()
+            role_skill.skill.skill_name.strip().lower()
             not in professional_skill_names
         )
     ]
 
-    high_priority_missing_skills = [
+    high_priority_all_required = [
         role_skill
-        for role_skill in missing_role_skills
+        for role_skill in technical_all_required_skills
         if role_skill.importance == 'High'
     ]
 
-    skill_candidates = (
-        high_priority_missing_skills
-        if high_priority_missing_skills
-        else missing_role_skills
+    all_required_candidates = (
+        high_priority_all_required
+        if high_priority_all_required
+        else technical_all_required_skills
     )
 
-    for role_skill in skill_candidates[:2]:
+    for role_skill in all_required_candidates[:2]:
         skill = role_skill.skill
 
         add_question(
             question_text=(
-                f"{skill.skill_name} is an important competency for the "
-                f"{job_role.role_name} role. Explain the underlying concept "
-                f"and describe how you would apply it if "
+                f"{skill.skill_name} is an important required competency "
+                f"for the {job_role.role_name} role. Explain the underlying "
+                f"concept and describe how you would apply it if "
                 f"'{project.title}' needed to be extended for production use."
             ),
             question_type='WEAKNESS',
@@ -4223,9 +4402,51 @@ def generate_interview_questions(session):
             expected_skill=skill
         )
 
-    # -------------------------------------------------
-    # 9. Missing tools
-    # -------------------------------------------------
+    # =================================================
+    # 11. Ungrouped missing skills
+    # =================================================
+
+    ungrouped_missing_skills = [
+        role_skill
+        for role_skill in role_skills
+        if (
+            role_skill.skill_id not in grouped_skill_ids
+            and role_skill.skill_id not in user_skill_ids
+            and role_skill.skill.skill_name.strip().lower()
+            not in professional_skill_names
+        )
+    ]
+
+    high_priority_ungrouped = [
+        role_skill
+        for role_skill in ungrouped_missing_skills
+        if role_skill.importance == 'High'
+    ]
+
+    ungrouped_candidates = (
+        high_priority_ungrouped
+        if high_priority_ungrouped
+        else ungrouped_missing_skills
+    )
+
+    for role_skill in ungrouped_candidates[:1]:
+        skill = role_skill.skill
+
+        add_question(
+            question_text=(
+                f"{skill.skill_name} is relevant to the "
+                f"{job_role.role_name} role. Explain the underlying concept "
+                f"and describe how you would apply it to "
+                f"'{project.title}' in production."
+            ),
+            question_type='WEAKNESS',
+            difficulty='HARD',
+            expected_skill=skill
+        )
+
+    # =================================================
+    # 12. Missing role tool
+    # =================================================
 
     missing_role_tools = [
         role_tool
@@ -4260,81 +4481,9 @@ def generate_interview_questions(session):
             expected_tool=tool
         )
 
-    # -------------------------------------------------
-    # 10. Competency group question
-    # -------------------------------------------------
-
-    competency_groups = CompetencyGroup.objects.filter(
-        job_role=job_role
-    ).prefetch_related(
-        'members__job_role_skill__skill'
-    )
-
-    for group in competency_groups:
-        member_skills = [
-            member.job_role_skill.skill
-            for member in group.members.all()
-            if member.job_role_skill
-        ]
-
-        if not member_skills:
-            continue
-
-        skill_names = ', '.join(
-            skill.skill_name
-            for skill in member_skills
-        )
-
-        group_skill_ids = {
-            skill.id
-            for skill in member_skills
-        }
-
-        matched_group_skill_ids = group_skill_ids.intersection(
-            user_skill_ids
-        )
-
-        if group.rule == 'ANY_ONE':
-            if matched_group_skill_ids:
-                matched_skill_names = ', '.join(
-                    skill.skill_name
-                    for skill in member_skills
-                    if skill.id in matched_group_skill_ids
-                )
-
-                question_text = (
-                    f"You satisfy the competency group "
-                    f"'{group.group_name}' through {matched_skill_names}. "
-                    f"Explain how you applied this competency in "
-                    f"'{project.title}' and why it was suitable."
-                )
-            else:
-                question_text = (
-                    f"The competency group '{group.group_name}' can be "
-                    f"satisfied through one of these options: {skill_names}. "
-                    f"Which option would you choose for "
-                    f"'{project.title}', and why?"
-                )
-        else:
-            question_text = (
-                f"The competency group '{group.group_name}' requires "
-                f"the following competencies: {skill_names}. Explain how "
-                f"these competencies work together in a real "
-                f"{job_role.role_name} project."
-            )
-
-        add_question(
-            question_text=question_text,
-            question_type='COMPETENCY',
-            difficulty='MEDIUM',
-            competency_group=group
-        )
-
-        break
-
-    # -------------------------------------------------
-    # 11. Readiness assessment question
-    # -------------------------------------------------
+    # =================================================
+    # 13. Readiness assessment question
+    # =================================================
 
     if latest_assessment:
         add_question(
@@ -4350,9 +4499,9 @@ def generate_interview_questions(session):
             difficulty='MEDIUM'
         )
 
-    # -------------------------------------------------
-    # 12. Employability bottleneck question
-    # -------------------------------------------------
+    # =================================================
+    # 14. Employability bottleneck question
+    # =================================================
 
     if latest_bottleneck:
         bottleneck_name = getattr(
@@ -4372,9 +4521,9 @@ def generate_interview_questions(session):
             difficulty='MEDIUM'
         )
 
-    # -------------------------------------------------
-    # 13. Behavioural fallback question
-    # -------------------------------------------------
+    # =================================================
+    # 15. Behavioural fallback
+    # =================================================
 
     add_question(
         question_text=(
@@ -4387,9 +4536,9 @@ def generate_interview_questions(session):
         difficulty='MEDIUM'
     )
 
-    # -------------------------------------------------
-    # 14. Production readiness
-    # -------------------------------------------------
+    # =================================================
+    # 16. Production readiness
+    # =================================================
 
     add_question(
         question_text=(
@@ -4401,7 +4550,10 @@ def generate_interview_questions(session):
         difficulty='HARD'
     )
 
-    # Limit interview to 10 questions
+    # =================================================
+    # Save maximum 10 questions
+    # =================================================
+
     selected_questions = question_data[:10]
 
     for index, item in enumerate(
@@ -4420,14 +4572,12 @@ def generate_interview_questions(session):
         )
 
     return session.questions.order_by(
-        'display_order'
+        'display_order',
+        'id'
     )
-
 @login_required
 def interview_setup(request):
-    user_projects = UserProject.objects.filter(
-        user=request.user
-    )
+    user_projects = UserProject.objects.filter(user=request.user)
 
     if not user_projects.exists():
         messages.warning(
@@ -4444,7 +4594,6 @@ def interview_setup(request):
 
         if form.is_valid():
             interview_session = form.save(commit=False)
-
             selected_project = form.cleaned_data['project']
 
             if selected_project.user != request.user:
@@ -4458,9 +4607,23 @@ def interview_setup(request):
             interview_session.status = 'CREATED'
             interview_session.save()
 
+            # Generate and save interview questions
+            generate_interview_questions(interview_session)
+
+            if not interview_session.questions.exists():
+                messages.error(
+                    request,
+                    'The interview session was created, but questions could not be generated.'
+                )
+                interview_session.delete()
+                return redirect('interview_setup')
+
+            interview_session.status = 'IN_PROGRESS'
+            interview_session.save(update_fields=['status'])
+
             messages.success(
                 request,
-                'Interview session created successfully.'
+                'Interview session and personalised questions created successfully.'
             )
 
             return redirect(
@@ -4469,9 +4632,7 @@ def interview_setup(request):
             )
 
     else:
-        form = InterviewSetupForm(
-            user=request.user
-        )
+        form = InterviewSetupForm(user=request.user)
 
     context = {
         'form': form,
@@ -4483,81 +4644,183 @@ def interview_setup(request):
         'career_app/interview_setup.html',
         context
     )
+def evaluate_interview_session(
+    session,
+    method='hybrid'
+):
+    """
+    Evaluate all answers belonging to one interview session.
 
+    Supported methods:
 
-@login_required
-def interview_session(request, session_id):
-    session = get_object_or_404(
-        InterviewSession.objects.select_related(
-            'job_role',
-            'project',
-            'user'
-        ),
-        id=session_id,
-        user=request.user
-    )
+    rule:
+        Use only the rule-based evaluator.
 
-    if not session.questions.exists():
-        generate_interview_questions(session)
+    ai:
+        Use only the AI evaluator.
+        If AI evaluation fails, raise the error.
 
-    if session.status == 'CREATED':
-        session.status = 'IN_PROGRESS'
+    hybrid:
+        Try AI evaluation first.
+        If any AI evaluation fails, re-evaluate the complete
+        session using the rule-based evaluator.
 
-        if not session.started_at:
-            session.started_at = timezone.now()
+    The method actually used is stored in
+    InterviewSession.evaluation_method.
+    """
 
-        session.save(
-            update_fields=[
-                'status',
-                'started_at'
-            ]
-        )
-
-    questions = session.questions.select_related(
-        'expected_skill',
-        'expected_tool',
-        'competency_group'
-    ).order_by(
-        'display_order'
-    )
-
-    context = {
-        'session': session,
-        'questions': questions,
-        'question_count': questions.count(),
+    allowed_methods = {
+        'rule',
+        'ai',
+        'hybrid',
     }
 
-    return render(
-        request,
-        'career_app/interview_session.html',
-        context
+    method = str(
+        method or 'hybrid'
+    ).strip().lower()
+
+    if method not in allowed_methods:
+        raise ValueError(
+            "Invalid evaluation method. "
+            "Use 'rule', 'ai' or 'hybrid'."
+        )
+
+    answers = list(
+        InterviewAnswer.objects.filter(
+            question__session=session
+        ).select_related(
+            'question',
+            'question__expected_skill',
+            'question__expected_tool',
+            'question__competency_group',
+            'question__session',
+            'question__session__project',
+            'question__session__job_role',
+        ).prefetch_related(
+            'question__session__project__skills_used',
+            'question__session__project__tools_used',
+        ).order_by(
+            'question__display_order',
+            'question__id',
+        )
     )
 
+    if not answers:
+        raise ValueError(
+            'No interview answers were found for this session.'
+        )
+
+    evaluation_method_used = None
+
+    # ---------------------------------------------
+    # Rule-based evaluation only
+    # ---------------------------------------------
+
+    if method == 'rule':
+        for answer in answers:
+            evaluate_answer(answer)
+
+        evaluation_method_used = 'RULE_BASED'
+
+    # ---------------------------------------------
+    # AI evaluation only
+    # ---------------------------------------------
+
+    elif method == 'ai':
+        for answer in answers:
+            evaluate_answer_with_ai(answer)
+
+        evaluation_method_used = 'AI_POWERED'
+
+    # ---------------------------------------------
+    # Hybrid evaluation
+    # ---------------------------------------------
+
+    else:
+        try:
+            for answer in answers:
+                evaluate_answer_with_ai(answer)
+
+            evaluation_method_used = 'AI_POWERED'
+
+        except AIInterviewEvaluationError as error:
+            logger.warning(
+                'AI evaluation failed for interview session %s. '
+                'The complete session will be evaluated using '
+                'the rule-based fallback. Error: %s',
+                session.id,
+                error,
+            )
+
+            # Re-evaluate every answer using the rule-based evaluator.
+            # This avoids mixing AI and rule-based scores in one session.
+            for answer in answers:
+                evaluate_answer(answer)
+
+            evaluation_method_used = 'RULE_BASED_FALLBACK'
+
+    # ---------------------------------------------
+    # Calculate average session score
+    # ---------------------------------------------
+
+    average_score = InterviewAnswer.objects.filter(
+        question__session=session,
+        overall_score__isnull=False,
+    ).aggregate(
+        average_score=Avg('overall_score')
+    )['average_score']
+
+    session.overall_score = (
+        round(average_score, 2)
+        if average_score is not None
+        else 0.0
+    )
+
+    session.status = 'COMPLETED'
+    session.completed_at = timezone.now()
+    session.evaluation_method = evaluation_method_used
+    
+
+    session.save(
+        update_fields=[
+            'overall_score',
+            'status',
+            'completed_at',
+            'evaluation_method',
+        ]
+    )
+
+    logger.info(
+        'Interview session %s evaluated using %s. '
+        'Overall score: %s',
+        session.id,
+        evaluation_method_used,
+        session.overall_score,
+    )
+
+    return session
 
 @login_required
 def interview_session(request, session_id):
     session = get_object_or_404(
         InterviewSession.objects.select_related(
-            'user',
-            'job_role',
-            'project'
+            "job_role",
+            "project",
         ),
         id=session_id,
-        user=request.user
+        user=request.user,
     )
 
-    # Generate questions only if this session does not have any.
-    if not session.questions.exists():
-        generate_interview_questions(session)
-
     questions = list(
-        session.questions.select_related(
-            'expected_skill',
-            'expected_tool',
-            'competency_group'
+        InterviewQuestion.objects.filter(
+            session=session
+        ).select_related(
+            "expected_skill",
+            "expected_tool",
+            "competency_group",
         ).order_by(
-            'display_order',
-            'id'
+            "display_order",
+            "id",
         )
     )
 
@@ -4566,215 +4829,417 @@ def interview_session(request, session_id):
     if total_questions == 0:
         messages.error(
             request,
-            'No interview questions could be generated.'
+            "No interview questions were found for this session.",
+        )
+        return redirect("interview_setup")
+
+    # If already evaluated, do not allow answer editing.
+    if (
+        session.status == "COMPLETED"
+        and session.evaluation_method
+    ):
+        return redirect(
+            "interview_results",
+            session_id=session.id,
         )
 
-        return redirect('interview_setup')
-
-    # Start the interview when the user opens it.
-    if session.status == 'CREATED':
-        session.status = 'IN_PROGRESS'
-
-        if session.started_at is None:
-            session.started_at = timezone.now()
-
-        session.save(
-            update_fields=[
-                'status',
-                'started_at'
-            ]
+    try:
+        requested_position = int(
+            request.GET.get("question", 1)
         )
+    except (TypeError, ValueError):
+        requested_position = 1
 
-    # -------------------------------------------------
-    # Completed interview
-    # -------------------------------------------------
-
-    if session.status == 'COMPLETED':
-        answered_count = InterviewAnswer.objects.filter(
-            question__session=session
-        ).exclude(
-            answer_text__isnull=True
-        ).exclude(
-            answer_text__exact=''
-        ).count()
-
-        context = {
-            'session': session,
-            'completed': True,
-            'total_questions': total_questions,
-            'answered_count': answered_count,
-        }
-
-        return render(
-            request,
-            'career_app/interview_session.html',
-            context
-        )
-
-    # Get IDs of questions that already have answers.
-    answered_question_ids = set(
-        InterviewAnswer.objects.filter(
-            question__session=session
-        ).exclude(
-            answer_text__isnull=True
-        ).exclude(
-            answer_text__exact=''
-        ).values_list(
-            'question_id',
-            flat=True
-        )
-    )
-
-    # -------------------------------------------------
-    # Determine which question to display
-    # -------------------------------------------------
-
-    requested_position = request.GET.get('question')
-
-    if requested_position:
-        try:
-            current_position = int(requested_position)
-        except (TypeError, ValueError):
-            current_position = 1
-
-    else:
-        # Resume from the first unanswered question.
-        current_position = 1
-
-        for index, question in enumerate(
-            questions,
-            start=1
-        ):
-            if question.id not in answered_question_ids:
-                current_position = index
-                break
-        else:
-            # All questions have answers.
-            current_position = total_questions
-
-    # Prevent invalid question numbers.
-    current_position = max(
+    requested_position = max(
         1,
-        min(current_position, total_questions)
+        min(requested_position, total_questions),
     )
 
+    current_position = requested_position
     current_question = questions[current_position - 1]
 
-    # Because InterviewAnswer.question is OneToOneField,
-    # there can be only one answer per question.
     existing_answer = InterviewAnswer.objects.filter(
         question=current_question
     ).first()
 
-    # -------------------------------------------------
-    # Handle answer submission
-    # -------------------------------------------------
+    if request.method == "POST":
+        question_id = request.POST.get("question_id")
 
-    if request.method == 'POST':
-        submitted_question_id = request.POST.get(
-            'question_id'
-        )
-
-        try:
-            submitted_question_id = int(
-                submitted_question_id
-            )
-
-        except (TypeError, ValueError):
-            messages.error(
-                request,
-                'Invalid interview question.'
-            )
-
-            return redirect(
-                'interview_session',
-                session_id=session.id
-            )
-
-        submitted_question = get_object_or_404(
+        posted_question = get_object_or_404(
             InterviewQuestion,
-            id=submitted_question_id,
-            session=session
+            id=question_id,
+            session=session,
         )
 
-        # Find the submitted question's position.
-        submitted_position = next(
-            (
-                index
-                for index, question in enumerate(
-                    questions,
-                    start=1
-                )
-                if question.id == submitted_question.id
-            ),
-            1
-        )
-
-        submitted_answer = InterviewAnswer.objects.filter(
-            question=submitted_question
+        existing_answer = InterviewAnswer.objects.filter(
+            question=posted_question
         ).first()
 
         form = InterviewAnswerForm(
             request.POST,
-            instance=submitted_answer
+            instance=existing_answer,
         )
 
         if form.is_valid():
-            answer = form.save(
+            interview_answer = form.save(
                 commit=False
             )
+            interview_answer.question = posted_question
+            interview_answer.save()
 
-            answer.question = submitted_question
-            answer.submitted_at = timezone.now()
-            answer.save()
+            posted_position = next(
+                (
+                    index
+                    for index, question in enumerate(
+                        questions,
+                        start=1,
+                    )
+                    if question.id == posted_question.id
+                ),
+                current_position,
+            )
 
-            # Last question: complete the interview.
-            if submitted_position >= total_questions:
-                session.status = 'COMPLETED'
+            is_last_question = (
+                posted_position == total_questions
+            )
+
+            # -----------------------------------------
+            # Final question
+            # -----------------------------------------
+
+            if is_last_question:
+                answered_question_ids = set(
+                    InterviewAnswer.objects.filter(
+                        question__session=session
+                    ).exclude(
+                        answer_text__isnull=True
+                    ).exclude(
+                        answer_text__exact=""
+                    ).values_list(
+                        "question_id",
+                        flat=True,
+                    )
+                )
+
+                first_unanswered_position = None
+
+                for index, question in enumerate(
+                    questions,
+                    start=1,
+                ):
+                    if question.id not in answered_question_ids:
+                        first_unanswered_position = index
+                        break
+
+                    saved_answer = InterviewAnswer.objects.filter(
+                        question=question
+                    ).first()
+
+                    if (
+                        saved_answer is None
+                        or not saved_answer.answer_text.strip()
+                    ):
+                        first_unanswered_position = index
+                        break
+
+                if first_unanswered_position is not None:
+                    messages.warning(
+                        request,
+                        "Please answer all interview questions "
+                        "before finishing.",
+                    )
+
+                    interview_url = reverse(
+                        "interview_session",
+                        args=[session.id],
+                    )
+
+                    return redirect(
+                        f"{interview_url}"
+                        f"?question={first_unanswered_position}"
+                    )
+
+                # Answers are complete, but evaluation has not started.
+                # The user will choose Rule-Based or AI evaluation next.
+                session.status = "COMPLETED"
                 session.completed_at = timezone.now()
+                session.evaluation_method = None
+                session.overall_score = None
 
                 session.save(
                     update_fields=[
-                        'status',
-                        'completed_at'
+                        "status",
+                        "completed_at",
+                        "evaluation_method",
+                        "overall_score",
                     ]
                 )
 
-                messages.success(
-                    request,
-                    'Interview completed successfully.'
-                )
-
                 return redirect(
-                    'interview_session',
-                    session_id=session.id
+                    "choose_interview_evaluation",
+                    session_id=session.id,
                 )
 
-            # Move to next question.
-            next_position = submitted_position + 1
+            # -----------------------------------------
+            # Not the final question
+            # -----------------------------------------
 
-            next_url = reverse(
-                'interview_session',
-                args=[session.id]
+            next_position = posted_position + 1
+
+            messages.success(
+                request,
+                "Answer saved successfully.",
+            )
+
+            interview_url = reverse(
+                "interview_session",
+                args=[session.id],
             )
 
             return redirect(
-                f'{next_url}?question={next_position}'
+                f"{interview_url}"
+                f"?question={next_position}"
             )
-
-        # Form invalid: remain on the submitted question.
-        current_question = submitted_question
-        current_position = submitted_position
-        existing_answer = submitted_answer
 
     else:
         form = InterviewAnswerForm(
             instance=existing_answer
         )
 
-    # -------------------------------------------------
-    # Progress and navigation
-    # -------------------------------------------------
+    answered_count = InterviewAnswer.objects.filter(
+        question__session=session
+    ).exclude(
+        answer_text__isnull=True
+    ).exclude(
+        answer_text__exact=""
+    ).count()
+
+    progress_percentage = round(
+        (
+            answered_count
+            / total_questions
+        ) * 100
+    )
+
+    previous_position = (
+        current_position - 1
+        if current_position > 1
+        else None
+    )
+
+    next_position = (
+        current_position + 1
+        if current_position < total_questions
+        else None
+    )
+
+    context = {
+        "session": session,
+        "questions": questions,
+        "current_question": current_question,
+        "current_position": current_position,
+        "previous_position": previous_position,
+        "next_position": next_position,
+        "total_questions": total_questions,
+        "answered_count": answered_count,
+        "progress_percentage": progress_percentage,
+        "is_last_question": (
+            current_position == total_questions
+        ),
+        "completed": (
+            session.status == "COMPLETED"
+        ),
+        "form": form,
+    }
+
+    return render(
+        request,
+        "career_app/interview_session.html",
+        context,
+    )
+@login_required
+@transaction.atomic
+def complete_interview(request, session_id):
+    """
+    Complete and evaluate an interview.
+
+    The user must answer every question before the interview can
+    be completed.
+    """
+
+    session = get_object_or_404(
+        InterviewSession.objects.select_related(
+            'user',
+            'job_role',
+            'project',
+        ),
+        id=session_id,
+        user=request.user
+    )
+
+    questions = session.questions.all().order_by(
+        'display_order',
+        'id'
+    )
+
+    if not questions.exists():
+        messages.error(
+            request,
+            'This interview does not contain any questions.'
+        )
+
+        return redirect(
+            'interview_setup'
+        )
+
+    answered_question_ids = set(
+        InterviewAnswer.objects.filter(
+            question__session=session
+        ).values_list(
+            'question_id',
+            flat=True
+        )
+    )
+
+    unanswered_questions = questions.exclude(
+        id__in=answered_question_ids
+    )
+
+    if unanswered_questions.exists():
+        first_unanswered = unanswered_questions.first()
+
+        messages.warning(
+            request,
+            'Please answer all questions before completing the interview.'
+        )
+
+        interview_url = reverse(
+            'interview_session',
+            args=[session.id]
+        )
+
+        return redirect(
+            f'{interview_url}?question={first_unanswered.display_order}'
+        )
+
+    empty_answers = InterviewAnswer.objects.filter(
+        question__session=session,
+        answer_text__regex=r'^\s*$'
+    )
+
+    if empty_answers.exists():
+        first_empty_answer = empty_answers.select_related(
+            'question'
+        ).order_by(
+            'question__display_order'
+        ).first()
+
+        messages.warning(
+            request,
+            'Please provide an answer for every interview question.'
+        )
+
+        interview_url = reverse(
+            'interview_session',
+            args=[session.id]
+        )
+
+        return redirect(
+            f'{interview_url}'
+            f'?question={first_empty_answer.question.display_order}'
+        )
+
+    try:
+        evaluate_interview_session(session)
+
+    except Exception as error:
+        transaction.set_rollback(True)
+
+        messages.error(
+            request,
+            f'Interview evaluation failed: {error}'
+        )
+
+        return redirect(
+            'interview_session',
+            session_id=session.id
+        )
+
+    messages.success(
+        request,
+        'Interview completed and evaluated successfully.'
+    )
+
+    return redirect(
+        'interview_results',
+        session_id=session.id
+    )
+
+
+@login_required
+def interview_results(request, session_id):
+    """
+    Display the completed interview evaluation.
+    """
+
+    session = get_object_or_404(
+        InterviewSession.objects.select_related(
+            'user',
+            'job_role',
+            'project',
+            'readiness_assessment',
+            'bottleneck',
+        ),
+        id=session_id,
+        user=request.user
+    )
+
+    answers = InterviewAnswer.objects.filter(
+        question__session=session
+    ).select_related(
+        'question',
+        'question__expected_skill',
+        'question__expected_tool',
+        'question__competency_group',
+    ).order_by(
+        'question__display_order',
+        'question__id'
+    )
+
+    answered_count = answers.count()
+    evaluated_count = answers.filter(
+        evaluated_at__isnull=False
+    ).count()
+
+    context = {
+        'session': session,
+        'answers': answers,
+        'answered_count': answered_count,
+        'evaluated_count': evaluated_count,
+    }
+
+    return render(
+        request,
+        'career_app/interview_results.html',
+        context
+    )
+
+@login_required
+def choose_interview_evaluation(request, session_id):
+    """
+    Allow the user to choose rule-based or AI-powered evaluation.
+    """
+
+    session = get_object_or_404(
+        InterviewSession.objects.select_related(
+            'job_role',
+            'project',
+        ),
+        id=session_id,
+        user=request.user,
+    )
+
+    total_questions = session.questions.count()
 
     answered_count = InterviewAnswer.objects.filter(
         question__session=session
@@ -4784,40 +5249,123 @@ def interview_session(request, session_id):
         answer_text__exact=''
     ).count()
 
-    progress_percentage = round(
-        (answered_count / total_questions) * 100
-    )
+    if total_questions == 0:
+        messages.error(
+            request,
+            'This interview does not contain any questions.'
+        )
+        return redirect('interview_setup')
 
-    if current_position > 1:
-        previous_position = current_position - 1
-    else:
-        previous_position = None
+    if answered_count < total_questions:
+        messages.warning(
+            request,
+            'Please answer every question before choosing an evaluation method.'
+        )
 
-    if current_position < total_questions:
-        next_position = current_position + 1
-    else:
-        next_position = None
+        first_unanswered = session.questions.exclude(
+            answer__isnull=False
+        ).order_by(
+            'display_order',
+            'id'
+        ).first()
 
-    is_last_question = (
-        current_position == total_questions
-    )
+        position = (
+            first_unanswered.display_order
+            if first_unanswered
+            else 1
+        )
+
+        return redirect(
+            f"{reverse('interview_session', args=[session.id])}"
+            f"?question={position}"
+        )
+
+    if request.method == 'POST':
+        evaluation_method = request.POST.get(
+            'evaluation_method'
+        )
+
+        if evaluation_method not in [
+            'rule',
+            'ai',
+        ]:
+            messages.error(
+                request,
+                'Please select a valid evaluation method.'
+            )
+
+            return redirect(
+                'choose_interview_evaluation',
+                session_id=session.id,
+            )
+
+        try:
+            evaluate_interview_session(
+                session,
+                method=evaluation_method,
+            )
+
+        except Exception as error:
+            messages.error(
+                request,
+                f'Interview evaluation failed: {error}'
+            )
+
+            return redirect(
+                'choose_interview_evaluation',
+                session_id=session.id,
+            )
+
+        messages.success(
+            request,
+            'Interview evaluated successfully.'
+        )
+
+        return redirect(
+            'interview_results',
+            session_id=session.id,
+        )
 
     context = {
         'session': session,
-        'current_question': current_question,
-        'current_position': current_position,
         'total_questions': total_questions,
-        'previous_position': previous_position,
-        'next_position': next_position,
-        'is_last_question': is_last_question,
         'answered_count': answered_count,
-        'progress_percentage': progress_percentage,
-        'form': form,
-        'completed': False,
     }
 
     return render(
         request,
-        'career_app/interview_session.html',
-        context
+        'career_app/choose_interview_evaluation.html',
+        context,
+    )
+
+@login_required
+def interview_history(request):
+    """
+    Display all interview sessions created by the logged-in user.
+    """
+
+    sessions = InterviewSession.objects.filter(
+        user=request.user
+    ).select_related(
+        'job_role',
+        'project',
+    ).annotate(
+        answer_count=models.Count(
+            'questions__answer',
+            distinct=True
+        ),
+        question_count=models.Count(
+            'questions',
+            distinct=True
+        ),
+    ).order_by(
+        '-created_at'
+    )
+
+    return render(
+        request,
+        'career_app/interview_history.html',
+        {
+            'sessions': sessions,
+        }
     )

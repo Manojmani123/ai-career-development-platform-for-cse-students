@@ -345,12 +345,19 @@ class CareerTransitionAnalysis(models.Model):
         return f"{self.user.username}: {self.current_role.role_name} to {self.target_role.role_name}"
     
 
+
 class InterviewSession(models.Model):
     STATUS_CHOICES = [
         ('CREATED', 'Created'),
         ('IN_PROGRESS', 'In Progress'),
         ('COMPLETED', 'Completed'),
         ('FAILED', 'Failed'),
+    ]
+
+    EVALUATION_METHOD_CHOICES = [
+        ('RULE_BASED', 'Rule-Based'),
+        ('AI_POWERED', 'AI-Powered'),
+        ('RULE_BASED_FALLBACK', 'Rule-Based Fallback'),
     ]
 
     user = models.ForeignKey(
@@ -398,6 +405,13 @@ class InterviewSession(models.Model):
         null=True
     )
 
+    evaluation_method = models.CharField(
+        max_length=30,
+        choices=EVALUATION_METHOD_CHOICES,
+        blank=True,
+        null=True
+    )
+
     started_at = models.DateTimeField(
         blank=True,
         null=True
@@ -418,7 +432,6 @@ class InterviewSession(models.Model):
             f"{self.job_role.role_name} - "
             f"{self.status}"
         )
-
 
 class InterviewQuestion(models.Model):
     QUESTION_TYPE_CHOICES = [
@@ -498,7 +511,6 @@ class InterviewQuestion(models.Model):
             f"Question {self.display_order}"
         )
 
-
 class InterviewAnswer(models.Model):
     question = models.OneToOneField(
         InterviewQuestion,
@@ -533,6 +545,16 @@ class InterviewAnswer(models.Model):
         null=True
     )
 
+    technical_feedback = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    communication_feedback = models.TextField(
+        blank=True,
+        null=True
+    )
+
     strengths = models.TextField(
         blank=True,
         null=True
@@ -544,6 +566,11 @@ class InterviewAnswer(models.Model):
     )
 
     feedback = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    improved_answer = models.TextField(
         blank=True,
         null=True
     )

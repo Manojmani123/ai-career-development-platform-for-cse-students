@@ -191,4 +191,28 @@ path(
     views.interview_session,
     name='interview_session'
 ),
+
+
+path(
+        'interview/<int:session_id>/complete/',
+        views.complete_interview,
+        name='complete_interview'
+    ),
+
+    path(
+        'interview/<int:session_id>/results/',
+        views.interview_results,
+        name='interview_results'
+    ),
+
+    path(
+    'interview/session/<int:session_id>/evaluation-method/',
+    views.choose_interview_evaluation,
+    name='choose_interview_evaluation'
+),
+path(
+    'interview/history/',
+    views.interview_history,
+    name='interview_history'
+),
 ]
