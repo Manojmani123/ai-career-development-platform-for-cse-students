@@ -4031,6 +4031,31 @@ def generate_interview_questions(session):
         'attention to detail',
     }
 
+    def is_professional_skill(skill):
+        """
+        Return True when a Skill is a professional / behavioural
+        competency instead of a technical competency.
+        """
+
+        if not skill:
+            return False
+
+        return (
+            skill.skill_name.strip().lower()
+            in professional_skill_names
+        )
+
+    def is_technical_skill(skill):
+        """
+        Return True when a Skill is suitable for technical,
+        competency or technical weakness questions.
+        """
+
+        return (
+            skill is not None
+            and not is_professional_skill(skill)
+        )
+
     question_data = []
 
     # -------------------------------------------------
@@ -4115,13 +4140,12 @@ def generate_interview_questions(session):
     # =================================================
 
     matched_technical_skills = [
-        role_skill
-        for role_skill in role_skills
-        if (
-            role_skill.skill_id in project_skill_ids
-            and role_skill.skill.skill_name.strip().lower()
-            not in professional_skill_names
-        )
+    role_skill
+    for role_skill in role_skills
+    if (
+        role_skill.skill_id in project_skill_ids
+        and is_technical_skill(role_skill.skill)
+    )
     ]
 
     for role_skill in matched_technical_skills[:2]:
@@ -4150,13 +4174,12 @@ def generate_interview_questions(session):
     # =================================================
 
     matched_professional_skills = [
-        role_skill
-        for role_skill in role_skills
-        if (
-            role_skill.skill_id in project_skill_ids
-            and role_skill.skill.skill_name.strip().lower()
-            in professional_skill_names
-        )
+    role_skill
+    for role_skill in role_skills
+    if (
+        role_skill.skill_id in project_skill_ids
+        and is_professional_skill(role_skill.skill)
+    )
     ]
 
     for role_skill in matched_professional_skills[:1]:
@@ -4229,8 +4252,13 @@ def generate_interview_questions(session):
         group_members = [
             member
             for member in group.members.all()
-            if member.job_role_skill
-        ]
+            if (
+                member.job_role_skill
+                and is_technical_skill(
+                    member.job_role_skill.skill
+                    )
+                )
+            ]
 
         if not group_members:
             continue
@@ -4369,9 +4397,8 @@ def generate_interview_questions(session):
     technical_all_required_skills = [
         role_skill
         for role_skill in missing_all_required_skills
-        if (
-            role_skill.skill.skill_name.strip().lower()
-            not in professional_skill_names
+        if is_technical_skill(
+            role_skill.skill
         )
     ]
 
@@ -4412,10 +4439,11 @@ def generate_interview_questions(session):
         if (
             role_skill.skill_id not in grouped_skill_ids
             and role_skill.skill_id not in user_skill_ids
-            and role_skill.skill.skill_name.strip().lower()
-            not in professional_skill_names
-        )
-    ]
+            and is_technical_skill(
+                role_skill.skill
+                )
+            )
+        ]
 
     high_priority_ungrouped = [
         role_skill
