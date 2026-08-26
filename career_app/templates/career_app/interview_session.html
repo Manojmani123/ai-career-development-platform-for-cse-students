@@ -350,6 +350,31 @@ Interview Session | CareerReady AI
             font-size: 18px;
         }
     }
+
+    .interview-top-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+.secondary-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 18px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #374151;
+    font-weight: 700;
+    text-decoration: none;
+    transition: 0.2s ease;
+}
+
+.secondary-action:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
 </style>
 
 <div class="interview-page">
@@ -581,6 +606,15 @@ Interview Session | CareerReady AI
             </form>
 
         </div>
+
+        <div class="interview-top-actions">
+    <a
+        href="{% url 'interview_history' %}"
+        class="secondary-action"
+    >
+        Exit Interview
+    </a>
+</div>
 
     {% endif %}
 

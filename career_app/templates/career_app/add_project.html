@@ -8,73 +8,238 @@
 
         <div class="card shadow">
 
+            <!-- ============================= -->
+            <!-- HEADER -->
+            <!-- ============================= -->
+
             <div class="card-header bg-success text-white">
                 <h3 class="mb-0">Add Project</h3>
             </div>
 
+
             <div class="card-body">
 
+                <!-- ============================= -->
+                <!-- INFORMATION -->
+                <!-- ============================= -->
+
                 <div class="alert alert-info">
-                    Add your academic or personal projects. These projects are
-                    used by CareerReady AI when calculating your employability
-                    readiness and identifying career bottlenecks.
+                    Add your academic or personal projects.
+                    These projects are used by CareerReady AI
+                    when calculating your employability readiness,
+                    identifying career bottlenecks, and personalising
+                    interview questions.
                 </div>
+
+
+                <!-- ============================= -->
+                <!-- FORM -->
+                <!-- ============================= -->
 
                 <form method="POST">
 
                     {% csrf_token %}
 
+
+                    <!-- ============================= -->
+                    <!-- GENERAL FORM ERRORS -->
+                    <!-- ============================= -->
+
+                    {% if form.non_field_errors %}
+
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+
+                    {% endif %}
+
+
+                    <!-- ============================= -->
+                    <!-- PROJECT TITLE -->
+                    <!-- ============================= -->
+
                     <div class="mb-3">
+
                         {{ form.title.label_tag }}
+
                         {{ form.title }}
+
+                        {% if form.title.errors %}
+                            <div class="text-danger mt-1">
+                                {{ form.title.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
+
+                    <!-- ============================= -->
+                    <!-- PROJECT TYPE -->
+                    <!-- ============================= -->
+
                     <div class="mb-3">
+
+                        {{ form.project_type.label_tag }}
+
+                        {{ form.project_type }}
+
+                        {% if form.project_type.errors %}
+                            <div class="text-danger mt-1">
+                                {{ form.project_type.errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="form-text">
+                            Select the category that best describes
+                            your project.
+                        </div>
+
+                    </div>
+
+
+                    <!-- ============================= -->
+                    <!-- PROJECT DESCRIPTION -->
+                    <!-- ============================= -->
+
+                    <div class="mb-3">
+
                         {{ form.description.label_tag }}
+
                         {{ form.description }}
+
+                        {% if form.description.errors %}
+                            <div class="text-danger mt-1">
+                                {{ form.description.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
+
+                    <!-- ============================= -->
+                    <!-- PROJECT URL -->
+                    <!-- ============================= -->
+
                     <div class="mb-3">
+
                         {{ form.project_url.label_tag }}
+
                         {{ form.project_url }}
+
+                        {% if form.project_url.errors %}
+                            <div class="text-danger mt-1">
+                                {{ form.project_url.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
+
+                    <!-- ============================= -->
+                    <!-- GITHUB URL -->
+                    <!-- ============================= -->
+
                     <div class="mb-3">
+
                         {{ form.github_url.label_tag }}
+
                         {{ form.github_url }}
+
+                        {% if form.github_url.errors %}
+                            <div class="text-danger mt-1">
+                                {{ form.github_url.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
+
 
                     <hr>
 
+
+                    <!-- ============================= -->
+                    <!-- SKILLS USED -->
+                    <!-- ============================= -->
+
                     <h5>Skills Used</h5>
 
-                    <div class="border rounded p-3 mb-3"
-                         style="max-height:250px; overflow-y:auto;">
+                    <p class="text-muted">
+                        Select the skills that you actually used
+                        while developing this project.
+                    </p>
+
+                    <div
+                        class="border rounded p-3 mb-3"
+                        style="max-height:250px; overflow-y:auto;"
+                    >
 
                         {{ form.skills_used }}
 
                     </div>
 
+                    {% if form.skills_used.errors %}
+                        <div class="text-danger mb-3">
+                            {{ form.skills_used.errors }}
+                        </div>
+                    {% endif %}
+
+
+                    <!-- ============================= -->
+                    <!-- INDUSTRY TOOLS USED -->
+                    <!-- ============================= -->
+
                     <h5>Industry Tools Used</h5>
 
-                    <div class="border rounded p-3 mb-3"
-                         style="max-height:250px; overflow-y:auto;">
+                    <p class="text-muted">
+                        Select the development, deployment,
+                        testing, data, cloud, or other industry
+                        tools used in this project.
+                    </p>
+
+                    <div
+                        class="border rounded p-3 mb-3"
+                        style="max-height:250px; overflow-y:auto;"
+                    >
 
                         {{ form.tools_used }}
 
                     </div>
 
-                    <button type="submit" class="btn btn-success">
-                        Save Project
-                    </button>
+                    {% if form.tools_used.errors %}
+                        <div class="text-danger mb-3">
+                            {{ form.tools_used.errors }}
+                        </div>
+                    {% endif %}
 
-                    <a href="{% url 'view_projects' %}" class="btn btn-secondary">
-                        Back to Projects
-                    </a>
 
-                    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
-                        Back to Dashboard
-                    </a>
+                    <!-- ============================= -->
+                    <!-- BUTTONS -->
+                    <!-- ============================= -->
+
+                    <div class="d-flex gap-2 flex-wrap">
+
+                        <button
+                            type="submit"
+                            class="btn btn-success"
+                        >
+                            Save Project
+                        </button>
+
+                        <a
+                            href="{% url 'view_projects' %}"
+                            class="btn btn-secondary"
+                        >
+                            Back to Projects
+                        </a>
+
+                        <a
+                            href="{% url 'user_dashboard' %}"
+                            class="btn btn-dark"
+                        >
+                            Back to Dashboard
+                        </a>
+
+                    </div>
 
                 </form>
 

@@ -289,13 +289,47 @@ class EmployabilityBottleneck(models.Model):
         return f"{self.user.username} - {self.job_role.role_name} - {self.main_bottleneck}"
     
 class UserProject(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
-    title = models.CharField(max_length=200)
+    PROJECT_TYPE_CHOICES = [
+        ('WEB_APP', 'Web Application'),
+        ('MOBILE_APP', 'Mobile Application'),
+        ('DESKTOP_APP', 'Desktop Application'),
+        ('BACKEND_API', 'Backend / REST API'),
+        ('AI_ML', 'AI / Machine Learning Project'),
+        ('DATA', 'Data / Analytics Project'),
+        ('CLOUD_DEVOPS', 'Cloud / DevOps Project'),
+        ('GAME', 'Game Development Project'),
+        ('IOT', 'IoT / Embedded Project'),
+        ('BLOCKCHAIN', 'Blockchain Project'),
+        ('OTHER', 'Other'),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+    )
+
+    title = models.CharField(
+        max_length=200
+    )
+
+    project_type = models.CharField(
+        max_length=30,
+        choices=PROJECT_TYPE_CHOICES,
+        default='OTHER'
+    )
+
     description = models.TextField()
 
-    project_url = models.URLField(blank=True, null=True)
-    github_url = models.URLField(blank=True, null=True)
+    project_url = models.URLField(
+        blank=True,
+        null=True
+    )
+
+    github_url = models.URLField(
+        blank=True,
+        null=True
+    )
 
     skills_used = models.ManyToManyField(
         Skill,
@@ -307,10 +341,15 @@ class UserProject(models.Model):
         blank=True
     )
 
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(
+        default=timezone.now
+    )
 
     def __str__(self):
-        return f"{self.user.username} - {self.title}"
+        return (
+            f"{self.user.username} - "
+            f"{self.title}"
+        )
     
 
 class CareerTransitionAnalysis(models.Model):
@@ -347,6 +386,15 @@ class CareerTransitionAnalysis(models.Model):
 
 
 class InterviewSession(models.Model):
+    QUESTION_GENERATION_CHOICES = [
+        ('RULE_BASED', 'Rule-Based Questions'),
+        ('AI_POWERED', 'AI-Generated Questions'),
+        ]
+    question_generation_method = models.CharField(
+    max_length=20,
+    choices=QUESTION_GENERATION_CHOICES,
+    default='RULE_BASED'
+)
     STATUS_CHOICES = [
         ('CREATED', 'Created'),
         ('IN_PROGRESS', 'In Progress'),

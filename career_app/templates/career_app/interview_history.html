@@ -28,6 +28,19 @@
         </a>
     </div>
 
+    <div class="history-header-actions">
+
+    <a
+        href="{% url 'user_dashboard' %}"
+        class="secondary-action"
+    >
+        Back to Dashboard
+    </a>
+
+    
+
+</div>
+
     {% if sessions %}
 
         <div class="history-grid">
@@ -205,6 +218,9 @@
             </a>
 
         </div>
+
+
+       
 
     {% endif %}
 
@@ -495,6 +511,31 @@
             padding: 28px 16px 50px;
         }
     }
+
+    .history-header-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+}
+
+.secondary-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 18px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #374151;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.secondary-action:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
 </style>
 
 {% endblock %}

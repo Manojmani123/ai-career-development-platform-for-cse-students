@@ -1,4 +1,6 @@
 import email
+import json
+
 from sqlite3 import IntegrityError
 from unittest import result
 from django.db import models, transaction
@@ -64,6 +66,8 @@ from .services.ai_interview_evaluator import (
     AIInterviewEvaluationError,
     evaluate_answer_with_ai,
 )
+from openai import OpenAI
+
 logger = logging.getLogger(__name__)
 @login_required
 def view_users(request):
@@ -3886,59 +3890,109 @@ def platform_analytics(request):
         context
     )
 
-
-def generate_interview_questions(session):
+def _professional_skill_names():
     """
-    Generate personalised interview questions using:
-
-    - Selected project
-    - Target job role
-    - Project skills and tools
-    - User profile skills and tools
-    - Competency groups
-    - Readiness assessment
-    - Employability bottleneck
-
-    Important competency rule:
-
-    - ANY_ONE groups produce only one interview question.
-    - If the user knows one option, the whole group is satisfied.
-    - The remaining options are not treated as separate weaknesses.
-    - ALL_REQUIRED groups can generate questions for individual missing skills.
+    Professional / behavioural competencies that should not be treated
+    as technical weaknesses or technical interview skills.
     """
+    return {
+        'communication',
+        'teamwork',
+        'collaboration',
+        'leadership',
+        'adaptability',
+        'time management',
+        'problem solving',
+        'critical thinking',
+        'creativity',
+        'presentation skills',
+        'decision making',
+        'conflict resolution',
+        'attention to detail',
+    }
 
-    # Do not create duplicate questions.
-    if session.questions.exists():
-        return session.questions.order_by(
-            'display_order',
-            'id'
-        )
+
+def _is_professional_skill(skill):
+    if not skill:
+        return False
+
+    return (
+        skill.skill_name.strip().lower()
+        in _professional_skill_names()
+    )
+
+
+def _is_technical_skill(skill):
+    return (
+        skill is not None
+        and not _is_professional_skill(skill)
+    )
+
+
+def _build_ai_interview_context(session):
+    """
+    Build grounded context for AI-generated interview questions.
+
+    The context deliberately separates:
+    - evidence actually linked to the selected project;
+    - competencies/tools known elsewhere in the user profile;
+    - missing target-role requirements;
+    - ANY_ONE competency groups from ALL_REQUIRED competencies.
+
+    This prevents the model from treating an unused option in a
+    satisfied ANY_ONE group as a separate weakness.
+    """
 
     user = session.user
     job_role = session.job_role
     project = session.project
 
-    # -------------------------------------------------
-    # Latest assessment and bottleneck
-    # -------------------------------------------------
+    project_skills = list(
+        project.skills_used.all().order_by('skill_name')
+    )
 
-    latest_assessment = ReadinessAssessment.objects.filter(
-        user=user,
-        job_role=job_role
-    ).order_by(
-        '-created_at'
+    project_tools = list(
+        project.tools_used.all().order_by('tool_name')
+    )
+
+    project_skill_ids = {
+        skill.id
+        for skill in project_skills
+    }
+
+    project_tool_ids = {
+        tool.id
+        for tool in project_tools
+    }
+
+    profile = UserProfile.objects.filter(
+        user=user
     ).first()
 
-    latest_bottleneck = EmployabilityBottleneck.objects.filter(
-        user=user,
-        job_role=job_role
-    ).order_by(
-        '-created_at'
-    ).first()
+    user_skill_ids = set(project_skill_ids)
+    user_tool_ids = set(project_tool_ids)
 
-    # -------------------------------------------------
-    # Role skills and tools
-    # -------------------------------------------------
+    if profile:
+        user_skill_ids.update(
+            profile.extracted_skills.values_list(
+                'id',
+                flat=True
+            )
+        )
+
+        user_skill_ids.update(
+            profile.manual_skills.values_list(
+                'id',
+                flat=True
+            )
+        )
+
+        user_tool_ids.update(
+            profile.manual_tools.values_list(
+                'id',
+                flat=True
+            )
+        )
 
     role_skills = list(
         JobRoleSkill.objects.filter(
@@ -3962,9 +4016,645 @@ def generate_interview_questions(session):
         )
     )
 
-    # -------------------------------------------------
-    # Project evidence
-    # -------------------------------------------------
+    competency_groups = list(
+        CompetencyGroup.objects.filter(
+            job_role=job_role
+        ).prefetch_related(
+            'members__job_role_skill__skill'
+        ).order_by(
+            'group_name'
+        )
+    )
+
+    grouped_skill_ids = set()
+    competency_group_context = []
+    missing_all_required = []
+
+    for group in competency_groups:
+        members = [
+            member
+            for member in group.members.all()
+            if (
+                member.job_role_skill
+                and _is_technical_skill(
+                    member.job_role_skill.skill
+                )
+            )
+        ]
+
+        if not members:
+            continue
+
+        skills = [
+            member.job_role_skill.skill
+            for member in members
+        ]
+
+        skill_ids = {
+            skill.id
+            for skill in skills
+        }
+
+        grouped_skill_ids.update(skill_ids)
+
+        matched_ids = skill_ids.intersection(
+            user_skill_ids
+        )
+
+        if group.rule == 'ANY_ONE':
+            competency_group_context.append({
+                'name': group.group_name,
+                'rule': 'ANY_ONE',
+                'status': (
+                    'SATISFIED'
+                    if matched_ids
+                    else 'MISSING'
+                ),
+                'options': [
+                    skill.skill_name
+                    for skill in skills
+                ],
+                'matched_options': [
+                    skill.skill_name
+                    for skill in skills
+                    if skill.id in matched_ids
+                ],
+            })
+
+        elif group.rule == 'ALL_REQUIRED':
+            missing_names = []
+
+            for member in members:
+                role_skill = member.job_role_skill
+
+                if role_skill.skill_id not in user_skill_ids:
+                    missing_all_required.append(
+                        role_skill
+                    )
+                    missing_names.append(
+                        role_skill.skill.skill_name
+                    )
+
+            competency_group_context.append({
+                'name': group.group_name,
+                'rule': 'ALL_REQUIRED',
+                'status': (
+                    'SATISFIED'
+                    if not missing_names
+                    else 'PARTIAL_OR_MISSING'
+                ),
+                'options': [
+                    skill.skill_name
+                    for skill in skills
+                ],
+                'missing_options': missing_names,
+            })
+
+    standalone_role_skills = [
+        role_skill
+        for role_skill in role_skills
+        if (
+            role_skill.skill_id not in grouped_skill_ids
+            and _is_technical_skill(role_skill.skill)
+        )
+    ]
+
+    missing_standalone = [
+        role_skill
+        for role_skill in standalone_role_skills
+        if role_skill.skill_id not in user_skill_ids
+    ]
+
+    matched_project_technical = [
+        role_skill.skill.skill_name
+        for role_skill in role_skills
+        if (
+            role_skill.skill_id in project_skill_ids
+            and _is_technical_skill(role_skill.skill)
+        )
+    ]
+
+    matched_project_professional = [
+        role_skill.skill.skill_name
+        for role_skill in role_skills
+        if (
+            role_skill.skill_id in project_skill_ids
+            and _is_professional_skill(role_skill.skill)
+        )
+    ]
+
+    matched_project_tools = [
+        role_tool.tool.tool_name
+        for role_tool in role_tools
+        if role_tool.tool_id in project_tool_ids
+    ]
+
+    missing_role_tools = [
+        role_tool.tool.tool_name
+        for role_tool in role_tools
+        if role_tool.tool_id not in user_tool_ids
+    ]
+
+    missing_role_skills = []
+
+    for role_skill in missing_all_required:
+        if role_skill.skill.skill_name not in missing_role_skills:
+            missing_role_skills.append(
+                role_skill.skill.skill_name
+            )
+
+    for role_skill in missing_standalone:
+        if role_skill.skill.skill_name not in missing_role_skills:
+            missing_role_skills.append(
+                role_skill.skill.skill_name
+            )
+
+    latest_assessment = ReadinessAssessment.objects.filter(
+        user=user,
+        job_role=job_role
+    ).order_by(
+        '-created_at'
+    ).first()
+
+    latest_bottleneck = EmployabilityBottleneck.objects.filter(
+        user=user,
+        job_role=job_role
+    ).order_by(
+        '-created_at'
+    ).first()
+
+    return {
+        'target_role': job_role.role_name,
+        'project': {
+            'title': project.title,
+            'type': (
+                project.get_project_type_display()
+                if hasattr(
+                    project,
+                    'get_project_type_display'
+                )
+                else 'Not specified'
+            ),
+            'description': project.description or '',
+            'skills_used': [
+                skill.skill_name
+                for skill in project_skills
+            ],
+            'tools_used': [
+                tool.tool_name
+                for tool in project_tools
+            ],
+        },
+        'project_evidence': {
+            'matched_technical_role_skills': (
+                matched_project_technical
+            ),
+            'matched_professional_role_skills': (
+                matched_project_professional
+            ),
+            'matched_role_tools': (
+                matched_project_tools
+            ),
+        },
+        'competency_groups': competency_group_context,
+        'missing_required_skills': missing_role_skills,
+        'missing_required_tools': missing_role_tools,
+        'readiness': (
+            {
+                'academic_score': latest_assessment.academic_score,
+                'industry_score': latest_assessment.industry_score,
+                'overall_score': (
+                    latest_assessment.overall_readiness_score
+                ),
+            }
+            if latest_assessment
+            else None
+        ),
+        'bottleneck': (
+            {
+                'name': latest_bottleneck.main_bottleneck,
+                'explanation': latest_bottleneck.explanation,
+            }
+            if latest_bottleneck
+            else None
+        ),
+    }
+
+
+def _generate_ai_question_set(session):
+    """
+    Generate one complete set of 10 grounded interview questions.
+
+    CareerReady AI supplies the evidence and constraints. The model
+    generates the wording and scenarios. The returned metadata is
+    validated against the database before questions are saved.
+
+    Returns a list of dictionaries, or None if generation fails.
+    """
+
+    context = _build_ai_interview_context(session)
+
+    client = OpenAI(
+        api_key=settings.OPENAI_API_KEY
+    )
+
+    system_prompt = """
+You are an interview question generator inside CareerReady AI.
+
+Generate exactly 10 realistic interview questions for a Computer Science student.
+
+The questions must be grounded ONLY in the supplied CareerReady AI evidence.
+
+STRICT GROUNDING RULES:
+1. Never invent technologies, frameworks, tools, project features,
+   architecture, responsibilities, team activities, testing methods,
+   metrics or outcomes.
+2. A skill/tool listed under project evidence may be treated as something
+   the candidate actually used in the selected project.
+3. A skill/tool listed as missing must NEVER be described as something the
+   candidate already used. Ask a hypothetical application question instead.
+4. For a satisfied ANY_ONE competency group, do not treat the unused options
+   as separate weaknesses.
+5. For a missing ANY_ONE competency group, ask about choosing/applying one
+   suitable option rather than requiring every option.
+6. Professional competencies such as Communication and Teamwork belong in
+   BEHAVIOURAL questions, not technical weakness questions.
+
+QUESTION QUALITY RULES:
+7. Every question must be specific to the target role and/or selected project.
+8. Each question must be no more than 80 words.
+9. Assess at most two main technical ideas in a single question.
+10. Do not create long numbered lists or multiple questions disguised as one.
+11. A question should normally be answerable verbally in about 2 to 4 minutes.
+12. Make HARD questions deeper through reasoning and trade-offs, not length.
+13. Avoid duplicate or near-duplicate questions.
+14. Do not ask the candidate to define a professional competency such as
+    Communication. Ask for behavioural evidence instead.
+
+COVERAGE:
+15. Include a balanced interview containing project evidence, system design,
+    matched technical evidence when available, behavioural evidence when
+    available, competency gaps, tool knowledge and production thinking.
+16. Use only these question types:
+    PROJECT, TECHNICAL, TOOL, COMPETENCY, WEAKNESS, SYSTEM_DESIGN, BEHAVIOURAL.
+17. Use only these difficulty values: EASY, MEDIUM, HARD.
+18. Return exactly 10 question objects in the required structured format.
+""".strip()
+
+    user_prompt = (
+        "CAREERREADY AI INTERVIEW CONTEXT:\n\n"
+        + json.dumps(
+            context,
+            indent=2,
+            default=str
+        )
+    )
+
+    try:
+        response = client.responses.create(
+            model='gpt-5',
+            instructions=system_prompt,
+            input=user_prompt,
+            text={
+                'format': {
+                    'type': 'json_schema',
+                    'name': 'careerready_interview_questions',
+                    'strict': True,
+                    'schema': {
+                        'type': 'object',
+                        'properties': {
+                            'questions': {
+                                'type': 'array',
+                                'minItems': 10,
+                                'maxItems': 10,
+                                'items': {
+                                    'type': 'object',
+                                    'properties': {
+                                        'question_text': {
+                                            'type': 'string'
+                                        },
+                                        'question_type': {
+                                            'type': 'string',
+                                            'enum': [
+                                                'PROJECT',
+                                                'TECHNICAL',
+                                                'TOOL',
+                                                'COMPETENCY',
+                                                'WEAKNESS',
+                                                'SYSTEM_DESIGN',
+                                                'BEHAVIOURAL',
+                                            ]
+                                        },
+                                        'difficulty': {
+                                            'type': 'string',
+                                            'enum': [
+                                                'EASY',
+                                                'MEDIUM',
+                                                'HARD',
+                                            ]
+                                        },
+                                        'expected_skill': {
+                                            'type': [
+                                                'string',
+                                                'null'
+                                            ]
+                                        },
+                                        'expected_tool': {
+                                            'type': [
+                                                'string',
+                                                'null'
+                                            ]
+                                        },
+                                        'competency_group': {
+                                            'type': [
+                                                'string',
+                                                'null'
+                                            ]
+                                        },
+                                    },
+                                    'required': [
+                                        'question_text',
+                                        'question_type',
+                                        'difficulty',
+                                        'expected_skill',
+                                        'expected_tool',
+                                        'competency_group',
+                                    ],
+                                    'additionalProperties': False,
+                                }
+                            }
+                        },
+                        'required': [
+                            'questions'
+                        ],
+                        'additionalProperties': False,
+                    }
+                }
+            }
+        )
+
+        data = json.loads(
+            response.output_text
+        )
+
+        questions = data.get(
+            'questions',
+            []
+        )
+
+        if len(questions) != 10:
+            raise ValueError(
+                'AI did not return exactly 10 questions.'
+            )
+
+        return questions
+
+    except Exception as error:
+        logger.warning(
+            'AI interview question generation failed for '
+            'session %s: %s',
+            session.id,
+            error,
+        )
+
+        return None
+
+
+def generate_ai_interview_questions(session):
+    """
+    Generate and save a complete AI-powered interview question set.
+
+    If AI generation or validation fails, the complete session falls
+    back to the existing rule-based generator so that one interview
+    never mixes partially generated AI questions with rule-based ones.
+    """
+
+    if session.questions.exists():
+        return session.questions.order_by(
+            'display_order',
+            'id'
+        )
+
+    generated_questions = _generate_ai_question_set(
+        session
+    )
+
+    if not generated_questions:
+        logger.warning(
+            'Using rule-based question fallback for session %s.',
+            session.id,
+        )
+        return generate_interview_questions(
+            session
+        )
+
+    allowed_skill_names = {
+        skill.skill_name.lower(): skill
+        for skill in Skill.objects.filter(
+            jobroleskill__job_role=session.job_role
+        ).distinct()
+    }
+
+    allowed_tool_names = {
+        tool.tool_name.lower(): tool
+        for tool in IndustryTool.objects.filter(
+            jobroletool__job_role=session.job_role
+        ).distinct()
+    }
+
+    allowed_group_names = {
+        group.group_name.lower(): group
+        for group in CompetencyGroup.objects.filter(
+            job_role=session.job_role
+        )
+    }
+
+    validated_questions = []
+    normalized_texts = set()
+
+    for item in generated_questions:
+        question_text = str(
+            item.get(
+                'question_text',
+                ''
+            )
+        ).strip()
+
+        question_type = str(
+            item.get(
+                'question_type',
+                ''
+            )
+        ).strip().upper()
+
+        difficulty = str(
+            item.get(
+                'difficulty',
+                ''
+            )
+        ).strip().upper()
+
+        if not question_text:
+            continue
+
+        # Hard safety limit for excessively long AI questions.
+        if len(question_text.split()) > 90:
+            logger.warning(
+                'Rejected overlong AI interview question '
+                'for session %s.',
+                session.id,
+            )
+            continue
+
+        normalized_text = ' '.join(
+            question_text.lower().split()
+        )
+
+        if normalized_text in normalized_texts:
+            continue
+
+        normalized_texts.add(
+            normalized_text
+        )
+
+        skill_name = item.get(
+            'expected_skill'
+        )
+        tool_name = item.get(
+            'expected_tool'
+        )
+        group_name = item.get(
+            'competency_group'
+        )
+
+        expected_skill = None
+        expected_tool = None
+        competency_group = None
+
+        if skill_name:
+            expected_skill = allowed_skill_names.get(
+                str(skill_name).strip().lower()
+            )
+
+        if tool_name:
+            expected_tool = allowed_tool_names.get(
+                str(tool_name).strip().lower()
+            )
+
+        if group_name:
+            competency_group = allowed_group_names.get(
+                str(group_name).strip().lower()
+            )
+
+        validated_questions.append({
+            'question_text': question_text,
+            'question_type': question_type,
+            'difficulty': difficulty,
+            'expected_skill': expected_skill,
+            'expected_tool': expected_tool,
+            'competency_group': competency_group,
+        })
+
+    # Do not save a partial AI interview.
+    if len(validated_questions) != 10:
+        logger.warning(
+            'AI question validation produced %s/10 usable '
+            'questions for session %s. Falling back to '
+            'rule-based generation.',
+            len(validated_questions),
+            session.id,
+        )
+
+        return generate_interview_questions(
+            session
+        )
+
+    with transaction.atomic():
+        for index, item in enumerate(
+            validated_questions,
+            start=1
+        ):
+            InterviewQuestion.objects.create(
+                session=session,
+                question_type=item['question_type'],
+                question_text=item['question_text'],
+                difficulty=item['difficulty'],
+                display_order=index,
+                expected_skill=item['expected_skill'],
+                expected_tool=item['expected_tool'],
+                competency_group=item['competency_group'],
+            )
+
+    return session.questions.order_by(
+        'display_order',
+        'id'
+    )
+
+
+def generate_interview_questions(session):
+    """
+    Generate rule-based personalised interview questions using:
+
+    - Selected project
+    - Target job role
+    - Project skills and tools
+    - User profile skills and tools
+    - Competency groups
+    - Readiness assessment
+    - Employability bottleneck
+
+    Important competency rule:
+    - ANY_ONE groups produce only one interview question.
+    - If the user knows one option, the whole group is satisfied.
+    - The remaining options are not treated as separate weaknesses.
+    - ALL_REQUIRED groups can generate questions for individual missing skills.
+    """
+
+    if session.questions.exists():
+        return session.questions.order_by(
+            'display_order',
+            'id'
+        )
+
+    user = session.user
+    job_role = session.job_role
+    project = session.project
+
+    latest_assessment = ReadinessAssessment.objects.filter(
+        user=user,
+        job_role=job_role
+    ).order_by(
+        '-created_at'
+    ).first()
+
+    latest_bottleneck = EmployabilityBottleneck.objects.filter(
+        user=user,
+        job_role=job_role
+    ).order_by(
+        '-created_at'
+    ).first()
+
+    role_skills = list(
+        JobRoleSkill.objects.filter(
+            job_role=job_role
+        ).select_related(
+            'skill'
+        ).order_by(
+            'importance',
+            'skill__skill_name'
+        )
+    )
+
+    role_tools = list(
+        JobRoleTool.objects.filter(
+            job_role=job_role
+        ).select_related(
+            'tool'
+        ).order_by(
+            'importance',
+            'tool__tool_name'
+        )
+    )
 
     project_skill_ids = set(
         project.skills_used.values_list(
@@ -3980,13 +4670,12 @@ def generate_interview_questions(session):
         )
     )
 
-    # Begin with project evidence.
-    user_skill_ids = set(project_skill_ids)
-    user_tool_ids = set(project_tool_ids)
-
-    # -------------------------------------------------
-    # User profile evidence
-    # -------------------------------------------------
+    user_skill_ids = set(
+        project_skill_ids
+    )
+    user_tool_ids = set(
+        project_tool_ids
+    )
 
     try:
         user_profile = user.userprofile
@@ -4015,52 +4704,7 @@ def generate_interview_questions(session):
             )
         )
 
-    professional_skill_names = {
-        'communication',
-        'teamwork',
-        'collaboration',
-        'leadership',
-        'adaptability',
-        'time management',
-        'problem solving',
-        'critical thinking',
-        'creativity',
-        'presentation skills',
-        'decision making',
-        'conflict resolution',
-        'attention to detail',
-    }
-
-    def is_professional_skill(skill):
-        """
-        Return True when a Skill is a professional / behavioural
-        competency instead of a technical competency.
-        """
-
-        if not skill:
-            return False
-
-        return (
-            skill.skill_name.strip().lower()
-            in professional_skill_names
-        )
-
-    def is_technical_skill(skill):
-        """
-        Return True when a Skill is suitable for technical,
-        competency or technical weakness questions.
-        """
-
-        return (
-            skill is not None
-            and not is_professional_skill(skill)
-        )
-
     question_data = []
-
-    # -------------------------------------------------
-    # Helper for adding unique questions
-    # -------------------------------------------------
 
     def add_question(
         question_text,
@@ -4093,10 +4737,7 @@ def generate_interview_questions(session):
             'competency_group': competency_group,
         })
 
-    # =================================================
     # 1. Project introduction
-    # =================================================
-
     add_question(
         question_text=(
             f"Please introduce your project '{project.title}'. "
@@ -4107,10 +4748,7 @@ def generate_interview_questions(session):
         difficulty='EASY'
     )
 
-    # =================================================
     # 2. Project architecture
-    # =================================================
-
     add_question(
         question_text=(
             f"Describe the technical architecture of '{project.title}'. "
@@ -4121,10 +4759,7 @@ def generate_interview_questions(session):
         difficulty='MEDIUM'
     )
 
-    # =================================================
     # 3. Project challenge
-    # =================================================
-
     add_question(
         question_text=(
             f"What was the most difficult technical challenge you faced "
@@ -4135,17 +4770,14 @@ def generate_interview_questions(session):
         difficulty='MEDIUM'
     )
 
-    # =================================================
     # 4. Matched technical project skills
-    # =================================================
-
     matched_technical_skills = [
-    role_skill
-    for role_skill in role_skills
-    if (
-        role_skill.skill_id in project_skill_ids
-        and is_technical_skill(role_skill.skill)
-    )
+        role_skill
+        for role_skill in role_skills
+        if (
+            role_skill.skill_id in project_skill_ids
+            and _is_technical_skill(role_skill.skill)
+        )
     ]
 
     for role_skill in matched_technical_skills[:2]:
@@ -4169,17 +4801,14 @@ def generate_interview_questions(session):
             expected_skill=skill
         )
 
-    # =================================================
     # 5. Matched professional skill
-    # =================================================
-
     matched_professional_skills = [
-    role_skill
-    for role_skill in role_skills
-    if (
-        role_skill.skill_id in project_skill_ids
-        and is_professional_skill(role_skill.skill)
-    )
+        role_skill
+        for role_skill in role_skills
+        if (
+            role_skill.skill_id in project_skill_ids
+            and _is_professional_skill(role_skill.skill)
+        )
     ]
 
     for role_skill in matched_professional_skills[:1]:
@@ -4197,10 +4826,7 @@ def generate_interview_questions(session):
             expected_skill=skill
         )
 
-    # =================================================
     # 6. Matched project tools
-    # =================================================
-
     matched_project_tools = [
         role_tool
         for role_tool in role_tools
@@ -4228,10 +4854,7 @@ def generate_interview_questions(session):
             expected_tool=tool
         )
 
-    # =================================================
-    # 7. Load competency groups
-    # =================================================
-
+    # 7. Competency groups
     competency_groups = list(
         CompetencyGroup.objects.filter(
             job_role=job_role
@@ -4243,7 +4866,6 @@ def generate_interview_questions(session):
     )
 
     grouped_skill_ids = set()
-
     satisfied_any_one_groups = []
     unsatisfied_any_one_groups = []
     missing_all_required_skills = []
@@ -4254,11 +4876,11 @@ def generate_interview_questions(session):
             for member in group.members.all()
             if (
                 member.job_role_skill
-                and is_technical_skill(
+                and _is_technical_skill(
                     member.job_role_skill.skill
-                    )
                 )
-            ]
+            )
+        ]
 
         if not group_members:
             continue
@@ -4276,10 +4898,6 @@ def generate_interview_questions(session):
             user_skill_ids
         )
 
-        # ---------------------------------------------
-        # ANY_ONE
-        # ---------------------------------------------
-
         if group.rule == 'ANY_ONE':
             if matched_skill_ids:
                 satisfied_any_one_groups.append({
@@ -4293,10 +4911,6 @@ def generate_interview_questions(session):
                     'members': group_members,
                 })
 
-        # ---------------------------------------------
-        # ALL_REQUIRED
-        # ---------------------------------------------
-
         elif group.rule == 'ALL_REQUIRED':
             for member in group_members:
                 role_skill = member.job_role_skill
@@ -4306,10 +4920,7 @@ def generate_interview_questions(session):
                         role_skill
                     )
 
-    # =================================================
-    # 8. Ask one question for a satisfied ANY_ONE group
-    # =================================================
-
+    # 8. One satisfied ANY_ONE group question
     for group_data in satisfied_any_one_groups[:1]:
         group = group_data['group']
         group_members = group_data['members']
@@ -4339,9 +4950,8 @@ def generate_interview_questions(session):
             question_text=(
                 f"You satisfy the competency group "
                 f"'{group.group_name}' through {matched_skill_names}. "
-                f"Which of these competencies are you strongest in? "
-                f"Explain how you applied it in '{project.title}' "
-                f"and why it was suitable."
+                f"Which technology are you strongest in? Explain how you "
+                f"applied it in '{project.title}' and why it was suitable."
             ),
             question_type='COMPETENCY',
             difficulty='MEDIUM',
@@ -4349,10 +4959,7 @@ def generate_interview_questions(session):
             competency_group=group
         )
 
-    # =================================================
-    # 9. Ask one question per missing ANY_ONE group
-    # =================================================
-
+    # 9. Missing ANY_ONE groups
     for group_data in unsatisfied_any_one_groups[:2]:
         group = group_data['group']
         group_members = group_data['members']
@@ -4386,18 +4993,11 @@ def generate_interview_questions(session):
             competency_group=group
         )
 
-    # Important:
-    # AWS, Azure and Google Cloud Platform will now generate only one
-    # question if they belong to the same ANY_ONE group.
-
-    # =================================================
-    # 10. Missing ALL_REQUIRED skills
-    # =================================================
-
+    # 10. Missing ALL_REQUIRED technical skills
     technical_all_required_skills = [
         role_skill
         for role_skill in missing_all_required_skills
-        if is_technical_skill(
+        if _is_technical_skill(
             role_skill.skill
         )
     ]
@@ -4429,21 +5029,18 @@ def generate_interview_questions(session):
             expected_skill=skill
         )
 
-    # =================================================
-    # 11. Ungrouped missing skills
-    # =================================================
-
+    # 11. Ungrouped missing technical skills
     ungrouped_missing_skills = [
         role_skill
         for role_skill in role_skills
         if (
             role_skill.skill_id not in grouped_skill_ids
             and role_skill.skill_id not in user_skill_ids
-            and is_technical_skill(
+            and _is_technical_skill(
                 role_skill.skill
-                )
             )
-        ]
+        )
+    ]
 
     high_priority_ungrouped = [
         role_skill
@@ -4472,10 +5069,7 @@ def generate_interview_questions(session):
             expected_skill=skill
         )
 
-    # =================================================
     # 12. Missing role tool
-    # =================================================
-
     missing_role_tools = [
         role_tool
         for role_tool in role_tools
@@ -4502,17 +5096,14 @@ def generate_interview_questions(session):
                 f"The {job_role.role_name} role commonly requires "
                 f"{tool.tool_name}. How could this tool be introduced into "
                 f"'{project.title}'? Explain its practical benefit and the "
-                f"steps you would take to integrate it."
+                f"steps you would take to use it."
             ),
             question_type='TOOL',
             difficulty='MEDIUM',
             expected_tool=tool
         )
 
-    # =================================================
     # 13. Readiness assessment question
-    # =================================================
-
     if latest_assessment:
         add_question(
             question_text=(
@@ -4527,10 +5118,7 @@ def generate_interview_questions(session):
             difficulty='MEDIUM'
         )
 
-    # =================================================
     # 14. Employability bottleneck question
-    # =================================================
-
     if latest_bottleneck:
         bottleneck_name = getattr(
             latest_bottleneck,
@@ -4549,10 +5137,7 @@ def generate_interview_questions(session):
             difficulty='MEDIUM'
         )
 
-    # =================================================
     # 15. Behavioural fallback
-    # =================================================
-
     add_question(
         question_text=(
             f"Tell me about a time you received critical feedback while "
@@ -4564,10 +5149,7 @@ def generate_interview_questions(session):
         difficulty='MEDIUM'
     )
 
-    # =================================================
     # 16. Production readiness
-    # =================================================
-
     add_question(
         question_text=(
             f"Imagine '{project.title}' is going to be used by thousands "
@@ -4577,10 +5159,6 @@ def generate_interview_questions(session):
         question_type='SYSTEM_DESIGN',
         difficulty='HARD'
     )
-
-    # =================================================
-    # Save maximum 10 questions
-    # =================================================
 
     selected_questions = question_data[:10]
 
@@ -4603,9 +5181,14 @@ def generate_interview_questions(session):
         'display_order',
         'id'
     )
+
+
+
 @login_required
 def interview_setup(request):
-    user_projects = UserProject.objects.filter(user=request.user)
+    user_projects = UserProject.objects.filter(
+        user=request.user
+    )
 
     if not user_projects.exists():
         messages.warning(
@@ -4621,37 +5204,63 @@ def interview_setup(request):
         )
 
         if form.is_valid():
-            interview_session = form.save(commit=False)
-            selected_project = form.cleaned_data['project']
+            interview_session = form.save(
+                commit=False
+            )
+
+            selected_project = form.cleaned_data[
+                'project'
+            ]
 
             if selected_project.user != request.user:
                 messages.error(
                     request,
                     'You cannot use another user’s project.'
                 )
-                return redirect('interview_setup')
+                return redirect(
+                    'interview_setup'
+                )
 
             interview_session.user = request.user
             interview_session.status = 'CREATED'
             interview_session.save()
 
-            # Generate and save interview questions
-            generate_interview_questions(interview_session)
+            if (
+                interview_session.question_generation_method
+                == 'AI_POWERED'
+            ):
+                return redirect(
+                    'generate_ai_interview',
+                    session_id=interview_session.id
+                )
+
+            generate_interview_questions(
+                interview_session
+            )
 
             if not interview_session.questions.exists():
                 messages.error(
                     request,
                     'The interview session was created, but questions could not be generated.'
                 )
+
                 interview_session.delete()
-                return redirect('interview_setup')
+
+                return redirect(
+                    'interview_setup'
+                )
 
             interview_session.status = 'IN_PROGRESS'
-            interview_session.save(update_fields=['status'])
+
+            interview_session.save(
+                update_fields=[
+                    'status'
+                ]
+            )
 
             messages.success(
                 request,
-                'Interview session and personalised questions created successfully.'
+                'Interview session created successfully using rule-based questions.'
             )
 
             return redirect(
@@ -4660,7 +5269,9 @@ def interview_setup(request):
             )
 
     else:
-        form = InterviewSetupForm(user=request.user)
+        form = InterviewSetupForm(
+            user=request.user
+        )
 
     context = {
         'form': form,
@@ -4672,6 +5283,113 @@ def interview_setup(request):
         'career_app/interview_setup.html',
         context
     )
+
+
+@login_required
+def generate_ai_interview(request, session_id):
+    """
+    Display a loading page before AI question generation.
+
+    GET:
+        Show the generating-questions screen.
+
+    POST:
+        Generate the questions and redirect to the interview.
+    """
+
+    session = get_object_or_404(
+        InterviewSession.objects.select_related(
+            'job_role',
+            'project',
+        ),
+        id=session_id,
+        user=request.user,
+    )
+
+    # Prevent regeneration.
+    if session.questions.exists():
+        session.status = 'IN_PROGRESS'
+
+        session.save(
+            update_fields=[
+                'status'
+            ]
+        )
+
+        return redirect(
+            'interview_session',
+            session_id=session.id,
+        )
+
+    # ---------------------------------------------
+    # GET
+    # Show loading screen first
+    # ---------------------------------------------
+
+    if request.method == 'GET':
+        return render(
+            request,
+            'career_app/generating_interview_questions.html',
+            {
+                'session': session,
+            }
+        )
+
+    # ---------------------------------------------
+    # POST
+    # Generate AI questions
+    # ---------------------------------------------
+
+    try:
+        generate_ai_interview_questions(
+            session
+        )
+
+    except Exception as error:
+        logger.exception(
+            'AI question generation failed '
+            'for interview session %s.',
+            session.id,
+        )
+
+        messages.error(
+            request,
+            'AI question generation failed. '
+            'Please try again.'
+        )
+
+        return redirect(
+            'interview_setup'
+        )
+
+    if not session.questions.exists():
+        messages.error(
+            request,
+            'No interview questions could be generated.'
+        )
+
+        return redirect(
+            'interview_setup'
+        )
+
+    session.status = 'IN_PROGRESS'
+
+    session.save(
+        update_fields=[
+            'status'
+        ]
+    )
+
+    messages.success(
+        request,
+        'Personalised AI interview questions generated successfully.'
+    )
+
+    return redirect(
+        'interview_session',
+        session_id=session.id,
+    )
+
 def evaluate_interview_session(
     session,
     method='hybrid'

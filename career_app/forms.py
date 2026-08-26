@@ -246,30 +246,56 @@ class BottleneckForm(forms.Form):
 
 
 class UserProjectForm(forms.ModelForm):
+
     class Meta:
         model = UserProject
+
         fields = [
             'title',
+            'project_type',
             'description',
             'project_url',
             'github_url',
             'skills_used',
-            'tools_used'
+            'tools_used',
         ]
 
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 4
-            }),
-            'project_url': forms.URLInput(attrs={'class': 'form-control'}),
-            'github_url': forms.URLInput(attrs={'class': 'form-control'}),
+            'title': forms.TextInput(
+                attrs={
+                    'class': 'form-control'
+                }
+            ),
+
+            'project_type': forms.Select(
+                attrs={
+                    'class': 'form-select'
+                }
+            ),
+
+            'description': forms.Textarea(
+                attrs={
+                    'class': 'form-control',
+                    'rows': 4
+                }
+            ),
+
+            'project_url': forms.URLInput(
+                attrs={
+                    'class': 'form-control'
+                }
+            ),
+
+            'github_url': forms.URLInput(
+                attrs={
+                    'class': 'form-control'
+                }
+            ),
+
             'skills_used': forms.CheckboxSelectMultiple,
+
             'tools_used': forms.CheckboxSelectMultiple,
         }
-
-
 class CareerTransitionForm(forms.ModelForm):
     class Meta:
         model = CareerTransitionAnalysis
@@ -381,22 +407,39 @@ class RegisterForm(UserCreationForm):
 
 
 class InterviewSetupForm(forms.ModelForm):
+
     class Meta:
         model = InterviewSession
-        fields = ['job_role', 'project']
+
+        fields = [
+            'job_role',
+            'project',
+            'question_generation_method',
+        ]
 
         widgets = {
             'job_role': forms.Select(
                 attrs={
-                    'class': 'form-control',
+                    'class': 'form-control'
                 }
             ),
+
             'project': forms.Select(
                 attrs={
-                    'class': 'form-control',
+                    'class': 'form-control'
                 }
             ),
+
+            'question_generation_method': forms.RadioSelect(),
         }
+        def __init__(self, *args, user=None, **kwargs):
+            super().__init__(*args, **kwargs)
+            if user:
+                self.fields['project'].queryset = (
+                UserProject.objects.filter(
+                    user=user
+                ).order_by('-created_at')
+            )
 
         labels = {
             'job_role': 'Target Job Role',

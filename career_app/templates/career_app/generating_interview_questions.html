@@ -1,0 +1,162 @@
+{% extends "career_app/base.html" %}
+
+{% block content %}
+
+<style>
+
+    .generation-container {
+        max-width: 700px;
+        margin: 80px auto;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .generation-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 45px 35px;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+    }
+
+    .spinner {
+        width: 60px;
+        height: 60px;
+
+        margin: 0 auto 25px;
+
+        border: 6px solid #e5e7eb;
+        border-top-color: #2563eb;
+
+        border-radius: 50%;
+
+        animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .generation-card h2 {
+        margin-bottom: 12px;
+        font-weight: 700;
+    }
+
+    .generation-card p {
+        color: #6b7280;
+        line-height: 1.6;
+    }
+
+    .generation-details {
+        margin-top: 25px;
+        padding: 18px;
+
+        background: #f9fafb;
+
+        border-radius: 12px;
+
+        text-align: left;
+    }
+
+    .generation-details p {
+        margin: 7px 0;
+    }
+
+    .small-message {
+        margin-top: 25px;
+        font-size: 14px;
+        color: #9ca3af;
+    }
+
+</style>
+
+
+<div class="generation-container">
+
+    <div class="generation-card">
+
+        <div class="spinner"></div>
+
+        <h2>
+            Generating Your Interview Questions
+        </h2>
+
+        <p>
+            CareerReady AI is analysing your selected
+            job role, project evidence, competencies,
+            skills and tools to prepare personalised
+            interview questions.
+        </p>
+
+
+        <div class="generation-details">
+
+            <p>
+                <strong>Target Role:</strong>
+                {{ session.job_role.role_name }}
+            </p>
+
+            <p>
+                <strong>Project:</strong>
+                {{ session.project.title }}
+            </p>
+
+            <p>
+                <strong>Generation Method:</strong>
+                AI-Generated Questions
+            </p>
+
+        </div>
+
+
+        <p class="small-message">
+            This may take a few moments.
+            Please do not close this page.
+        </p>
+
+
+        <form
+            id="generate-form"
+            method="POST"
+        >
+            {% csrf_token %}
+        </form>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /*
+        The browser first renders this loading page.
+
+        After rendering, this automatically submits
+        another POST request which performs the actual
+        AI question generation.
+    */
+
+    window.addEventListener(
+        "load",
+        function () {
+
+            setTimeout(
+                function () {
+
+                    document
+                        .getElementById("generate-form")
+                        .submit();
+
+                },
+                500
+            );
+
+        }
+    );
+
+</script>
+
+{% endblock %}

@@ -1,228 +1,346 @@
-{% extends 'career_app/base.html' %}
-
-{% block title %}
-Interview Setup | CareerReady AI
-{% endblock %}
+{% extends "career_app/base.html" %}
 
 {% block content %}
 
 <style>
     .interview-setup-container {
-        max-width: 760px;
+        max-width: 900px;
         margin: 40px auto;
+        padding: 0 20px;
     }
 
-    .interview-setup-card {
-        background: #ffffff;
-        border-radius: 18px;
-        padding: 36px;
-        box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
-        border: 1px solid #e5e7eb;
-    }
-
-    .interview-setup-header {
+    .setup-header {
         margin-bottom: 30px;
     }
 
-    .interview-setup-header h1 {
-        font-size: 30px;
-        font-weight: 700;
-        color: #111827;
+    .setup-header h1 {
         margin-bottom: 10px;
+        font-size: 32px;
+        font-weight: 700;
     }
 
-    .interview-setup-header p {
+    .setup-header p {
         color: #6b7280;
         line-height: 1.6;
-        margin: 0;
+        margin-bottom: 15px;
     }
 
-    .project-summary {
-        margin-top: 20px;
-        padding: 14px 18px;
-        background: #eef2ff;
-        border-radius: 10px;
-        color: #3730a3;
-        font-weight: 500;
+    .project-count {
+        display: inline-block;
+        padding: 7px 12px;
+        border-radius: 8px;
+        background: #f3f4f6;
+        font-weight: 600;
+        font-size: 14px;
+        margin-top: 5px;
+    }
+
+    .setup-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 25px;
     }
 
     .form-group {
-        margin-bottom: 24px;
+        margin-bottom: 25px;
     }
 
-    .form-group label {
+    .form-group > label {
         display: block;
-        margin-bottom: 9px;
-        color: #1f2937;
-        font-weight: 600;
-    }
-
-    .form-control {
-        width: 100%;
-        min-height: 48px;
-        padding: 11px 14px;
-        border: 1px solid #d1d5db;
-        border-radius: 10px;
-        background: #ffffff;
+        margin-bottom: 8px;
+        font-weight: 700;
         color: #111827;
-        font-size: 15px;
-        transition: border-color 0.2s, box-shadow 0.2s;
     }
 
-    .form-control:focus {
-        outline: none;
-        border-color: #4f46e5;
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
-    }
-
-    .field-error {
-        margin-top: 7px;
-        color: #dc2626;
-        font-size: 14px;
-    }
-
-    .form-errors {
-        background: #fef2f2;
-        color: #b91c1c;
-        border: 1px solid #fecaca;
-        border-radius: 10px;
-        padding: 14px 16px;
-        margin-bottom: 22px;
-    }
-
-    .setup-information {
-        margin: 28px 0;
-        padding: 20px;
-        background: #f8fafc;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-    }
-
-    .setup-information h3 {
-        margin-top: 0;
-        margin-bottom: 12px;
-        color: #1e293b;
-        font-size: 17px;
-    }
-
-    .setup-information ul {
-        margin: 0;
-        padding-left: 20px;
-        color: #64748b;
-        line-height: 1.8;
-    }
-
-    .start-interview-button {
+    .form-group select,
+    .form-group input[type="text"] {
         width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #d1d5db;
+        border-radius: 9px;
+        font-size: 15px;
+        background: #ffffff;
+        box-sizing: border-box;
+    }
+
+    .form-group select:focus,
+    .form-group input:focus {
+        outline: none;
+        border-color: #6b7280;
+    }
+
+    /*
+        Django RadioSelect normally renders a <div>
+        containing individual radio options.
+    */
+    .generation-method-wrapper > div {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 15px;
+        margin-top: 10px;
+    }
+
+    .generation-method-wrapper label {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 11px;
+        cursor: pointer;
+        font-weight: 600;
+        background: #ffffff;
+    }
+
+    .generation-method-wrapper label:hover {
+        border-color: #9ca3af;
+        background: #f9fafb;
+    }
+
+    .generation-method-wrapper input[type="radio"] {
+        margin-top: 3px;
+    }
+
+    .field-help {
+        color: #6b7280;
+        font-size: 13px;
+        margin-top: 8px;
+        line-height: 1.5;
+    }
+
+    .error-message,
+    .errorlist {
+        color: #b91c1c;
+        font-size: 14px;
+        margin-top: 7px;
+    }
+
+    .errorlist {
+        padding-left: 20px;
+    }
+
+    .personalisation-box {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 25px;
+    }
+
+    .personalisation-box h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        font-size: 18px;
+    }
+
+    .personalisation-box ul {
+        margin: 0;
+        padding-left: 22px;
+    }
+
+    .personalisation-box li {
+        margin-bottom: 8px;
+        color: #4b5563;
+        line-height: 1.5;
+    }
+
+    .submit-button {
+        width: 100%;
+        padding: 14px 18px;
         border: none;
         border-radius: 10px;
-        padding: 14px 20px;
-        background: #4f46e5;
-        color: #ffffff;
         font-size: 16px;
         font-weight: 700;
         cursor: pointer;
-        transition: background 0.2s, transform 0.2s;
     }
 
-    .start-interview-button:hover {
-        background: #4338ca;
-        transform: translateY(-1px);
-    }
-
-    @media (max-width: 768px) {
-        .interview-setup-container {
-            margin: 20px auto;
+    @media (max-width: 700px) {
+        .generation-method-wrapper > div {
+            grid-template-columns: 1fr;
         }
 
-        .interview-setup-card {
-            padding: 24px;
-        }
-
-        .interview-setup-header h1 {
-            font-size: 25px;
+        .setup-card {
+            padding: 20px;
         }
     }
 </style>
 
+
 <div class="interview-setup-container">
-    <div class="interview-setup-card">
 
-        <div class="interview-setup-header">
-            <h1>AI Interview Coach</h1>
+    <div class="setup-header">
 
-            <p>
-                Select your target job role and one of your projects.
-                CareerReady AI will use your project evidence, skills,
-                tools, readiness results and employability gaps to prepare
-                a personalised interview.
-            </p>
+        <h1>AI Interview Coach</h1>
 
-            <div class="project-summary">
-                Available projects: {{ project_count }}
-            </div>
-        </div>
+        <p>
+            Select your target job role and one of your projects.
+            CareerReady AI will use your project evidence, skills,
+            tools, readiness results and employability gaps to
+            prepare a personalised interview.
+        </p>
 
-        {% if form.non_field_errors %}
-            <div class="form-errors">
-                {% for error in form.non_field_errors %}
-                    <div>{{ error }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
+        <span class="project-count">
+            Available projects: {{ project_count }}
+        </span>
 
-        <form method="post">
+    </div>
+
+
+    <div class="setup-card">
+
+        <form method="POST">
+
             {% csrf_token %}
 
+
+            <!-- ========================================= -->
+            <!-- FORM LEVEL ERRORS -->
+            <!-- ========================================= -->
+
+            {% if form.non_field_errors %}
+
+                <div class="error-message">
+                    {{ form.non_field_errors }}
+                </div>
+
+            {% endif %}
+
+
+            <!-- ========================================= -->
+            <!-- TARGET JOB ROLE -->
+            <!-- ========================================= -->
+
             <div class="form-group">
+
                 <label for="{{ form.job_role.id_for_label }}">
-                    {{ form.job_role.label }}
+                    Target Job Role
                 </label>
 
                 {{ form.job_role }}
 
-                {% for error in form.job_role.errors %}
-                    <div class="field-error">
-                        {{ error }}
+                {% if form.job_role.errors %}
+
+                    <div class="error-message">
+                        {{ form.job_role.errors }}
                     </div>
-                {% endfor %}
+
+                {% endif %}
+
             </div>
 
+
+            <!-- ========================================= -->
+            <!-- PROJECT -->
+            <!-- ========================================= -->
+
             <div class="form-group">
+
                 <label for="{{ form.project.id_for_label }}">
-                    {{ form.project.label }}
+                    Project Evidence
                 </label>
 
                 {{ form.project }}
 
-                {% for error in form.project.errors %}
-                    <div class="field-error">
-                        {{ error }}
+                {% if form.project.errors %}
+
+                    <div class="error-message">
+                        {{ form.project.errors }}
                     </div>
-                {% endfor %}
+
+                {% endif %}
+
+                <div class="field-help">
+                    Choose the project you want the interview questions
+                    to be based on.
+                </div>
+
             </div>
 
-            <div class="setup-information">
-                <h3>How the interview will be personalised</h3>
+
+            <!-- ========================================= -->
+            <!-- QUESTION GENERATION METHOD -->
+            <!-- ========================================= -->
+
+            <div class="form-group">
+
+                <label>
+                    Question Generation Method
+                </label>
+
+                <div class="generation-method-wrapper">
+                    {{ form.question_generation_method }}
+                </div>
+
+                {% if form.question_generation_method.errors %}
+
+                    <div class="error-message">
+                        {{ form.question_generation_method.errors }}
+                    </div>
+
+                {% endif %}
+
+                <div class="field-help">
+                    Rule-Based Questions use predefined CareerReady AI
+                    competency rules and templates. AI-Generated Questions
+                    use your project and career evidence to generate
+                    contextual interview questions.
+                </div>
+
+            </div>
+
+
+            <!-- ========================================= -->
+            <!-- PERSONALISATION INFORMATION -->
+            <!-- ========================================= -->
+
+            <div class="personalisation-box">
+
+                <h3>
+                    How the interview will be personalised
+                </h3>
 
                 <ul>
-                    <li>Questions based on your selected project.</li>
-                    <li>Technical questions for your target job role.</li>
-                    <li>Questions covering relevant skills and tools.</li>
-                    <li>Questions based on readiness weaknesses.</li>
-                    <li>Feedback linked to evidence from your portfolio.</li>
+                    <li>
+                        Questions based on your selected project.
+                    </li>
+
+                    <li>
+                        Technical questions for your target job role.
+                    </li>
+
+                    <li>
+                        Questions covering relevant skills and tools.
+                    </li>
+
+                    <li>
+                        Questions based on readiness weaknesses.
+                    </li>
+
+                    <li>
+                        Feedback linked to evidence from your portfolio.
+                    </li>
                 </ul>
+
             </div>
+
+
+            <!-- ========================================= -->
+            <!-- SUBMIT -->
+            <!-- ========================================= -->
 
             <button
                 type="submit"
-                class="start-interview-button"
+                class="submit-button"
             >
                 Create Interview Session
             </button>
+
         </form>
 
     </div>
+
 </div>
 
 {% endblock %}

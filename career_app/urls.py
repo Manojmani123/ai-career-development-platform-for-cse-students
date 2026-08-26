@@ -215,4 +215,9 @@ path(
     views.interview_history,
     name='interview_history'
 ),
+path(
+    'interview/session/<int:session_id>/generate-ai/',
+    views.generate_ai_interview,
+    name='generate_ai_interview'
+),
 ]
