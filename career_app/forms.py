@@ -129,14 +129,29 @@ class LearningResourceForm(forms.ModelForm):
 
 
 class ReadinessAssessmentForm(forms.ModelForm):
+
     class Meta:
         model = ReadinessAssessment
-        fields = ['job_role']
+
+        fields = [
+            'job_role',
+            'assessment_method',
+        ]
 
         widgets = {
-            'job_role': forms.Select(attrs={'class': 'form-select'})
+            'job_role': forms.Select(
+                attrs={
+                    'class': 'form-control'
+                }
+            ),
+
+            'assessment_method': forms.RadioSelect(),
         }
 
+        labels = {
+            'job_role': 'Target Job Role',
+            'assessment_method': 'Assessment Method',
+        }
 
 class IndustryToolForm(forms.ModelForm):
     class Meta:
@@ -414,55 +429,49 @@ class InterviewSetupForm(forms.ModelForm):
         fields = [
             'job_role',
             'project',
-            'question_generation_method',
         ]
 
         widgets = {
             'job_role': forms.Select(
                 attrs={
-                    'class': 'form-control'
+                    'class': 'form-control',
                 }
             ),
 
             'project': forms.Select(
                 attrs={
-                    'class': 'form-control'
+                    'class': 'form-control',
                 }
             ),
-
-            'question_generation_method': forms.RadioSelect(),
-        }
-        def __init__(self, *args, user=None, **kwargs):
-            super().__init__(*args, **kwargs)
-            if user:
-                self.fields['project'].queryset = (
-                UserProject.objects.filter(
-                    user=user
-                ).order_by('-created_at')
-            )
-
-        labels = {
-            'job_role': 'Target Job Role',
-            'project': 'Project Evidence',
         }
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields['job_role'].queryset = JobRole.objects.all().order_by(
-            'role_name'
+        self.fields['job_role'].queryset = (
+            JobRole.objects
+            .all()
+            .order_by('role_name')
         )
 
-        if user:
-            self.fields['project'].queryset = UserProject.objects.filter(
-                user=user
-            ).order_by('-created_at')
+        if user is not None:
+            self.fields['project'].queryset = (
+                UserProject.objects
+                .filter(user=user)
+                .order_by('-created_at')
+            )
         else:
-            self.fields['project'].queryset = UserProject.objects.none()
+            self.fields['project'].queryset = (
+                UserProject.objects.none()
+            )
 
-        self.fields['job_role'].empty_label = 'Select a job role'
-        self.fields['project'].empty_label = 'Select one of your projects'
+        self.fields['job_role'].empty_label = (
+            'Select a job role'
+        )
 
+        self.fields['project'].empty_label = (
+            'Select one of your projects'
+        )
 
 class InterviewAnswerForm(forms.ModelForm):
     class Meta:

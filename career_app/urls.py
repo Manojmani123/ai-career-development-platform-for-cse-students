@@ -6,14 +6,8 @@ from django.conf import settings
 urlpatterns = [
     path('', views.home, name='home'),
     path('register/', views.register, name='register'),
-
-    path('login/', auth_views.LoginView.as_view(
-        template_name='career_app/login.html',
-        next_page='dashboard_redirect'
-    ), name='login'),
-
+    path('login/', auth_views.LoginView.as_view(template_name='career_app/login.html', next_page='dashboard_redirect'), name='login'),
     path('logout/', views.logout_view, name='logout'),
-
     path('dashboard-redirect/', views.dashboard_redirect, name='dashboard_redirect'),
     path('dashboard/', views.user_dashboard, name='user_dashboard'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
@@ -23,201 +17,79 @@ urlpatterns = [
     path('view-admin-requests/', views.view_admin_requests, name='view_admin_requests'),
     path('approve-admin-request/<int:request_id>/', views.approve_admin_request, name='approve_admin_request'),
     path('reject-admin-request/<int:request_id>/', views.reject_admin_request, name='reject_admin_request'),
-    path('password-reset/', auth_views.PasswordResetView.as_view(
-    template_name='career_app/password_reset.html',
-    email_template_name='career_app/password_reset_email.html',
-    success_url='/password-reset/done/',
-    extra_email_context={
-        'domain': '127.0.0.1:8000',
-        'protocol': 'http',
-    }
-), name='password_reset'),
 
-path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(
-    template_name='career_app/password_reset_done.html'
-), name='password_reset_done'),
+    path('password-reset/', auth_views.PasswordResetView.as_view(template_name='career_app/password_reset.html', email_template_name='career_app/password_reset_email.html', success_url='/password-reset/done/', extra_email_context={'domain': '127.0.0.1:8000', 'protocol': 'http'}), name='password_reset'),
+    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='career_app/password_reset_done.html'), name='password_reset_done'),
+    path('password-reset-confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='career_app/password_reset_confirm.html', success_url='/password-reset-complete/'), name='password_reset_confirm'),
+    path('password-reset-complete/', auth_views.PasswordResetCompleteView.as_view(template_name='career_app/password_reset_complete.html'), name='password_reset_complete'),
 
-path('password-reset-confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
-    template_name='career_app/password_reset_confirm.html',
-    success_url='/password-reset-complete/'
-), name='password_reset_confirm'),
+    path('add-job-role/', views.add_job_role, name='add_job_role'),
+    path('view-job-roles/', views.view_job_roles, name='view_job_roles'),
+    path('edit-job-role/<int:role_id>/', views.edit_job_role, name='edit_job_role'),
+    path('delete-job-role/<int:role_id>/', views.delete_job_role, name='delete_job_role'),
 
-path('password-reset-complete/', auth_views.PasswordResetCompleteView.as_view(
-    template_name='career_app/password_reset_complete.html'
-), name='password_reset_complete'),
-path('add-job-role/', views.add_job_role, name='add_job_role'),
-path('view-job-roles/', views.view_job_roles, name='view_job_roles'),
+    path('add-skill/', views.add_skill, name='add_skill'),
+    path('view-skills/', views.view_skills, name='view_skills'),
+    path('edit-skill/<int:skill_id>/', views.edit_skill, name='edit_skill'),
+    path('delete-skill/<int:skill_id>/', views.delete_skill, name='delete_skill'),
+    path('assign-skill-to-role/', views.assign_skill_to_role, name='assign_skill_to_role'),
+    path('view-role-skills/', views.view_role_skills, name='view_role_skills'),
 
-path(
-    'edit-job-role/<int:role_id>/',
-    views.edit_job_role,
-    name='edit_job_role'
-),
+    path('career-match/', views.career_match, name='career_match'),
+    path('career-match-result/<int:result_id>/', views.career_match_result, name='career_match_result'),
 
-path(
-    'delete-job-role/<int:role_id>/',
-    views.delete_job_role,
-    name='delete_job_role'
-),
-path('add-skill/', views.add_skill, name='add_skill'),
-path('view-skills/', views.view_skills, name='view_skills'),
-path( 'edit-skill/<int:skill_id>/',views.edit_skill,name='edit_skill'),
-path('delete-skill/<int:skill_id>/',views.delete_skill,name='delete_skill'),
-path('assign-skill-to-role/', views.assign_skill_to_role, name='assign_skill_to_role'),
-path('view-role-skills/', views.view_role_skills, name='view_role_skills'),
-path('career-match/', views.career_match, name='career_match'),
-path('career-match-result/<int:result_id>/', views.career_match_result, name='career_match_result'),
-path('add-learning-resource/', views.add_learning_resource, name='add_learning_resource'),
-path('view-learning-resources/', views.view_learning_resources, name='view_learning_resources'),
-path(
-    'edit-learning-resource/<int:resource_id>/',
-    views.edit_learning_resource,
-    name='edit_learning_resource'
-),
+    path('add-learning-resource/', views.add_learning_resource, name='add_learning_resource'),
+    path('view-learning-resources/', views.view_learning_resources, name='view_learning_resources'),
+    path('edit-learning-resource/<int:resource_id>/', views.edit_learning_resource, name='edit_learning_resource'),
+    path('delete-learning-resource/<int:resource_id>/', views.delete_learning_resource, name='delete_learning_resource'),
+    path('learning-roadmap/<int:result_id>/', views.learning_roadmap, name='learning_roadmap'),
 
-path(
-    'delete-learning-resource/<int:resource_id>/',
-    views.delete_learning_resource,
-    name='delete_learning_resource'
-),
-path('learning-roadmap/<int:result_id>/', views.learning_roadmap, name='learning_roadmap'),
-path('create-profile/', views.create_profile, name='create_profile'),
-path('view-profile/', views.view_profile, name='view_profile'),
-path('edit-profile/', views.edit_profile, name='edit_profile'),
-path('readiness-assessment/', views.readiness_assessment, name='readiness_assessment'),
-path('readiness-result/<int:assessment_id>/', views.readiness_result, name='readiness_result'),
-path('add-industry-tool/', views.add_industry_tool, name='add_industry_tool'),
-path('view-industry-tools/', views.view_industry_tools, name='view_industry_tools'),
-path(
-    'edit-industry-tool/<int:tool_id>/',
-    views.edit_industry_tool,
-    name='edit_industry_tool'
-),
+    path('create-profile/', views.create_profile, name='create_profile'),
+    path('view-profile/', views.view_profile, name='view_profile'),
+    path('edit-profile/', views.edit_profile, name='edit_profile'),
 
-path(
-    'delete-industry-tool/<int:tool_id>/',
-    views.delete_industry_tool,
-    name='delete_industry_tool'
-),
-path('assign-tool-to-role/', views.assign_tool_to_role, name='assign_tool_to_role'),
-path('view-role-tools/', views.view_role_tools, name='view_role_tools'),
-path('bottleneck-detection/',views.bottleneck_detection,name='bottleneck_detection'),
+    path('readiness-assessment/', views.readiness_assessment, name='readiness_assessment'),
+    path('readiness-result/<int:assessment_id>/', views.readiness_result, name='readiness_result'),
 
-path('bottleneck-result/<int:bottleneck_id>/',views.bottleneck_result,name='bottleneck_result'),
+    path('add-industry-tool/', views.add_industry_tool, name='add_industry_tool'),
+    path('view-industry-tools/', views.view_industry_tools, name='view_industry_tools'),
+    path('edit-industry-tool/<int:tool_id>/', views.edit_industry_tool, name='edit_industry_tool'),
+    path('delete-industry-tool/<int:tool_id>/', views.delete_industry_tool, name='delete_industry_tool'),
+    path('assign-tool-to-role/', views.assign_tool_to_role, name='assign_tool_to_role'),
+    path('view-role-tools/', views.view_role_tools, name='view_role_tools'),
 
-path(
-    'add-project/',
-    views.add_project,
-    name='add_project'
-),
+    path('bottleneck-detection/', views.bottleneck_detection, name='bottleneck_detection'),
+    path('bottleneck-result/<int:bottleneck_id>/', views.bottleneck_result, name='bottleneck_result'),
 
-path(
-    'view-projects/',
-    views.view_projects,
-    name='view_projects'
-),
-path(
-    'delete-project/<int:project_id>/',
-    views.delete_project,
-    name='delete_project'
-),
+    path('add-project/', views.add_project, name='add_project'),
+    path('view-projects/', views.view_projects, name='view_projects'),
+    path('delete-project/<int:project_id>/', views.delete_project, name='delete_project'),
 
-path(
-    'career-transition-analysis/',
-    views.career_transition_analysis,
-    name='career_transition_analysis'
-),
+    path('career-transition-analysis/', views.career_transition_analysis, name='career_transition_analysis'),
+    path('career-transition-result/<int:analysis_id>/', views.career_transition_result, name='career_transition_result'),
 
-path(
-    'career-transition-result/<int:analysis_id>/',
-    views.career_transition_result,
-    name='career_transition_result'
-),
-path('import-dataset/', views.import_dataset, name='import_dataset'),
-path(
-    'add-competency-group/',
-    views.add_competency_group,
-    name='add_competency_group'
-),
+    path('import-dataset/', views.import_dataset, name='import_dataset'),
 
-path(
-    'view-competency-groups/',
-    views.view_competency_groups,
-    name='view_competency_groups'
-),
+    path('add-competency-group/', views.add_competency_group, name='add_competency_group'),
+    path('view-competency-groups/', views.view_competency_groups, name='view_competency_groups'),
+    path('add-competency-group-members/', views.add_competency_group_members, name='add_competency_group_members'),
+    path('edit-competency-group/<int:group_id>/', views.edit_competency_group, name='edit_competency_group'),
+    path('delete-competency-group/<int:group_id>/', views.delete_competency_group, name='delete_competency_group'),
 
-path(
-    'add-competency-group-members/',
-    views.add_competency_group_members,
-    name='add_competency_group_members'
-),
+    path('view-users/', views.view_users, name='view_users'),
+    path('view-admins/', views.view_admins, name='view_admins'),
+    path('platform-analytics/', views.platform_analytics, name='platform_analytics'),
 
-path(
-    'edit-competency-group/<int:group_id>/',
-    views.edit_competency_group,
-    name='edit_competency_group'
-),
-
-path(
-    'delete-competency-group/<int:group_id>/',
-    views.delete_competency_group,
-    name='delete_competency_group'
-),
-path(
-    'view-users/',
-    views.view_users,
-    name='view_users'
-),
-
-path(
-    'view-admins/',
-    views.view_admins,
-    name='view_admins'
-),
-path(
-    'platform-analytics/',
-    views.platform_analytics,
-    name='platform_analytics'
-),
-
-path(
-    'interview/setup/',
-    views.interview_setup,
-    name='interview_setup'
-),
-
-path(
-    'interview/session/<int:session_id>/',
-    views.interview_session,
-    name='interview_session'
-),
-
-
-path(
-        'interview/<int:session_id>/complete/',
-        views.complete_interview,
-        name='complete_interview'
-    ),
-
+    path('interview/setup/', views.interview_setup, name='interview_setup'),
+    path('interview/session/<int:session_id>/', views.interview_session, name='interview_session'),
+    path('interview/session/<int:session_id>/evaluating/',views.interview_evaluation_loading,name='interview_evaluation_loading'),
+    path('interview/<int:session_id>/complete/', views.complete_interview, name='complete_interview'),
+    
+    path('interview/<int:session_id>/results/', views.interview_results, name='interview_results'),
+    path('interview/history/', views.interview_history, name='interview_history'),
+    path('interview/session/<int:session_id>/generate-ai/', views.generate_ai_interview, name='generate_ai_interview'),
+    path('learning-roadmap/<int:result_id>/prepare/', views.prepare_learning_roadmap, name='prepare_learning_roadmap'),
+    path('readiness-assessment/<int:job_role_id>/prepare-ai/',views.prepare_ai_readiness,name='prepare_ai_readiness'),
     path(
-        'interview/<int:session_id>/results/',
-        views.interview_results,
-        name='interview_results'
-    ),
-
-    path(
-    'interview/session/<int:session_id>/evaluation-method/',
-    views.choose_interview_evaluation,
-    name='choose_interview_evaluation'
-),
-path(
-    'interview/history/',
-    views.interview_history,
-    name='interview_history'
-),
-path(
-    'interview/session/<int:session_id>/generate-ai/',
-    views.generate_ai_interview,
-    name='generate_ai_interview'
-),
+    'bottleneck/<int:bottleneck_id>/prepare-ai/',views.prepare_ai_bottleneck,name='prepare_ai_bottleneck'),
 ]

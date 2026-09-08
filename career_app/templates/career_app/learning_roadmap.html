@@ -2,105 +2,528 @@
 
 {% block content %}
 
-<div class="container mt-4">
+<style>
+    .roadmap-page {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 20px 50px;
+    }
 
-    <div class="card shadow">
+    .roadmap-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
 
-        <div class="card-header bg-success text-white">
-            <h3 class="mb-0">Personalized Learning Roadmap</h3>
-        </div>
+    .roadmap-header h2 {
+        font-size: 34px;
+        font-weight: 800;
+        margin-bottom: 10px;
+    }
 
-        <div class="card-body">
+    .roadmap-header p {
+        color: #6b7280;
+        max-width: 760px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
 
-            <p class="text-muted">
-                This roadmap is generated based on your current skills,
-                competency groups, and missing requirements for your selected
-                career path.
-            </p>
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+        margin-bottom: 30px;
+    }
 
-            <div class="row mt-4">
+    .summary-box {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 22px;
+        text-align: center;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    }
 
-                <div class="col-md-6">
+    .summary-label {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #6b7280;
+        margin-bottom: 7px;
+    }
 
-                    <div class="card border-primary">
+    .summary-value {
+        font-size: 23px;
+        font-weight: 800;
+        color: #111827;
+    }
 
-                        <div class="card-body text-center">
+    .overview-card {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 25px;
+    }
 
-                            <h5>Target Role</h5>
+    .overview-card h4 {
+        font-weight: 800;
+        margin-bottom: 10px;
+    }
 
-                            <h3>{{ result.job_role.role_name }}</h3>
+    .overview-card p {
+        margin-bottom: 0;
+        color: #4b5563;
+        line-height: 1.65;
+    }
 
-                        </div>
+    .current-position {
+        border-left: 5px solid #0d6efd;
+    }
 
-                    </div>
+    .journey-marker-wrap {
+        text-align: center;
+        margin: 30px 0;
+    }
 
-                </div>
+    .journey-marker {
+        display: inline-block;
+        padding: 12px 22px;
+        background: #111827;
+        color: white;
+        border-radius: 999px;
+        font-weight: 800;
+    }
 
-                <div class="col-md-6">
+    .journey-wrapper {
+        position: relative;
+    }
 
-                    <div class="card border-success">
+    .journey-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        width: 4px;
+        background: #d1d5db;
+        transform: translateX(-50%);
+        border-radius: 999px;
+    }
 
-                        <div class="card-body text-center">
+    .journey-phase {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr 80px 1fr;
+        align-items: center;
+        margin-bottom: 46px;
+    }
 
-                            <h5>Current Match Score</h5>
+    .phase-node {
+        grid-column: 2;
+        display: flex;
+        justify-content: center;
+        position: relative;
+        z-index: 2;
+    }
 
-                            <h2>{{ result.match_score }}%</h2>
+    .phase-number {
+        width: 54px;
+        height: 54px;
+        background: #198754;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: 800;
+        border: 5px solid white;
+        box-shadow: 0 0 0 2px #198754;
+    }
 
-                        </div>
+    .phase-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+    }
 
-                    </div>
+    .phase-card.left {
+        grid-column: 1;
+    }
 
-                </div>
+    .phase-card.right {
+        grid-column: 3;
+    }
 
+    .phase-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+
+    .phase-title {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 800;
+    }
+
+    .priority-badge {
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+        background: #f3f4f6;
+        white-space: nowrap;
+    }
+
+    .phase-row {
+        margin-top: 16px;
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 9px;
+    }
+
+    .phase-row strong {
+        display: block;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: .04em;
+        color: #374151;
+        margin-bottom: 5px;
+    }
+
+    .phase-row p {
+        margin: 0;
+        color: #4b5563;
+        line-height: 1.6;
+    }
+
+    .gap-row {
+        border-left: 4px solid #dc3545;
+    }
+
+    .action-row {
+        border-left: 4px solid #0d6efd;
+    }
+
+    .project-row {
+        border-left: 4px solid #6f42c1;
+    }
+
+    .evidence-row {
+        border-left: 4px solid #fd7e14;
+    }
+
+    .outcome-row {
+        border-left: 4px solid #198754;
+    }
+
+    .final-card {
+        max-width: 760px;
+        margin: 0 auto;
+        text-align: center;
+        background: #f0fdf4;
+        border: 2px solid #198754;
+        border-radius: 18px;
+        padding: 28px;
+    }
+
+    .final-card h3 {
+        font-weight: 800;
+        margin-bottom: 10px;
+    }
+
+    .final-card p {
+        margin-bottom: 0;
+        color: #374151;
+        line-height: 1.65;
+    }
+
+    .fallback-box {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 14px;
+        padding: 22px;
+    }
+
+    .fallback-step {
+        background: white;
+        border-left: 4px solid #f59e0b;
+        padding: 14px;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+
+    .roadmap-actions {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 38px;
+    }
+
+    @media (max-width: 800px) {
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .journey-line {
+            left: 23px;
+        }
+
+        .journey-phase {
+            grid-template-columns: 48px 1fr;
+            gap: 15px;
+        }
+
+        .phase-node {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .phase-card.left,
+        .phase-card.right {
+            grid-column: 2;
+            grid-row: 1;
+        }
+    }
+</style>
+
+<div class="roadmap-page">
+
+    <div class="roadmap-header">
+        <h2>Career Action Roadmap</h2>
+
+        <p>
+            A personalised journey showing what to improve,
+            how to apply it, what evidence to produce and
+            how each action moves you toward your target role.
+        </p>
+    </div>
+
+    <div class="summary-grid">
+
+        <div class="summary-box">
+            <div class="summary-label">
+                Target Role
             </div>
 
-            <div class="card mt-4">
+            <div class="summary-value">
+                {{ result.job_role.role_name }}
+            </div>
+        </div>
 
-                <div class="card-header bg-primary text-white">
-                    Learning Plan
-                </div>
+        <div class="summary-box">
+            <div class="summary-label">
+                Career Match
+            </div>
 
-                <div class="card-body">
+            <div class="summary-value">
+                {{ result.match_score }}%
+            </div>
+        </div>
 
-                    {% if roadmap_steps %}
+        <div class="summary-box">
+            <div class="summary-label">
+                Roadmap
+            </div>
 
-                        <ol class="list-group list-group-numbered">
+            <div class="summary-value">
+                AI Action Plan
+            </div>
+        </div>
 
-                            {% for step in roadmap_steps %}
+    </div>
 
-                                <li class="list-group-item">
-                                    {{ step }}
-                                </li>
+    {% if ai_roadmap %}
 
-                            {% endfor %}
+        <div class="overview-card">
+            <h4>Roadmap Overview</h4>
 
-                        </ol>
+            <p>
+                {{ ai_roadmap.summary }}
+            </p>
+        </div>
+
+        <div class="overview-card current-position">
+            <h4>Your Current Position</h4>
+
+            <p>
+                {{ ai_roadmap.current_position }}
+            </p>
+        </div>
+
+        <div class="journey-marker-wrap">
+            <div class="journey-marker">
+                🚩 Start Your Career Journey
+            </div>
+        </div>
+
+        <div class="journey-wrapper">
+
+            <div class="journey-line"></div>
+
+            {% for phase in ai_roadmap.phases %}
+
+                <div class="journey-phase">
+
+                    {% if forloop.counter|divisibleby:2 %}
+
+                        <div class="phase-node">
+                            <div class="phase-number">
+                                {{ forloop.counter }}
+                            </div>
+                        </div>
+
+                        <div class="phase-card right">
 
                     {% else %}
 
-                        <div class="alert alert-success">
-                            Congratulations! No additional learning steps are required.
+                        <div class="phase-card left">
+
+                    {% endif %}
+
+                            <div class="phase-top">
+
+                                <h3 class="phase-title">
+                                    {{ phase.title }}
+                                </h3>
+
+                                <span class="priority-badge">
+                                    {{ phase.priority }} PRIORITY
+                                </span>
+
+                            </div>
+
+                            <div class="phase-row gap-row">
+                                <strong>
+                                    Priority Gap
+                                </strong>
+
+                                <p>
+                                    {{ phase.gap }}
+                                </p>
+                            </div>
+
+                            <div class="phase-row action-row">
+                                <strong>
+                                    Action
+                                </strong>
+
+                                <p>
+                                    {{ phase.action }}
+                                </p>
+                            </div>
+
+                            <div class="phase-row project-row">
+                                <strong>
+                                    Project Application
+                                </strong>
+
+                                <p>
+                                    {{ phase.project_application }}
+                                </p>
+                            </div>
+
+                            <div class="phase-row evidence-row">
+                                <strong>
+                                    Evidence to Produce
+                                </strong>
+
+                                <p>
+                                    {{ phase.evidence }}
+                                </p>
+                            </div>
+
+                            <div class="phase-row outcome-row">
+                                <strong>
+                                    Expected Outcome
+                                </strong>
+
+                                <p>
+                                    {{ phase.expected_outcome }}
+                                </p>
+                            </div>
+
+                        </div>
+
+                    {% if not forloop.counter|divisibleby:2 %}
+
+                        <div class="phase-node">
+                            <div class="phase-number">
+                                {{ forloop.counter }}
+                            </div>
                         </div>
 
                     {% endif %}
 
                 </div>
 
-            </div>
-
-            <div class="mt-4">
-
-                <a href="{% url 'career_match' %}" class="btn btn-primary">
-                    Analyze Another Career
-                </a>
-
-                <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
-                    Back to Dashboard
-                </a>
-
-            </div>
+            {% endfor %}
 
         </div>
+
+        <div class="journey-marker-wrap">
+            <div class="journey-marker">
+                🏁 {{ result.job_role.role_name }}
+            </div>
+        </div>
+
+        <div class="final-card">
+
+            <h3>Expected Career Outcome</h3>
+
+            <p>
+                {{ ai_roadmap.final_outcome }}
+            </p>
+
+        </div>
+
+    {% else %}
+
+        <div class="fallback-box">
+
+            <h4>Standard Roadmap</h4>
+
+            <p>
+                AI roadmap generation was unavailable.
+                Your competency-based fallback roadmap is shown below.
+            </p>
+
+            {% for step in roadmap_steps %}
+                <div class="fallback-step">
+                    {{ step }}
+                </div>
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+    <div class="roadmap-actions">
+
+        <a
+            href="{% url 'career_match' %}"
+            class="btn btn-outline-success"
+        >
+            New Career Match
+        </a>
+
+        <a
+            href="{% url 'interview_setup' %}"
+            class="btn btn-success"
+        >
+            Start Interview Preparation
+        </a>
+
+        <a
+            href="{% url 'user_dashboard' %}"
+            class="btn btn-dark"
+        >
+            Back to Dashboard
+        </a>
 
     </div>
 

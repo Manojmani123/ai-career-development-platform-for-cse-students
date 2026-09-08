@@ -160,12 +160,12 @@
 
     {% elif session.status == 'COMPLETED' and session.question_count > 0 and session.answer_count == session.question_count %}
 
-        <a
-            href="{% url 'choose_interview_evaluation' session.id %}"
-            class="primary-action"
-        >
-            Choose Evaluation
-        </a>
+    <a
+        href="{% url 'interview_evaluation_loading' session.id %}"
+        class="primary-action"
+    >
+        Evaluate with AI
+    </a>
 
     {% elif session.question_count == 0 %}
 

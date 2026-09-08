@@ -2,79 +2,332 @@
 
 {% block content %}
 
-<h2>Readiness Assessment Result</h2>
-<p class="text-muted">Target Role: {{ assessment.job_role.role_name }}</p>
+<style>
+    .result-page {
+        max-width: 1050px;
+        margin: 45px auto;
+        padding: 0 20px 60px;
+    }
 
-<div class="row mt-4">
+    .result-header {
+        text-align: center;
+        margin-bottom: 35px;
+    }
 
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5>Academic Score</h5>
-                <h2>{{ assessment.academic_score }}%</h2>
+    .ai-label {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: #ede9fe;
+        color: #6d28d9;
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 12px;
+    }
+
+    .result-header h1 {
+        font-size: 34px;
+        font-weight: 800;
+        margin-bottom: 8px;
+    }
+
+    .target-role {
+        color: #6b7280;
+        font-size: 16px;
+    }
+
+    .score-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 32px;
+        margin-bottom: 25px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.05);
+    }
+
+    .overall-score {
+        text-align: center;
+        margin-bottom: 28px;
+    }
+
+    .overall-score h2 {
+        font-size: 56px;
+        font-weight: 800;
+        margin: 0;
+        color: #198754;
+    }
+
+    .overall-score span {
+        color: #6b7280;
+        font-weight: 700;
+    }
+
+    .progress-track {
+        max-width: 520px;
+        height: 10px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        margin: 18px auto 0;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: #198754;
+        border-radius: 999px;
+        width: var(--readiness-width);
+    }
+
+    .score-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+    }
+
+    .mini-score {
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .mini-score .label {
+        color: #6b7280;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-bottom: 7px;
+    }
+
+    .mini-score .value {
+        font-size: 30px;
+        font-weight: 800;
+        color: #111827;
+    }
+
+    .content-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+    }
+
+    .content-card h3 {
+        font-size: 20px;
+        font-weight: 800;
+        margin-bottom: 12px;
+    }
+
+    .content-card p {
+        color: #4b5563;
+        line-height: 1.7;
+        white-space: pre-line;
+        margin-bottom: 0;
+    }
+
+    .strength-card {
+        border-left: 5px solid #198754;
+    }
+
+    .weakness-card {
+        border-left: 5px solid #dc3545;
+    }
+
+    .reasoning-card {
+        border-left: 5px solid #6f42c1;
+    }
+
+    .recommendation-card {
+        border-left: 5px solid #0d6efd;
+    }
+
+    .action-row {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 32px;
+    }
+
+    @media (max-width: 700px) {
+        .score-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .overall-score h2 {
+            font-size: 44px;
+        }
+    }
+</style>
+
+
+<div class="result-page">
+
+    <div class="result-header">
+
+        {% if assessment.assessment_method == 'AI_POWERED' %}
+            <div class="ai-label">
+                ✦ AI-POWERED ASSESSMENT
             </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5>Industry Score</h5>
-                <h2>{{ assessment.industry_score }}%</h2>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5>Overall Readiness</h5>
-                <h2>{{ assessment.overall_readiness_score }}%</h2>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<div class="card mt-4">
-    <div class="card-header bg-success text-white">
-        Strengths
-    </div>
-    <div class="card-body">
-        <pre class="mb-0">{{ assessment.strengths }}</pre>
-    </div>
-</div>
-
-<div class="card mt-4">
-    <div class="card-header bg-danger text-white">
-        Weaknesses / Missing Skills
-    </div>
-    <div class="card-body">
-        {% if assessment.weaknesses %}
-            <pre class="mb-0">{{ assessment.weaknesses }}</pre>
-        {% else %}
-            <p>No missing skills found.</p>
         {% endif %}
-    </div>
-</div>
 
-<div class="card mt-4">
-    <div class="card-header">
-        Recommendation
-    </div>
-    <div class="card-body">
-        <p>{{ assessment.recommendation }}</p>
-    </div>
-</div>
+        <h1>
+            Career Readiness Result
+        </h1>
 
-<div class="mt-4">
-    <a href="{% url 'readiness_assessment' %}" class="btn btn-secondary">
-        Try Again
-    </a>
+        <div class="target-role">
+            Target Role:
+            <strong>
+                {{ assessment.job_role.role_name }}
+            </strong>
+        </div>
 
-    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
-        Back to Dashboard
-    </a>
+    </div>
+
+
+    <div class="score-card">
+
+        <div class="overall-score">
+
+            <span>
+                Overall Readiness
+            </span>
+
+            <h2>
+                {{ assessment.overall_readiness_score }}%
+            </h2>
+
+            <div class="progress-track">
+                <div
+                    class="progress-fill"
+                    style="--readiness-width: {{ assessment.overall_readiness_score }}%;"
+                    ></div>
+            </div>
+
+        </div>
+
+
+        <div class="score-grid">
+
+            <div class="mini-score">
+                <div class="label">
+                    Academic Readiness
+                </div>
+
+                <div class="value">
+                    {{ assessment.academic_score }}%
+                </div>
+            </div>
+
+            <div class="mini-score">
+                <div class="label">
+                    Industry Readiness
+                </div>
+
+                <div class="value">
+                    {{ assessment.industry_score }}%
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {% if assessment.assessment_method == 'AI_POWERED' %}
+
+        {% if assessment.ai_analysis %}
+
+            <div class="content-card reasoning-card">
+
+                <h3>
+                    Why AI Gave This Score
+                </h3>
+
+                <p>
+                    {{ assessment.ai_analysis }}
+                </p>
+
+            </div>
+
+        {% endif %}
+
+    {% endif %}
+
+
+    <div class="content-card strength-card">
+
+        <h3>
+            Your Strengths
+        </h3>
+
+        <p>
+            {{ assessment.strengths }}
+        </p>
+
+    </div>
+
+
+    <div class="content-card weakness-card">
+
+        <h3>
+            Priority Gaps
+        </h3>
+
+        <p>
+            {{ assessment.weaknesses }}
+        </p>
+
+    </div>
+
+
+    <div class="content-card recommendation-card">
+
+        <h3>
+            {% if assessment.assessment_method == 'AI_POWERED' %}
+                AI Recommendation
+            {% else %}
+                Recommendation
+            {% endif %}
+        </h3>
+
+        <p>
+            {% if assessment.ai_recommendation %}
+                {{ assessment.ai_recommendation }}
+            {% else %}
+                {{ assessment.recommendation }}
+            {% endif %}
+        </p>
+
+    </div>
+
+
+    <div class="action-row">
+
+        <a
+            href="{% url 'readiness_assessment' %}"
+            class="btn btn-outline-success"
+        >
+            New Assessment
+        </a>
+
+        <a
+            href="{% url 'interview_setup' %}"
+            class="btn btn-success"
+        >
+            Start Interview Preparation
+        </a>
+
+        <a
+            href="{% url 'user_dashboard' %}"
+            class="btn btn-dark"
+        >
+            Back to Dashboard
+        </a>
+
+    </div>
+
 </div>
 
 {% endblock %}

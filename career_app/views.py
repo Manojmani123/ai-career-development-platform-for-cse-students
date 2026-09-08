@@ -1,4 +1,4 @@
-import email
+
 import json
 
 from sqlite3 import IntegrityError
@@ -8,13 +8,14 @@ from django.urls import reverse
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from .forms import RegisterForm
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.utils.crypto import get_random_string
 from .models import AdminInviteCode, AdminRequest
 from .forms import AdminRequestForm
-from .forms import RegisterForm, JobRoleForm, SkillForm, JobRoleSkillForm
+from .forms import JobRoleForm, SkillForm, JobRoleSkillForm
 from .models import  JobRole, Skill, JobRoleSkill
 from .forms import CareerMatchForm
 from .models import CareerMatchResult
@@ -30,13 +31,7 @@ from .models import ReadinessAssessment
 from .forms import IndustryToolForm, JobRoleToolForm
 
 from .models import IndustryTool, JobRoleTool
-from .forms import (
- 
-    ReadinessAssessmentForm
-)
-from django.db import transaction
 from django.db.models import Avg
-from .services.interview_evaluator import evaluate_answer
 from django.core.paginator import Paginator
 from django.db.models import Prefetch
 from .models import CompetencyGroup, CompetencyGroupMember
@@ -51,21 +46,14 @@ from .forms import CareerTransitionForm
 from django.conf import settings
 from .models import UserProject
 from .forms import UserProjectForm
-from django.contrib.auth.models import User
 from .forms import InterviewSetupForm
 from .models import InterviewSession
 from .models import InterviewQuestion,InterviewAnswer
 from .forms import InterviewAnswerForm
 import logging
 
-from django.db.models import Avg
-from django.utils import timezone
 
-from .services.interview_evaluator import evaluate_answer
-from .services.ai_interview_evaluator import (
-    AIInterviewEvaluationError,
-    evaluate_answer_with_ai,
-)
+from .services.ai_interview_evaluator import evaluate_answer_with_ai
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
@@ -510,21 +498,18 @@ def career_match(request):
             )
 
             if group.rule == 'ANY_ONE':
-                # The entire group counts as one requirement.
+
                 total_requirement_count += 1
 
                 if matched_ids:
                     satisfied_requirement_count += 1
 
-                    # Store the actual option(s) the student knows.
+
                     matched_skill_ids.update(matched_ids)
 
-                # If nothing is matched, do not add every option
-                # to missing_skills. The result page will display
-                # this as one missing competency group.
 
             elif group.rule == 'ALL_REQUIRED':
-                # Every member is an individual requirement.
+
                 total_requirement_count += len(skill_ids)
                 satisfied_requirement_count += len(matched_ids)
 
@@ -847,28 +832,366 @@ def delete_learning_resource(request, resource_id):
             'resource': resource
         }
     )
+
+def generate_ai_learning_roadmap(result):
+    client = OpenAI(
+        api_key=settings.OPENAI_API_KEY
+    )
+
+    user = result.user
+    job_role = result.job_role
+
+    profile = UserProfile.objects.filter(
+        user=user
+    ).first()
+
+    matched_skills = list(
+        result.matched_skills.values_list(
+            'skill_name',
+            flat=True
+        )
+    )
+
+    missing_skills = list(
+        result.missing_skills.values_list(
+            'skill_name',
+            flat=True
+        )
+    )
+
+    projects = list(
+        UserProject.objects.filter(
+            user=user
+        ).values(
+            'title',
+            'description',
+            'project_type'
+        )
+    )
+
+    latest_readiness = ReadinessAssessment.objects.filter(
+        user=user,
+        job_role=job_role
+    ).order_by(
+        '-created_at'
+    ).first()
+
+    latest_bottleneck = EmployabilityBottleneck.objects.filter(
+        user=user,
+        job_role=job_role
+    ).order_by(
+        '-created_at'
+    ).first()
+
+    profile_skills = []
+
+    if profile:
+        profile_skills = list(
+            (
+                profile.extracted_skills.all()
+                | profile.manual_skills.all()
+            ).distinct().values_list(
+                'skill_name',
+                flat=True
+            )
+        )
+
+    context = {
+        'target_role': job_role.role_name,
+        'career_match_score': result.match_score,
+        'matched_skills': matched_skills,
+        'missing_skills': missing_skills,
+        'profile_skills': profile_skills,
+        'projects': projects,
+        'readiness': (
+            {
+                'academic_score': latest_readiness.academic_score,
+                'industry_score': latest_readiness.industry_score,
+                'overall_score': latest_readiness.overall_readiness_score,
+                'weaknesses': latest_readiness.weaknesses,
+            }
+            if latest_readiness
+            else None
+        ),
+        'bottleneck': (
+            {
+                'name': latest_bottleneck.main_bottleneck,
+                'explanation': latest_bottleneck.explanation,
+                'recommendation': latest_bottleneck.recommendation,
+            }
+            if latest_bottleneck
+            else None
+        ),
+    }
+
+    system_prompt = """
+You are the Career Action Roadmap generator inside CareerReady AI.
+
+Use ONLY the supplied CareerReady AI evidence.
+
+Do not invent skills, tools, projects, qualifications, experience,
+scores, achievements or technologies that are not present in the
+supplied evidence.
+
+The purpose of the roadmap is NOT to create a generic study plan.
+
+The roadmap must show how the student can move from their current
+career position toward the target role by closing competency gaps,
+applying skills practically, producing portfolio evidence and
+preparing for employment.
+
+ROADMAP PRINCIPLES:
+
+1. Start from the student's current strengths and detected gaps.
+
+2. Prioritise the most important missing competencies for the target role.
+
+3. Do not simply say "learn X".
+   Every phase must connect learning to a concrete action.
+
+4. Where possible, connect the action to one of the student's existing projects.
+
+5. If an existing project is suitable, recommend extending that project
+   rather than always recommending a completely new project.
+
+6. Each phase must produce measurable employability evidence.
+
+7. Do not ask the student to relearn competencies they already demonstrate
+   unless the supplied evidence clearly indicates that improvement is needed.
+
+8. Include production-oriented actions where relevant, such as testing,
+   deployment, scalability, security, documentation or CI/CD.
+
+9. Include portfolio strengthening before the final interview phase.
+
+10. The final phase should focus on interview preparation and job readiness.
+
+11. Do not recalculate or modify any CareerReady AI score.
+
+12. Keep each phase concise, practical and achievable.
+
+Return a structured Career Action Roadmap.
+
+The roadmap must contain:
+
+summary
+
+current_position
+
+phases
+
+final_outcome
+
+Each phase must contain:
+
+title
+priority
+gap
+action
+project_application
+evidence
+expected_outcome
+""".strip()
+
+    try:
+        response = client.responses.create(
+            model='gpt-5',
+            instructions=system_prompt,
+            input=json.dumps(
+                context,
+                indent=2,
+                default=str
+            ),
+            text={
+                'format': {
+                    'type': 'json_schema',
+                    'name': 'career_action_roadmap',
+                    'strict': True,
+                    'schema': {
+                        'type': 'object',
+                        'properties': {
+                            'summary': {
+                                'type': 'string'
+                            },
+                            'current_position': {
+                                'type': 'string'
+                            },
+                            'phases': {
+                                'type': 'array',
+                                'minItems': 3,
+                                'maxItems': 6,
+                                'items': {
+                                    'type': 'object',
+                                    'properties': {
+                                        'title': {
+                                            'type': 'string'
+                                        },
+                                        'priority': {
+                                            'type': 'string',
+                                            'enum': [
+                                                'HIGH',
+                                                'MEDIUM',
+                                                'LOW'
+                                            ]
+                                        },
+                                        'gap': {
+                                            'type': 'string'
+                                        },
+                                        'action': {
+                                            'type': 'string'
+                                        },
+                                        'project_application': {
+                                            'type': 'string'
+                                        },
+                                        'evidence': {
+                                            'type': 'string'
+                                        },
+                                        'expected_outcome': {
+                                            'type': 'string'
+                                        },
+                                    },
+                                    'required': [
+                                        'title',
+                                        'priority',
+                                        'gap',
+                                        'action',
+                                        'project_application',
+                                        'evidence',
+                                        'expected_outcome'
+                                    ],
+                                    'additionalProperties': False,
+                                }
+                            },
+                            'final_outcome': {
+                                'type': 'string'
+                            },
+                        },
+                        'required': [
+                            'summary',
+                            'current_position',
+                            'phases',
+                            'final_outcome'
+                        ],
+                        'additionalProperties': False,
+                    }
+                }
+            }
+        )
+
+        return json.loads(
+            response.output_text
+        )
+
+    except Exception as error:
+        logger.warning(
+            'AI career action roadmap generation failed for '
+            'career match result %s: %s',
+            result.id,
+            error
+        )
+
+        return None
+
 @login_required
 def learning_roadmap(request, result_id):
-
-    result = CareerMatchResult.objects.get(
+    result = get_object_or_404(
+        CareerMatchResult,
         id=result_id,
         user=request.user
     )
 
+    roadmap_data = None
+
+    if result.ai_roadmap:
+        try:
+            roadmap_data = json.loads(
+                result.ai_roadmap
+            )
+        except (TypeError, ValueError):
+            roadmap_data = None
+
+    if not roadmap_data:
+        return redirect(
+            'prepare_learning_roadmap',
+            result_id=result.id
+        )
+
+    return render(
+        request,
+        'career_app/learning_roadmap.html',
+        {
+            'result': result,
+            'ai_roadmap': roadmap_data,
+            'roadmap_steps': None,
+        }
+    )
+
+@login_required
+def prepare_learning_roadmap(request, result_id):
+    result = get_object_or_404(
+        CareerMatchResult,
+        id=result_id,
+        user=request.user
+    )
+
+    if result.ai_roadmap:
+        return redirect(
+            'learning_roadmap',
+            result_id=result.id
+        )
+
+    if request.method == 'GET':
+        return render(
+            request,
+            'career_app/preparing_learning_roadmap.html',
+            {
+                'result': result
+            }
+        )
+
+    roadmap_data = generate_ai_learning_roadmap(
+        result
+    )
+
+    if roadmap_data:
+        result.ai_roadmap = json.dumps(
+            roadmap_data
+        )
+
+        result.save(
+            update_fields=[
+                'ai_roadmap'
+            ]
+        )
+
+        messages.success(
+            request,
+            'Your personalised AI career roadmap is ready.'
+        )
+
+        return redirect(
+            'learning_roadmap',
+            result_id=result.id
+        )
+
+    messages.warning(
+        request,
+        'AI roadmap generation was unavailable.'
+    )
+
     missing_skills = result.missing_skills.all()
 
-    roadmap_steps = []
-
-    step_number = 1
-
-    for skill in missing_skills:
-        roadmap_steps.append(
-            f"Step {step_number}: Learn {skill.skill_name}"
+    roadmap_steps = [
+        f"Step {index}: Learn {skill.skill_name}"
+        for index, skill in enumerate(
+            missing_skills,
+            start=1
         )
-        step_number += 1
+    ]
 
     roadmap_steps.append(
-        f"Step {step_number}: Build a project related to {result.job_role.role_name}"
+        f"Build a project related to "
+        f"{result.job_role.role_name}"
     )
 
     return render(
@@ -876,7 +1199,8 @@ def learning_roadmap(request, result_id):
         'career_app/learning_roadmap.html',
         {
             'result': result,
-            'roadmap_steps': roadmap_steps
+            'ai_roadmap': None,
+            'roadmap_steps': roadmap_steps,
         }
     )
 @login_required
@@ -954,6 +1278,306 @@ def edit_profile(request):
 
     return render(request, 'career_app/edit_profile.html', {'form': form})
 
+
+def generate_ai_readiness_analysis(assessment):
+    client = OpenAI(
+        api_key=settings.OPENAI_API_KEY
+    )
+
+    prompt = f"""
+You are analysing a student's career readiness assessment.
+
+Use only the supplied CareerReady AI results.
+
+Target Role:
+{assessment.job_role.role_name}
+
+Academic Readiness:
+{assessment.academic_score}%
+
+Industry Readiness:
+{assessment.industry_score}%
+
+Overall Readiness:
+{assessment.overall_readiness_score}%
+
+Strengths:
+{assessment.strengths}
+
+Weaknesses:
+{assessment.weaknesses}
+
+Rules:
+1. Do not change or recalculate any readiness score.
+2. Do not invent skills, tools, projects, experience or qualifications.
+3. Explain why the student's readiness looks like this.
+4. Identify the highest-priority gaps.
+5. Give practical actions the student can take.
+6. Keep the response concise and career-focused.
+
+Return JSON with:
+- analysis
+- recommendation
+"""
+
+    try:
+        response = client.responses.create(
+            model='gpt-5',
+            input=prompt,
+            text={
+                'format': {
+                    'type': 'json_schema',
+                    'name': 'readiness_analysis',
+                    'strict': True,
+                    'schema': {
+                        'type': 'object',
+                        'properties': {
+                            'analysis': {
+                                'type': 'string'
+                            },
+                            'recommendation': {
+                                'type': 'string'
+                            }
+                        },
+                        'required': [
+                            'analysis',
+                            'recommendation'
+                        ],
+                        'additionalProperties': False
+                    }
+                }
+            }
+        )
+
+        data = json.loads(
+            response.output_text
+        )
+
+        assessment.ai_analysis = data[
+            'analysis'
+        ]
+
+        assessment.ai_recommendation = data[
+            'recommendation'
+        ]
+
+        assessment.save(
+            update_fields=[
+                'ai_analysis',
+                'ai_recommendation'
+            ]
+        )
+
+    except Exception as error:
+        logger.warning(
+            'AI readiness analysis failed for assessment %s: %s',
+            assessment.id,
+            error
+        )
+
+def generate_ai_readiness_assessment(user, job_role):
+    client = OpenAI(
+        api_key=settings.OPENAI_API_KEY
+    )
+    profile = UserProfile.objects.filter(user=user).first()
+    user_skills = []
+    user_tools = []
+    if profile:
+        user_skills = list(
+            (
+                profile.extracted_skills.all()
+                | profile.manual_skills.all()
+            ).distinct().values_list(
+                'skill_name',
+                flat=True
+            )
+        )
+
+        user_tools = list(
+            profile.manual_tools.values_list(
+                'tool_name',
+                flat=True
+            )
+        )
+
+    projects = UserProject.objects.filter(
+        user=user
+    ).prefetch_related(
+        'skills_used',
+        'tools_used'
+    )
+
+    project_evidence = []
+
+    for project in projects:
+        project_evidence.append({
+            'title': project.title,
+            'project_type': (
+                project.get_project_type_display()
+                if hasattr(
+                    project,
+                    'get_project_type_display'
+                )
+                else 'Not specified'
+            ),
+            'description': project.description or '',
+            'skills_used': list(
+                project.skills_used.values_list(
+                    'skill_name',
+                    flat=True
+                )
+            ),
+            'tools_used': list(
+                project.tools_used.values_list(
+                    'tool_name',
+                    flat=True
+                )
+            ),
+        })
+
+    required_skills = list(
+        JobRoleSkill.objects.filter(
+            job_role=job_role
+        ).values(
+            'skill__skill_name',
+            'importance'
+        )
+    )
+
+    required_tools = list(
+        JobRoleTool.objects.filter(
+            job_role=job_role
+        ).values(
+            'tool__tool_name',
+            'importance'
+        )
+    )
+
+    context = {
+        'target_role': job_role.role_name,
+        'required_skills': required_skills,
+        'required_tools': required_tools,
+        'user_skills': user_skills,
+        'user_tools': user_tools,
+        'projects': project_evidence,
+    }
+
+    instructions = """
+You are the AI readiness assessment engine inside CareerReady AI.
+
+Evaluate the student's readiness for the supplied target job role.
+
+Use ONLY the evidence and role requirements supplied in the input.
+
+Do not invent:
+- skills
+- tools
+- projects
+- experience
+- qualifications
+- achievements
+
+Evaluate relevance, not simply the number of skills.
+
+Academic Readiness Score:
+Score from 0 to 100 based primarily on the student's demonstrated
+technical and conceptual competencies relative to the supplied
+required role skills.
+
+Industry Readiness Score:
+Score from 0 to 100 based primarily on relevant tools and practical
+project evidence relative to the supplied role requirements.
+
+Overall Readiness Score:
+Score from 0 to 100 representing the student's overall readiness
+for the target role.
+
+Important:
+- High-importance requirements should influence the assessment more strongly.
+- Project-backed evidence is stronger than merely listing a competency.
+- Missing important competencies should reduce readiness.
+- Do not reward unrelated skills.
+- Scores must be consistent with the explanation.
+- Be conservative when evidence is weak.
+- Clearly explain why the scores were assigned.
+
+Return strengths, weaknesses, recommendations and concise scoring reasoning.
+""".strip()
+
+    try:
+        response = client.responses.create(
+            model='gpt-5',
+            instructions=instructions,
+            input=json.dumps(
+                context,
+                indent=2,
+                default=str
+            ),
+            text={
+                'format': {
+                    'type': 'json_schema',
+                    'name': 'ai_readiness_assessment',
+                    'strict': True,
+                    'schema': {
+                        'type': 'object',
+                        'properties': {
+                            'academic_score': {
+                                'type': 'number',
+                                'minimum': 0,
+                                'maximum': 100
+                            },
+                            'industry_score': {
+                                'type': 'number',
+                                'minimum': 0,
+                                'maximum': 100
+                            },
+                            'overall_score': {
+                                'type': 'number',
+                                'minimum': 0,
+                                'maximum': 100
+                            },
+                            'strengths': {
+                                'type': 'string'
+                            },
+                            'weaknesses': {
+                                'type': 'string'
+                            },
+                            'recommendation': {
+                                'type': 'string'
+                            },
+                            'reasoning': {
+                                'type': 'string'
+                            }
+                        },
+                        'required': [
+                            'academic_score',
+                            'industry_score',
+                            'overall_score',
+                            'strengths',
+                            'weaknesses',
+                            'recommendation',
+                            'reasoning'
+                        ],
+                        'additionalProperties': False
+                    }
+                }
+            }
+        )
+
+        return json.loads(
+            response.output_text
+        )
+
+    except Exception as error:
+        logger.warning(
+            'AI readiness assessment failed for user %s and role %s: %s',
+            user.id,
+            job_role.id,
+            error
+        )
+
+        return None
+    
 @login_required
 def readiness_assessment(request):
     form = ReadinessAssessmentForm(
@@ -967,6 +1591,19 @@ def readiness_assessment(request):
 
         assessment.user = request.user
         job_role = assessment.job_role
+
+        assessment_method = form.cleaned_data.get(
+            'assessment_method',
+            'RULE_BASED'
+        )
+
+        assessment.assessment_method = assessment_method
+
+        if assessment_method == 'AI_POWERED':
+            return redirect(
+                'prepare_ai_readiness',
+                job_role_id=job_role.id
+            )
 
         profile = UserProfile.objects.filter(
             user=request.user
@@ -1053,7 +1690,7 @@ def readiness_assessment(request):
             )
 
             if group.rule == 'ANY_ONE':
-                # The whole group counts as one requirement.
+
                 total_requirement_count += 1
 
                 if matched_ids:
@@ -1086,7 +1723,7 @@ def readiness_assessment(request):
                     })
 
             elif group.rule == 'ALL_REQUIRED':
-                # Every member counts as an individual requirement.
+
                 total_requirement_count += len(
                     skill_ids
                 )
@@ -1337,6 +1974,72 @@ def readiness_assessment(request):
             'form': form
         }
     )
+
+@login_required
+def prepare_ai_readiness(request, job_role_id):
+    job_role = get_object_or_404(
+        JobRole,
+        id=job_role_id
+    )
+
+    if request.method == 'GET':
+        return render(
+            request,
+            'career_app/preparing_ai_readiness.html',
+            {
+                'job_role': job_role
+            }
+        )
+
+    ai_result = generate_ai_readiness_assessment(
+        request.user,
+        job_role
+    )
+
+    if not ai_result:
+        messages.error(
+            request,
+            'AI readiness assessment could not be generated. Please try again.'
+        )
+
+        return redirect(
+            'readiness_assessment'
+        )
+
+    assessment = ReadinessAssessment.objects.create(
+        user=request.user,
+        job_role=job_role,
+        academic_score=round(
+            ai_result['academic_score'],
+            2
+        ),
+        industry_score=round(
+            ai_result['industry_score'],
+            2
+        ),
+        overall_readiness_score=round(
+            ai_result['overall_score'],
+            2
+        ),
+        strengths=ai_result['strengths'],
+        weaknesses=ai_result['weaknesses'],
+        recommendation=ai_result['recommendation'],
+        ai_analysis=ai_result['reasoning'],
+        ai_recommendation=ai_result['recommendation'],
+        assessment_method='AI_POWERED'
+    )
+
+    messages.success(
+        request,
+        'Your AI-powered career readiness assessment is ready.'
+    )
+
+    return redirect(
+        'readiness_result',
+        assessment_id=assessment.id
+    )
+
+
 @login_required
 def readiness_result(request, assessment_id):
     assessment = ReadinessAssessment.objects.get(
@@ -1459,254 +2162,666 @@ def view_role_tools(request):
     role_tools = JobRoleTool.objects.select_related('job_role', 'tool').all()
     return render(request, 'career_app/view_role_tools.html', {'role_tools': role_tools})
 
+def generate_ai_bottleneck_analysis(bottleneck):
+    client = OpenAI(
+        api_key=settings.OPENAI_API_KEY
+    )
 
+    user = bottleneck.user
+    job_role = bottleneck.job_role
+    assessment = bottleneck.readiness_assessment
+
+    profile = UserProfile.objects.filter(
+        user=user
+    ).first()
+
+    user_skills = []
+    user_tools = []
+
+    if profile:
+        user_skills = list(
+            (
+                profile.extracted_skills.all()
+                | profile.manual_skills.all()
+            ).distinct().values_list(
+                'skill_name',
+                flat=True
+            )
+        )
+
+        user_tools = list(
+            profile.manual_tools.values_list(
+                'tool_name',
+                flat=True
+            )
+        )
+
+    projects = UserProject.objects.filter(
+        user=user
+    ).prefetch_related(
+        'skills_used',
+        'tools_used'
+    )
+
+    project_evidence = []
+
+    for project in projects:
+        project_evidence.append({
+            'title': project.title,
+            'project_type': (
+                project.get_project_type_display()
+                if hasattr(
+                    project,
+                    'get_project_type_display'
+                )
+                else 'Not specified'
+            ),
+            'description': project.description or '',
+            'skills_used': list(
+                project.skills_used.values_list(
+                    'skill_name',
+                    flat=True
+                )
+            ),
+            'tools_used': list(
+                project.tools_used.values_list(
+                    'tool_name',
+                    flat=True
+                )
+            ),
+        })
+
+    required_skills = list(
+        JobRoleSkill.objects.filter(
+            job_role=job_role
+        ).values(
+            'skill__skill_name',
+            'importance'
+        )
+    )
+
+    required_tools = list(
+        JobRoleTool.objects.filter(
+            job_role=job_role
+        ).values(
+            'tool__tool_name',
+            'importance'
+        )
+    )
+
+    context = {
+        'target_role': job_role.role_name,
+        'detected_bottleneck': bottleneck.main_bottleneck,
+        'rule_based_explanation': bottleneck.explanation,
+        'rule_based_recommendation': bottleneck.recommendation,
+        'readiness': {
+            'academic_score': (
+                assessment.academic_score
+                if assessment
+                else None
+            ),
+            'industry_score': (
+                assessment.industry_score
+                if assessment
+                else None
+            ),
+            'overall_score': (
+                assessment.overall_readiness_score
+                if assessment
+                else None
+            ),
+        },
+        'user_skills': user_skills,
+        'user_tools': user_tools,
+        'required_skills': required_skills,
+        'required_tools': required_tools,
+        'projects': project_evidence,
+    }
+
+    instructions = """
+You are the AI employability bottleneck analysis engine
+inside CareerReady AI.
+
+The rule-based system has already identified the student's
+primary employability bottleneck.
+
+Do NOT replace or change that detected bottleneck.
+
+Use ONLY the supplied evidence.
+
+Do not invent:
+- skills
+- tools
+- projects
+- work experience
+- qualifications
+- achievements
+
+Your job is to interpret and prioritise the existing diagnosis.
+
+Return:
+
+1. severity
+   Must be one of:
+   LOW
+   MODERATE
+   HIGH
+
+2. analysis
+   Explain why the detected bottleneck is limiting readiness
+   for the selected target role.
+
+3. priority_gaps
+   Identify the most important gaps the student should address
+   first. Prioritise high-importance role requirements and
+   evidence weaknesses.
+
+4. action_plan
+   Give a concise, practical improvement plan.
+   Connect actions to existing projects where appropriate.
+
+Important:
+- Do not recalculate readiness scores.
+- Do not change the detected bottleneck.
+- Do not recommend unrelated technologies.
+- Prefer project-backed practical actions.
+- Be concise and specific.
+""".strip()
+
+    try:
+        response = client.responses.create(
+            model='gpt-5',
+            instructions=instructions,
+            input=json.dumps(
+                context,
+                indent=2,
+                default=str
+            ),
+            text={
+                'format': {
+                    'type': 'json_schema',
+                    'name': 'ai_bottleneck_analysis',
+                    'strict': True,
+                    'schema': {
+                        'type': 'object',
+                        'properties': {
+                            'severity': {
+                                'type': 'string',
+                                'enum': [
+                                    'LOW',
+                                    'MODERATE',
+                                    'HIGH'
+                                ]
+                            },
+                            'analysis': {
+                                'type': 'string'
+                            },
+                            'priority_gaps': {
+                                'type': 'string'
+                            },
+                            'action_plan': {
+                                'type': 'string'
+                            }
+                        },
+                        'required': [
+                            'severity',
+                            'analysis',
+                            'priority_gaps',
+                            'action_plan'
+                        ],
+                        'additionalProperties': False
+                    }
+                }
+            }
+        )
+
+        return json.loads(
+            response.output_text
+        )
+
+    except Exception as error:
+        logger.warning(
+            'AI bottleneck analysis failed for bottleneck %s: %s',
+            bottleneck.id,
+            error
+        )
+
+        return None
 @login_required
 def bottleneck_detection(request):
     form = BottleneckForm(request.POST or None)
 
-    if request.method == 'POST':
-        if form.is_valid():
-            job_role = form.cleaned_data['job_role']
+    if request.method == 'POST' and form.is_valid():
+        job_role = form.cleaned_data['job_role']
 
-            assessment = ReadinessAssessment.objects.filter(
-                user=request.user,
-                job_role=job_role
-            ).order_by('-created_at').first()
+        assessment = ReadinessAssessment.objects.filter(
+            user=request.user,
+            job_role=job_role
+        ).order_by('-created_at').first()
 
-            if not assessment:
-                return redirect('readiness_assessment')
+        if not assessment:
+            messages.warning(
+                request,
+                'Please complete a readiness assessment for this role first.'
+            )
+            return redirect('readiness_assessment')
 
-            projects = UserProject.objects.filter(user=request.user)
-            project_count = projects.count()
+        projects = UserProject.objects.filter(
+            user=request.user
+        )
 
-            required_skills = Skill.objects.filter(
-                jobroleskill__job_role=job_role
-            ).distinct()
+        project_count = projects.count()
 
-            required_tools = IndustryTool.objects.filter(
-                jobroletool__job_role=job_role
-            ).distinct()
+        required_skills = Skill.objects.filter(
+            jobroleskill__job_role=job_role
+        ).distinct()
 
-            project_skill_ids = set()
-            project_tool_ids = set()
+        required_tools = IndustryTool.objects.filter(
+            jobroletool__job_role=job_role
+        ).distinct()
 
-            for project in projects:
-                project_skill_ids.update(
-                    project.skills_used.values_list('id', flat=True)
+        project_skill_ids = set()
+        project_tool_ids = set()
+
+        for project in projects:
+            project_skill_ids.update(
+                project.skills_used.values_list(
+                    'id',
+                    flat=True
                 )
-                project_tool_ids.update(
-                    project.tools_used.values_list('id', flat=True)
-                )
-
-            matched_project_skill_ids = set()
-            missing_project_skill_ids = set()
-            grouped_skill_ids = set()
-
-            groups = CompetencyGroup.objects.filter(
-                job_role=job_role
             )
 
-            for group in groups:
-                members = CompetencyGroupMember.objects.filter(
-                    group=group
-                ).select_related('job_role_skill__skill')
+            project_tool_ids.update(
+                project.tools_used.values_list(
+                    'id',
+                    flat=True
+                )
+            )
 
-                skills = [
-                    member.job_role_skill.skill
-                    for member in members
-                ]
+        matched_project_skill_ids = set()
+        missing_project_skill_ids = set()
+        grouped_skill_ids = set()
 
-                skill_ids = {
-                    skill.id
-                    for skill in skills
-                }
+        groups = CompetencyGroup.objects.filter(
+            job_role=job_role
+        )
 
-                grouped_skill_ids.update(skill_ids)
+        for group in groups:
+            members = CompetencyGroupMember.objects.filter(
+                group=group
+            ).select_related(
+                'job_role_skill__skill'
+            )
 
-                if group.rule == "ANY_ONE":
-                    matched = skill_ids.intersection(project_skill_ids)
+            skills = [
+                member.job_role_skill.skill
+                for member in members
+            ]
 
-                    if matched:
-                        matched_project_skill_ids.add(next(iter(matched)))
+            skill_ids = {
+                skill.id
+                for skill in skills
+            }
+
+            grouped_skill_ids.update(
+                skill_ids
+            )
+
+            if group.rule == 'ANY_ONE':
+                matched = skill_ids.intersection(
+                    project_skill_ids
+                )
+
+                if matched:
+                    matched_project_skill_ids.add(
+                        next(iter(matched))
+                    )
+
+                else:
+                    missing_project_skill_ids.update(
+                        skill_ids
+                    )
+
+            else:
+                for skill in skills:
+                    if skill.id in project_skill_ids:
+                        matched_project_skill_ids.add(
+                            skill.id
+                        )
                     else:
-                        missing_project_skill_ids.update(skill_ids)
+                        missing_project_skill_ids.add(
+                            skill.id
+                        )
 
-                else:
-                    for skill in skills:
-                        if skill.id in project_skill_ids:
-                            matched_project_skill_ids.add(skill.id)
-                        else:
-                            missing_project_skill_ids.add(skill.id)
+        normal_required_skills = required_skills.exclude(
+            id__in=grouped_skill_ids
+        )
 
-            normal_required_skills = required_skills.exclude(
-                id__in=grouped_skill_ids
+        for skill in normal_required_skills:
+            if skill.id in project_skill_ids:
+                matched_project_skill_ids.add(
+                    skill.id
+                )
+            else:
+                missing_project_skill_ids.add(
+                    skill.id
+                )
+
+        required_tool_ids = set(
+            required_tools.values_list(
+                'id',
+                flat=True
             )
+        )
 
-            for skill in normal_required_skills:
-                if skill.id in project_skill_ids:
-                    matched_project_skill_ids.add(skill.id)
-                else:
-                    missing_project_skill_ids.add(skill.id)
-
-            required_tool_ids = set(
-                required_tools.values_list('id', flat=True)
-            )
-
-            relevant_project_tools = project_tool_ids.intersection(
+        relevant_project_tools = (
+            project_tool_ids.intersection(
                 required_tool_ids
             )
+        )
 
-            missing_project_tool_ids = required_tool_ids.difference(
+        missing_project_tool_ids = (
+            required_tool_ids.difference(
                 project_tool_ids
             )
+        )
 
-            total_skill_items = (
-                len(matched_project_skill_ids) +
-                len(missing_project_skill_ids)
+        total_skill_items = (
+            len(matched_project_skill_ids)
+            + len(missing_project_skill_ids)
+        )
+
+        if total_skill_items > 0:
+            project_skill_coverage = round(
+                (
+                    len(matched_project_skill_ids)
+                    / total_skill_items
+                ) * 100,
+                2
+            )
+        else:
+            project_skill_coverage = 0
+
+        if len(required_tool_ids) > 0:
+            project_tool_coverage = round(
+                (
+                    len(relevant_project_tools)
+                    / len(required_tool_ids)
+                ) * 100,
+                2
+            )
+        else:
+            project_tool_coverage = 0
+
+        total_required_items = (
+            total_skill_items
+            + len(required_tool_ids)
+        )
+
+        total_relevant_items = (
+            len(matched_project_skill_ids)
+            + len(relevant_project_tools)
+        )
+
+        if total_required_items > 0:
+            project_relevance_score = round(
+                (
+                    total_relevant_items
+                    / total_required_items
+                ) * 100,
+                2
+            )
+        else:
+            project_relevance_score = 0
+
+        missing_project_skills = Skill.objects.filter(
+            id__in=missing_project_skill_ids
+        )
+
+        missing_project_tools = IndustryTool.objects.filter(
+            id__in=missing_project_tool_ids
+        )
+
+        missing_skill_names = ', '.join(
+            missing_project_skills.values_list(
+                'skill_name',
+                flat=True
+            )
+        )
+
+        missing_tool_names = ', '.join(
+            missing_project_tools.values_list(
+                'tool_name',
+                flat=True
+            )
+        )
+
+        bottleneck = EmployabilityBottleneck(
+            user=request.user,
+            job_role=job_role,
+            readiness_assessment=assessment
+        )
+
+        if assessment.academic_score < 50:
+            bottleneck.main_bottleneck = (
+                'Skill Deficiency'
             )
 
-            if total_skill_items > 0:
-                project_skill_coverage = round(
-                    (len(matched_project_skill_ids) / total_skill_items) * 100,
-                    2
-                )
-            else:
-                project_skill_coverage = 0
-
-            if len(required_tool_ids) > 0:
-                project_tool_coverage = round(
-                    (len(relevant_project_tools) / len(required_tool_ids)) * 100,
-                    2
-                )
-            else:
-                project_tool_coverage = 0
-
-            total_required_items = total_skill_items + len(required_tool_ids)
-            total_relevant_items = (
-                len(matched_project_skill_ids) +
-                len(relevant_project_tools)
+            bottleneck.explanation = (
+                f'Your academic readiness score is '
+                f'{assessment.academic_score}%, which means '
+                f'your core skill foundation for '
+                f'{job_role.role_name} is weak.'
             )
 
-            if total_required_items > 0:
-                project_relevance_score = round(
-                    (total_relevant_items / total_required_items) * 100,
-                    2
-                )
-            else:
-                project_relevance_score = 0
-
-            missing_project_skills = Skill.objects.filter(
-                id__in=missing_project_skill_ids
+            bottleneck.recommendation = (
+                'First improve the missing core skills for '
+                'this role before focusing on projects.'
             )
 
-            missing_project_tools = IndustryTool.objects.filter(
-                id__in=missing_project_tool_ids
+        elif assessment.industry_score < 50:
+            bottleneck.main_bottleneck = (
+                'Industry Tool Deficiency'
             )
 
-            missing_skill_names = ", ".join(
-                missing_project_skills.values_list("skill_name", flat=True)
+            bottleneck.explanation = (
+                f'Your industry tool readiness score is '
+                f'{assessment.industry_score}%, which means '
+                f'you are missing important tools required '
+                f'for {job_role.role_name}.'
             )
 
-            missing_tool_names = ", ".join(
-                missing_project_tools.values_list("tool_name", flat=True)
+            bottleneck.recommendation = (
+                'Learn the missing tools and use them '
+                'inside practical projects.'
             )
 
-            bottleneck = EmployabilityBottleneck()
-            bottleneck.user = request.user
-            bottleneck.job_role = job_role
-            bottleneck.readiness_assessment = assessment
-
-            if assessment.academic_score < 50:
-                bottleneck.main_bottleneck = "Skill Deficiency"
-                bottleneck.explanation = (
-                    f"Your academic readiness score is {assessment.academic_score}%, "
-                    f"which means your core skill foundation for {job_role.role_name} is weak."
-                )
-                bottleneck.recommendation = (
-                    "First improve the missing core skills for this role before focusing on projects."
-                )
-
-            elif assessment.industry_score < 50:
-                bottleneck.main_bottleneck = "Industry Tool Deficiency"
-                bottleneck.explanation = (
-                    f"Your industry tool readiness score is {assessment.industry_score}%, "
-                    f"which means you are missing important tools required for {job_role.role_name}."
-                )
-                bottleneck.recommendation = (
-                    "Learn the missing tools and use them inside practical projects."
-                )
-
-            elif project_count == 0:
-                bottleneck.main_bottleneck = "Lack of Practical Projects"
-                bottleneck.explanation = (
-                    "You have not added any projects to prove practical experience."
-                )
-                bottleneck.recommendation = (
-                    f"Add at least one {job_role.role_name} project and map the skills/tools used."
-                )
-
-            elif project_skill_coverage < 50:
-                bottleneck.main_bottleneck = "Weak Project Skill Evidence"
-                bottleneck.explanation = (
-                    f"You added {project_count} project(s), but they only prove "
-                    f"{project_skill_coverage}% of the required skill competencies for {job_role.role_name}."
-                )
-                bottleneck.recommendation = (
-                    f"Strengthen your projects using missing role skills such as: "
-                    f"{missing_skill_names if missing_skill_names else 'more target-role skills'}."
-                )
-
-            elif project_tool_coverage < 50:
-                bottleneck.main_bottleneck = "Weak Project Tool Evidence"
-                bottleneck.explanation = (
-                    f"You added {project_count} project(s), but they only show "
-                    f"{project_tool_coverage}% of the required tools for {job_role.role_name}."
-                )
-                bottleneck.recommendation = (
-                    f"Update your projects to include tools such as: "
-                    f"{missing_tool_names if missing_tool_names else 'more industry tools'}."
-                )
-
-            elif project_relevance_score < 70:
-                bottleneck.main_bottleneck = "Weak Project Relevance"
-                bottleneck.explanation = (
-                    f"You added {project_count} project(s), but their combined relevance score is only "
-                    f"{project_relevance_score}% for {job_role.role_name}."
-                )
-                bottleneck.recommendation = (
-                    "Build one stronger role-specific project instead of adding many weak or unrelated projects."
-                )
-
-            elif assessment.overall_readiness_score < 75:
-                bottleneck.main_bottleneck = "Moderate Readiness"
-                bottleneck.explanation = (
-                    f"Your projects are relevant, but your overall readiness score is "
-                    f"{assessment.overall_readiness_score}%, which is still below industry-ready level."
-                )
-                bottleneck.recommendation = (
-                    "Improve your weakest readiness area and polish your best project into portfolio quality."
-                )
-
-            else:
-                bottleneck.main_bottleneck = "No Major Bottleneck"
-                bottleneck.explanation = (
-                    f"You appear ready for {job_role.role_name} based on your current skills, tools, and projects."
-                )
-                bottleneck.recommendation = (
-                    "Focus on interview preparation, portfolio polishing, and job applications."
-                )
-
-            bottleneck.save()
-
-            return redirect(
-                'bottleneck_result',
-                bottleneck_id=bottleneck.id
+        elif project_count == 0:
+            bottleneck.main_bottleneck = (
+                'Lack of Practical Projects'
             )
+
+            bottleneck.explanation = (
+                'You have not added any projects to prove '
+                'practical experience.'
+            )
+
+            bottleneck.recommendation = (
+                f'Add at least one {job_role.role_name} '
+                f'project and map the skills/tools used.'
+            )
+
+        elif project_skill_coverage < 50:
+            bottleneck.main_bottleneck = (
+                'Weak Project Skill Evidence'
+            )
+
+            bottleneck.explanation = (
+                f'You added {project_count} project(s), but '
+                f'they only prove {project_skill_coverage}% '
+                f'of the required skill competencies for '
+                f'{job_role.role_name}.'
+            )
+
+            bottleneck.recommendation = (
+                f'Strengthen your projects using missing '
+                f'role skills such as: '
+                f'{missing_skill_names if missing_skill_names else "more target-role skills"}.'
+            )
+
+        elif project_tool_coverage < 50:
+            bottleneck.main_bottleneck = (
+                'Weak Project Tool Evidence'
+            )
+
+            bottleneck.explanation = (
+                f'You added {project_count} project(s), but '
+                f'they only show {project_tool_coverage}% '
+                f'of the required tools for '
+                f'{job_role.role_name}.'
+            )
+
+            bottleneck.recommendation = (
+                f'Update your projects to include tools '
+                f'such as: '
+                f'{missing_tool_names if missing_tool_names else "more industry tools"}.'
+            )
+
+        elif project_relevance_score < 70:
+            bottleneck.main_bottleneck = (
+                'Weak Project Relevance'
+            )
+
+            bottleneck.explanation = (
+                f'You added {project_count} project(s), but '
+                f'their combined relevance score is only '
+                f'{project_relevance_score}% for '
+                f'{job_role.role_name}.'
+            )
+
+            bottleneck.recommendation = (
+                'Build one stronger role-specific project '
+                'instead of adding many weak or unrelated '
+                'projects.'
+            )
+
+        elif assessment.overall_readiness_score < 75:
+            bottleneck.main_bottleneck = (
+                'Moderate Readiness'
+            )
+
+            bottleneck.explanation = (
+                f'Your projects are relevant, but your '
+                f'overall readiness score is '
+                f'{assessment.overall_readiness_score}%, '
+                f'which is still below industry-ready level.'
+            )
+
+            bottleneck.recommendation = (
+                'Improve your weakest readiness area and '
+                'polish your best project into portfolio '
+                'quality.'
+            )
+
+        else:
+            bottleneck.main_bottleneck = (
+                'No Major Bottleneck'
+            )
+
+            bottleneck.explanation = (
+                f'You appear ready for '
+                f'{job_role.role_name} based on your '
+                f'current skills, tools, and projects.'
+            )
+
+            bottleneck.recommendation = (
+                'Focus on interview preparation, '
+                'portfolio polishing, and job applications.'
+            )
+
+        bottleneck.save()
+
+        return redirect(
+            'prepare_ai_bottleneck',
+            bottleneck_id=bottleneck.id
+        )
 
     return render(
         request,
         'career_app/bottleneck_detection.html',
-        {'form': form}
+        {
+            'form': form
+        }
+    )
+
+
+@login_required
+def prepare_ai_bottleneck(request, bottleneck_id):
+    bottleneck = get_object_or_404(
+        EmployabilityBottleneck,
+        id=bottleneck_id,
+        user=request.user
+    )
+
+    if request.method == 'POST':
+        try:
+            ai_result = generate_ai_bottleneck_analysis(
+                bottleneck
+            )
+
+            if ai_result:
+                bottleneck.ai_severity = ai_result.get(
+                    'severity',
+                    ''
+                )
+
+                bottleneck.ai_analysis = ai_result.get(
+                    'analysis',
+                    ''
+                )
+
+                bottleneck.ai_priority_gaps = ai_result.get(
+                    'priority_gaps',
+                    ''
+                )
+
+                bottleneck.ai_action_plan = ai_result.get(
+                    'action_plan',
+                    ''
+                )
+
+                bottleneck.save(
+                    update_fields=[
+                        'ai_severity',
+                        'ai_analysis',
+                        'ai_priority_gaps',
+                        'ai_action_plan'
+                    ]
+                )
+
+        except Exception as error:
+            print(
+                'AI bottleneck analysis error:',
+                error
+            )
+
+            messages.warning(
+                request,
+                'The bottleneck was detected, but the AI analysis '
+                'could not be generated.'
+            )
+
+        return redirect(
+            'bottleneck_result',
+            bottleneck_id=bottleneck.id
+        )
+
+    return render(
+        request,
+        'career_app/prepare_ai_bottleneck.html',
+        {
+            'bottleneck': bottleneck
+        }
     )
 @login_required
 def bottleneck_result(request, bottleneck_id):
@@ -2033,7 +3148,7 @@ def import_dataset(request):
         return str(value).strip()
 
     def add_warning(message):
-        # Prevent the result page from becoming enormous.
+
         if len(summary['warnings']) < 200:
             summary['warnings'].append(message)
 
@@ -2092,9 +3207,6 @@ def import_dataset(request):
 
         return default
 
-    # =====================================================
-    # JOB ROLES
-    # =====================================================
 
     sheet = get_sheet(
         'JobRoles',
@@ -2167,9 +3279,6 @@ def import_dataset(request):
                 else:
                     summary['duplicates'] += 1
 
-    # =====================================================
-    # SKILLS
-    # =====================================================
 
     sheet = get_sheet(
         'Skills',
@@ -2251,9 +3360,6 @@ def import_dataset(request):
                 else:
                     summary['duplicates'] += 1
 
-    # =====================================================
-    # INDUSTRY TOOLS
-    # =====================================================
 
     sheet = get_sheet(
         'Tools',
@@ -2336,9 +3442,6 @@ def import_dataset(request):
                 else:
                     summary['duplicates'] += 1
 
-    # =====================================================
-    # ROLE-SKILL MAPPINGS
-    # =====================================================
 
     sheet = get_sheet(
         'RoleSkills',
@@ -2460,9 +3563,6 @@ def import_dataset(request):
                 else:
                     summary['duplicates'] += 1
 
-    # =====================================================
-    # ROLE-TOOL MAPPINGS
-    # =====================================================
 
     sheet = get_sheet(
         'RoleTools',
@@ -2584,9 +3684,6 @@ def import_dataset(request):
                 else:
                     summary['duplicates'] += 1
 
-    # =====================================================
-    # LEARNING RESOURCES
-    # =====================================================
 
     sheet = get_sheet(
         'LearningResources',
@@ -2717,9 +3814,6 @@ def import_dataset(request):
                 else:
                     summary['duplicates'] += 1
 
-    # =====================================================
-    # COMPETENCY GROUPS
-    # =====================================================
 
     sheet = get_sheet(
         'CompetencyGroups',
@@ -2835,9 +3929,6 @@ def import_dataset(request):
                 else:
                     summary['duplicates'] += 1
 
-    # =====================================================
-    # COMPETENCY GROUP MEMBERS
-    # =====================================================
 
     sheet = get_sheet(
         'CompetencyGroupMembers',
@@ -2957,9 +4048,6 @@ def import_dataset(request):
             else:
                 summary['duplicates'] += 1
 
-    # =====================================================
-    # USERS
-    # =====================================================
 
     sheet = get_sheet(
         'User',
@@ -3144,9 +4232,6 @@ def import_dataset(request):
                     "be created."
                 )
 
-    # =====================================================
-    # USER PROFILES
-    # =====================================================
 
     profile_source_map = {}
 
@@ -3324,9 +4409,6 @@ def import_dataset(request):
                     source_profile_id
                 ] = profile
 
-    # =====================================================
-    # USER PROFILE SKILLS
-    # =====================================================
 
     sheet = get_sheet(
         'UserProfile_Skills',
@@ -3405,9 +4487,6 @@ def import_dataset(request):
                     'user_profile_skills'
                 ] += 1
 
-    # =====================================================
-    # USER PROJECTS
-    # =====================================================
 
     project_source_map = {}
 
@@ -3556,9 +4635,6 @@ def import_dataset(request):
                     source_project_id
                 ] = project
 
-    # =====================================================
-    # USER PROJECT SKILLS
-    # =====================================================
 
     sheet = get_sheet(
         'UserProject_Skills',
@@ -3622,9 +4698,6 @@ def import_dataset(request):
                     'user_project_skills'
                 ] += 1
 
-    # =====================================================
-    # USER PROJECT TOOLS
-    # =====================================================
 
     sheet = get_sheet(
         'UserProject_Tools',
@@ -4420,13 +5493,15 @@ COVERAGE:
         return None
 
 
+
 def generate_ai_interview_questions(session):
     """
-    Generate and save a complete AI-powered interview question set.
+    Generate and save exactly 10 AI-powered interview questions.
 
-    If AI generation or validation fails, the complete session falls
-    back to the existing rule-based generator so that one interview
-    never mixes partially generated AI questions with rule-based ones.
+    CareerReady AI supplies grounded user, project, role, competency,
+    readiness and bottleneck evidence. If AI generation or validation fails,
+    the interview is not replaced with rule-based questions; the failure is
+    returned to the user so they can retry.
     """
 
     if session.questions.exists():
@@ -4440,12 +5515,8 @@ def generate_ai_interview_questions(session):
     )
 
     if not generated_questions:
-        logger.warning(
-            'Using rule-based question fallback for session %s.',
-            session.id,
-        )
-        return generate_interview_questions(
-            session
+        raise ValueError(
+            'AI interview question generation returned no usable questions.'
         )
 
     allowed_skill_names = {
@@ -4467,6 +5538,22 @@ def generate_ai_interview_questions(session):
         for group in CompetencyGroup.objects.filter(
             job_role=session.job_role
         )
+    }
+
+    allowed_question_types = {
+        'PROJECT',
+        'TECHNICAL',
+        'TOOL',
+        'COMPETENCY',
+        'WEAKNESS',
+        'SYSTEM_DESIGN',
+        'BEHAVIOURAL',
+    }
+
+    allowed_difficulties = {
+        'EASY',
+        'MEDIUM',
+        'HARD',
     }
 
     validated_questions = []
@@ -4497,7 +5584,24 @@ def generate_ai_interview_questions(session):
         if not question_text:
             continue
 
-        # Hard safety limit for excessively long AI questions.
+        if question_type not in allowed_question_types:
+            logger.warning(
+                'Rejected invalid AI interview question type %s '
+                'for session %s.',
+                question_type,
+                session.id,
+            )
+            continue
+
+        if difficulty not in allowed_difficulties:
+            logger.warning(
+                'Rejected invalid AI interview difficulty %s '
+                'for session %s.',
+                difficulty,
+                session.id,
+            )
+            continue
+
         if len(question_text.split()) > 90:
             logger.warning(
                 'Rejected overlong AI interview question '
@@ -4555,18 +5659,10 @@ def generate_ai_interview_questions(session):
             'competency_group': competency_group,
         })
 
-    # Do not save a partial AI interview.
     if len(validated_questions) != 10:
-        logger.warning(
-            'AI question validation produced %s/10 usable '
-            'questions for session %s. Falling back to '
-            'rule-based generation.',
-            len(validated_questions),
-            session.id,
-        )
-
-        return generate_interview_questions(
-            session
+        raise ValueError(
+            f'AI question validation produced '
+            f'{len(validated_questions)}/10 usable questions.'
         )
 
     with transaction.atomic():
@@ -4591,601 +5687,15 @@ def generate_ai_interview_questions(session):
     )
 
 
-def generate_interview_questions(session):
-    """
-    Generate rule-based personalised interview questions using:
-
-    - Selected project
-    - Target job role
-    - Project skills and tools
-    - User profile skills and tools
-    - Competency groups
-    - Readiness assessment
-    - Employability bottleneck
-
-    Important competency rule:
-    - ANY_ONE groups produce only one interview question.
-    - If the user knows one option, the whole group is satisfied.
-    - The remaining options are not treated as separate weaknesses.
-    - ALL_REQUIRED groups can generate questions for individual missing skills.
-    """
-
-    if session.questions.exists():
-        return session.questions.order_by(
-            'display_order',
-            'id'
-        )
-
-    user = session.user
-    job_role = session.job_role
-    project = session.project
-
-    latest_assessment = ReadinessAssessment.objects.filter(
-        user=user,
-        job_role=job_role
-    ).order_by(
-        '-created_at'
-    ).first()
-
-    latest_bottleneck = EmployabilityBottleneck.objects.filter(
-        user=user,
-        job_role=job_role
-    ).order_by(
-        '-created_at'
-    ).first()
-
-    role_skills = list(
-        JobRoleSkill.objects.filter(
-            job_role=job_role
-        ).select_related(
-            'skill'
-        ).order_by(
-            'importance',
-            'skill__skill_name'
-        )
-    )
-
-    role_tools = list(
-        JobRoleTool.objects.filter(
-            job_role=job_role
-        ).select_related(
-            'tool'
-        ).order_by(
-            'importance',
-            'tool__tool_name'
-        )
-    )
-
-    project_skill_ids = set(
-        project.skills_used.values_list(
-            'id',
-            flat=True
-        )
-    )
-
-    project_tool_ids = set(
-        project.tools_used.values_list(
-            'id',
-            flat=True
-        )
-    )
-
-    user_skill_ids = set(
-        project_skill_ids
-    )
-    user_tool_ids = set(
-        project_tool_ids
-    )
-
-    try:
-        user_profile = user.userprofile
-    except UserProfile.DoesNotExist:
-        user_profile = None
-
-    if user_profile:
-        user_skill_ids.update(
-            user_profile.manual_skills.values_list(
-                'id',
-                flat=True
-            )
-        )
-
-        user_skill_ids.update(
-            user_profile.extracted_skills.values_list(
-                'id',
-                flat=True
-            )
-        )
-
-        user_tool_ids.update(
-            user_profile.manual_tools.values_list(
-                'id',
-                flat=True
-            )
-        )
-
-    question_data = []
-
-    def add_question(
-        question_text,
-        question_type,
-        difficulty='MEDIUM',
-        expected_skill=None,
-        expected_tool=None,
-        competency_group=None
-    ):
-        normalized_text = ' '.join(
-            question_text.lower().split()
-        )
-
-        existing_texts = {
-            ' '.join(
-                item['question_text'].lower().split()
-            )
-            for item in question_data
-        }
-
-        if normalized_text in existing_texts:
-            return
-
-        question_data.append({
-            'question_text': question_text,
-            'question_type': question_type,
-            'difficulty': difficulty,
-            'expected_skill': expected_skill,
-            'expected_tool': expected_tool,
-            'competency_group': competency_group,
-        })
-
-    # 1. Project introduction
-    add_question(
-        question_text=(
-            f"Please introduce your project '{project.title}'. "
-            f"What problem does it solve, who are its intended users, "
-            f"and what was your personal contribution?"
-        ),
-        question_type='PROJECT',
-        difficulty='EASY'
-    )
-
-    # 2. Project architecture
-    add_question(
-        question_text=(
-            f"Describe the technical architecture of '{project.title}'. "
-            f"Explain the main components, how data moves through the "
-            f"system, and why you selected this design."
-        ),
-        question_type='SYSTEM_DESIGN',
-        difficulty='MEDIUM'
-    )
-
-    # 3. Project challenge
-    add_question(
-        question_text=(
-            f"What was the most difficult technical challenge you faced "
-            f"while developing '{project.title}'? Explain how you diagnosed "
-            f"the problem, the solution you implemented, and what you learned."
-        ),
-        question_type='PROJECT',
-        difficulty='MEDIUM'
-    )
-
-    # 4. Matched technical project skills
-    matched_technical_skills = [
-        role_skill
-        for role_skill in role_skills
-        if (
-            role_skill.skill_id in project_skill_ids
-            and _is_technical_skill(role_skill.skill)
-        )
-    ]
-
-    for role_skill in matched_technical_skills[:2]:
-        skill = role_skill.skill
-
-        difficulty = (
-            'HARD'
-            if role_skill.importance == 'High'
-            else 'MEDIUM'
-        )
-
-        add_question(
-            question_text=(
-                f"You listed {skill.skill_name} as a skill used in "
-                f"'{project.title}'. Describe a specific feature where you "
-                f"applied it. What technical decisions did you make, and "
-                f"how did you test that the implementation worked correctly?"
-            ),
-            question_type='TECHNICAL',
-            difficulty=difficulty,
-            expected_skill=skill
-        )
-
-    # 5. Matched professional skill
-    matched_professional_skills = [
-        role_skill
-        for role_skill in role_skills
-        if (
-            role_skill.skill_id in project_skill_ids
-            and _is_professional_skill(role_skill.skill)
-        )
-    ]
-
-    for role_skill in matched_professional_skills[:1]:
-        skill = role_skill.skill
-
-        add_question(
-            question_text=(
-                f"Give an example of how you demonstrated "
-                f"{skill.skill_name} while working on "
-                f"'{project.title}'. Describe the situation, the action "
-                f"you took, and the final outcome."
-            ),
-            question_type='BEHAVIOURAL',
-            difficulty='MEDIUM',
-            expected_skill=skill
-        )
-
-    # 6. Matched project tools
-    matched_project_tools = [
-        role_tool
-        for role_tool in role_tools
-        if role_tool.tool_id in project_tool_ids
-    ]
-
-    for role_tool in matched_project_tools[:1]:
-        tool = role_tool.tool
-
-        difficulty = (
-            'HARD'
-            if role_tool.importance == 'High'
-            else 'MEDIUM'
-        )
-
-        add_question(
-            question_text=(
-                f"How did you use {tool.tool_name} in "
-                f"'{project.title}'? Explain why it was selected, "
-                f"how it supported development, and one limitation or "
-                f"problem you encountered while using it."
-            ),
-            question_type='TOOL',
-            difficulty=difficulty,
-            expected_tool=tool
-        )
-
-    # 7. Competency groups
-    competency_groups = list(
-        CompetencyGroup.objects.filter(
-            job_role=job_role
-        ).prefetch_related(
-            'members__job_role_skill__skill'
-        ).order_by(
-            'group_name'
-        )
-    )
-
-    grouped_skill_ids = set()
-    satisfied_any_one_groups = []
-    unsatisfied_any_one_groups = []
-    missing_all_required_skills = []
-
-    for group in competency_groups:
-        group_members = [
-            member
-            for member in group.members.all()
-            if (
-                member.job_role_skill
-                and _is_technical_skill(
-                    member.job_role_skill.skill
-                )
-            )
-        ]
-
-        if not group_members:
-            continue
-
-        group_skill_ids = {
-            member.job_role_skill.skill_id
-            for member in group_members
-        }
-
-        grouped_skill_ids.update(
-            group_skill_ids
-        )
-
-        matched_skill_ids = group_skill_ids.intersection(
-            user_skill_ids
-        )
-
-        if group.rule == 'ANY_ONE':
-            if matched_skill_ids:
-                satisfied_any_one_groups.append({
-                    'group': group,
-                    'members': group_members,
-                    'matched_skill_ids': matched_skill_ids,
-                })
-            else:
-                unsatisfied_any_one_groups.append({
-                    'group': group,
-                    'members': group_members,
-                })
-
-        elif group.rule == 'ALL_REQUIRED':
-            for member in group_members:
-                role_skill = member.job_role_skill
-
-                if role_skill.skill_id not in user_skill_ids:
-                    missing_all_required_skills.append(
-                        role_skill
-                    )
-
-    # 8. One satisfied ANY_ONE group question
-    for group_data in satisfied_any_one_groups[:1]:
-        group = group_data['group']
-        group_members = group_data['members']
-        matched_skill_ids = group_data['matched_skill_ids']
-
-        matched_skills = [
-            member.job_role_skill.skill
-            for member in group_members
-            if (
-                member.job_role_skill.skill_id
-                in matched_skill_ids
-            )
-        ]
-
-        matched_skill_names = ', '.join(
-            skill.skill_name
-            for skill in matched_skills
-        )
-
-        representative_skill = (
-            matched_skills[0]
-            if matched_skills
-            else None
-        )
-
-        add_question(
-            question_text=(
-                f"You satisfy the competency group "
-                f"'{group.group_name}' through {matched_skill_names}. "
-                f"Which technology are you strongest in? Explain how you "
-                f"applied it in '{project.title}' and why it was suitable."
-            ),
-            question_type='COMPETENCY',
-            difficulty='MEDIUM',
-            expected_skill=representative_skill,
-            competency_group=group
-        )
-
-    # 9. Missing ANY_ONE groups
-    for group_data in unsatisfied_any_one_groups[:2]:
-        group = group_data['group']
-        group_members = group_data['members']
-
-        skills = [
-            member.job_role_skill.skill
-            for member in group_members
-        ]
-
-        if not skills:
-            continue
-
-        skill_names = ', '.join(
-            skill.skill_name
-            for skill in skills
-        )
-
-        representative_skill = skills[0]
-
-        add_question(
-            question_text=(
-                f"The competency group '{group.group_name}' can be "
-                f"satisfied by learning any one of these options: "
-                f"{skill_names}. Which option would you choose for "
-                f"'{project.title}', and how would you apply it in a "
-                f"production environment?"
-            ),
-            question_type='WEAKNESS',
-            difficulty='HARD',
-            expected_skill=representative_skill,
-            competency_group=group
-        )
-
-    # 10. Missing ALL_REQUIRED technical skills
-    technical_all_required_skills = [
-        role_skill
-        for role_skill in missing_all_required_skills
-        if _is_technical_skill(
-            role_skill.skill
-        )
-    ]
-
-    high_priority_all_required = [
-        role_skill
-        for role_skill in technical_all_required_skills
-        if role_skill.importance == 'High'
-    ]
-
-    all_required_candidates = (
-        high_priority_all_required
-        if high_priority_all_required
-        else technical_all_required_skills
-    )
-
-    for role_skill in all_required_candidates[:2]:
-        skill = role_skill.skill
-
-        add_question(
-            question_text=(
-                f"{skill.skill_name} is an important required competency "
-                f"for the {job_role.role_name} role. Explain the underlying "
-                f"concept and describe how you would apply it if "
-                f"'{project.title}' needed to be extended for production use."
-            ),
-            question_type='WEAKNESS',
-            difficulty='HARD',
-            expected_skill=skill
-        )
-
-    # 11. Ungrouped missing technical skills
-    ungrouped_missing_skills = [
-        role_skill
-        for role_skill in role_skills
-        if (
-            role_skill.skill_id not in grouped_skill_ids
-            and role_skill.skill_id not in user_skill_ids
-            and _is_technical_skill(
-                role_skill.skill
-            )
-        )
-    ]
-
-    high_priority_ungrouped = [
-        role_skill
-        for role_skill in ungrouped_missing_skills
-        if role_skill.importance == 'High'
-    ]
-
-    ungrouped_candidates = (
-        high_priority_ungrouped
-        if high_priority_ungrouped
-        else ungrouped_missing_skills
-    )
-
-    for role_skill in ungrouped_candidates[:1]:
-        skill = role_skill.skill
-
-        add_question(
-            question_text=(
-                f"{skill.skill_name} is relevant to the "
-                f"{job_role.role_name} role. Explain the underlying concept "
-                f"and describe how you would apply it to "
-                f"'{project.title}' in production."
-            ),
-            question_type='WEAKNESS',
-            difficulty='HARD',
-            expected_skill=skill
-        )
-
-    # 12. Missing role tool
-    missing_role_tools = [
-        role_tool
-        for role_tool in role_tools
-        if role_tool.tool_id not in user_tool_ids
-    ]
-
-    high_priority_missing_tools = [
-        role_tool
-        for role_tool in missing_role_tools
-        if role_tool.importance == 'High'
-    ]
-
-    tool_candidates = (
-        high_priority_missing_tools
-        if high_priority_missing_tools
-        else missing_role_tools
-    )
-
-    for role_tool in tool_candidates[:1]:
-        tool = role_tool.tool
-
-        add_question(
-            question_text=(
-                f"The {job_role.role_name} role commonly requires "
-                f"{tool.tool_name}. How could this tool be introduced into "
-                f"'{project.title}'? Explain its practical benefit and the "
-                f"steps you would take to use it."
-            ),
-            question_type='TOOL',
-            difficulty='MEDIUM',
-            expected_tool=tool
-        )
-
-    # 13. Readiness assessment question
-    if latest_assessment:
-        add_question(
-            question_text=(
-                f"Your latest readiness assessment for "
-                f"{job_role.role_name} produced an academic readiness score "
-                f"of {latest_assessment.academic_score}% and an industry "
-                f"readiness score of {latest_assessment.industry_score}%. "
-                f"Which area needs the most improvement, and what practical "
-                f"steps would you take to improve it?"
-            ),
-            question_type='WEAKNESS',
-            difficulty='MEDIUM'
-        )
-
-    # 14. Employability bottleneck question
-    if latest_bottleneck:
-        bottleneck_name = getattr(
-            latest_bottleneck,
-            'main_bottleneck',
-            'Employability readiness'
-        )
-
-        add_question(
-            question_text=(
-                f"Your employability analysis identified "
-                f"'{bottleneck_name}' as an important development area. "
-                f"How would you address this bottleneck, and what evidence "
-                f"could you produce to demonstrate improvement?"
-            ),
-            question_type='WEAKNESS',
-            difficulty='MEDIUM'
-        )
-
-    # 15. Behavioural fallback
-    add_question(
-        question_text=(
-            f"Tell me about a time you received critical feedback while "
-            f"working on '{project.title}' or another software project. "
-            f"How did you respond, what action did you take, and what was "
-            f"the final result?"
-        ),
-        question_type='BEHAVIOURAL',
-        difficulty='MEDIUM'
-    )
-
-    # 16. Production readiness
-    add_question(
-        question_text=(
-            f"Imagine '{project.title}' is going to be used by thousands "
-            f"of users. What changes would you make to improve its security, "
-            f"performance, scalability, testing and maintainability?"
-        ),
-        question_type='SYSTEM_DESIGN',
-        difficulty='HARD'
-    )
-
-    selected_questions = question_data[:10]
-
-    for index, item in enumerate(
-        selected_questions,
-        start=1
-    ):
-        InterviewQuestion.objects.create(
-            session=session,
-            question_type=item['question_type'],
-            question_text=item['question_text'],
-            difficulty=item['difficulty'],
-            display_order=index,
-            expected_skill=item['expected_skill'],
-            expected_tool=item['expected_tool'],
-            competency_group=item['competency_group']
-        )
-
-    return session.questions.order_by(
-        'display_order',
-        'id'
-    )
-
-
-
 @login_required
 def interview_setup(request):
+    """
+    Create an AI-only interview session.
+
+    The user selects a target role and one of their own projects.
+    Question generation is always AI-powered.
+    """
+
     user_projects = UserProject.objects.filter(
         user=request.user
     )
@@ -5223,48 +5733,16 @@ def interview_setup(request):
 
             interview_session.user = request.user
             interview_session.status = 'CREATED'
+
+            # The Interview Coach is now AI-only.
+            interview_session.question_generation_method = (
+                'AI_POWERED'
+            )
+
             interview_session.save()
 
-            if (
-                interview_session.question_generation_method
-                == 'AI_POWERED'
-            ):
-                return redirect(
-                    'generate_ai_interview',
-                    session_id=interview_session.id
-                )
-
-            generate_interview_questions(
-                interview_session
-            )
-
-            if not interview_session.questions.exists():
-                messages.error(
-                    request,
-                    'The interview session was created, but questions could not be generated.'
-                )
-
-                interview_session.delete()
-
-                return redirect(
-                    'interview_setup'
-                )
-
-            interview_session.status = 'IN_PROGRESS'
-
-            interview_session.save(
-                update_fields=[
-                    'status'
-                ]
-            )
-
-            messages.success(
-                request,
-                'Interview session created successfully using rule-based questions.'
-            )
-
             return redirect(
-                'interview_session',
+                'generate_ai_interview',
                 session_id=interview_session.id
             )
 
@@ -5283,7 +5761,6 @@ def interview_setup(request):
         'career_app/interview_setup.html',
         context
     )
-
 
 @login_required
 def generate_ai_interview(request, session_id):
@@ -5306,7 +5783,7 @@ def generate_ai_interview(request, session_id):
         user=request.user,
     )
 
-    # Prevent regeneration.
+
     if session.questions.exists():
         session.status = 'IN_PROGRESS'
 
@@ -5321,10 +5798,6 @@ def generate_ai_interview(request, session_id):
             session_id=session.id,
         )
 
-    # ---------------------------------------------
-    # GET
-    # Show loading screen first
-    # ---------------------------------------------
 
     if request.method == 'GET':
         return render(
@@ -5335,10 +5808,6 @@ def generate_ai_interview(request, session_id):
             }
         )
 
-    # ---------------------------------------------
-    # POST
-    # Generate AI questions
-    # ---------------------------------------------
 
     try:
         generate_ai_interview_questions(
@@ -5390,46 +5859,15 @@ def generate_ai_interview(request, session_id):
         session_id=session.id,
     )
 
-def evaluate_interview_session(
-    session,
-    method='hybrid'
-):
+
+def evaluate_interview_session(session):
     """
-    Evaluate all answers belonging to one interview session.
+    Evaluate every answer in the interview session using the AI evaluator.
 
-    Supported methods:
-
-    rule:
-        Use only the rule-based evaluator.
-
-    ai:
-        Use only the AI evaluator.
-        If AI evaluation fails, raise the error.
-
-    hybrid:
-        Try AI evaluation first.
-        If any AI evaluation fails, re-evaluate the complete
-        session using the rule-based evaluator.
-
-    The method actually used is stored in
-    InterviewSession.evaluation_method.
+    Rule-based and hybrid evaluation have been removed. If AI evaluation
+    fails, the error is allowed to propagate so the session is not silently
+    replaced with a different scoring method.
     """
-
-    allowed_methods = {
-        'rule',
-        'ai',
-        'hybrid',
-    }
-
-    method = str(
-        method or 'hybrid'
-    ).strip().lower()
-
-    if method not in allowed_methods:
-        raise ValueError(
-            "Invalid evaluation method. "
-            "Use 'rule', 'ai' or 'hybrid'."
-        )
 
     answers = list(
         InterviewAnswer.objects.filter(
@@ -5456,58 +5894,10 @@ def evaluate_interview_session(
             'No interview answers were found for this session.'
         )
 
-    evaluation_method_used = None
-
-    # ---------------------------------------------
-    # Rule-based evaluation only
-    # ---------------------------------------------
-
-    if method == 'rule':
-        for answer in answers:
-            evaluate_answer(answer)
-
-        evaluation_method_used = 'RULE_BASED'
-
-    # ---------------------------------------------
-    # AI evaluation only
-    # ---------------------------------------------
-
-    elif method == 'ai':
-        for answer in answers:
-            evaluate_answer_with_ai(answer)
-
-        evaluation_method_used = 'AI_POWERED'
-
-    # ---------------------------------------------
-    # Hybrid evaluation
-    # ---------------------------------------------
-
-    else:
-        try:
-            for answer in answers:
-                evaluate_answer_with_ai(answer)
-
-            evaluation_method_used = 'AI_POWERED'
-
-        except AIInterviewEvaluationError as error:
-            logger.warning(
-                'AI evaluation failed for interview session %s. '
-                'The complete session will be evaluated using '
-                'the rule-based fallback. Error: %s',
-                session.id,
-                error,
-            )
-
-            # Re-evaluate every answer using the rule-based evaluator.
-            # This avoids mixing AI and rule-based scores in one session.
-            for answer in answers:
-                evaluate_answer(answer)
-
-            evaluation_method_used = 'RULE_BASED_FALLBACK'
-
-    # ---------------------------------------------
-    # Calculate average session score
-    # ---------------------------------------------
+    for answer in answers:
+        evaluate_answer_with_ai(
+            answer
+        )
 
     average_score = InterviewAnswer.objects.filter(
         question__session=session,
@@ -5524,8 +5914,7 @@ def evaluate_interview_session(
 
     session.status = 'COMPLETED'
     session.completed_at = timezone.now()
-    session.evaluation_method = evaluation_method_used
-    
+    session.evaluation_method = 'AI_POWERED'
 
     session.save(
         update_fields=[
@@ -5537,10 +5926,9 @@ def evaluate_interview_session(
     )
 
     logger.info(
-        'Interview session %s evaluated using %s. '
+        'Interview session %s evaluated using AI_POWERED. '
         'Overall score: %s',
         session.id,
-        evaluation_method_used,
         session.overall_score,
     )
 
@@ -5579,7 +5967,7 @@ def interview_session(request, session_id):
         )
         return redirect("interview_setup")
 
-    # If already evaluated, do not allow answer editing.
+
     if (
         session.status == "COMPLETED"
         and session.evaluation_method
@@ -5649,9 +6037,6 @@ def interview_session(request, session_id):
                 posted_position == total_questions
             )
 
-            # -----------------------------------------
-            # Final question
-            # -----------------------------------------
 
             if is_last_question:
                 answered_question_ids = set(
@@ -5705,30 +6090,12 @@ def interview_session(request, session_id):
                         f"?question={first_unanswered_position}"
                     )
 
-                # Answers are complete, but evaluation has not started.
-                # The user will choose Rule-Based or AI evaluation next.
-                session.status = "COMPLETED"
-                session.completed_at = timezone.now()
-                session.evaluation_method = None
-                session.overall_score = None
-
-                session.save(
-                    update_fields=[
-                        "status",
-                        "completed_at",
-                        "evaluation_method",
-                        "overall_score",
-                    ]
-                )
 
                 return redirect(
-                    "choose_interview_evaluation",
+                    "interview_evaluation_loading",
                     session_id=session.id,
                 )
 
-            # -----------------------------------------
-            # Not the final question
-            # -----------------------------------------
 
             next_position = posted_position + 1
 
@@ -5804,6 +6171,43 @@ def interview_session(request, session_id):
         context,
     )
 @login_required
+def interview_evaluation_loading(request, session_id):
+    """
+    Display the AI evaluation loading page before evaluation begins.
+
+    The loading template automatically submits a POST request to
+    complete_interview, so the user sees the loading screen while
+    the AI evaluates the saved interview answers.
+    """
+    session = get_object_or_404(
+        InterviewSession.objects.select_related(
+            'job_role',
+            'project',
+        ),
+        id=session_id,
+        user=request.user,
+    )
+
+    if (
+        session.status == 'COMPLETED'
+        and session.evaluation_method == 'AI_POWERED'
+    ):
+        return redirect(
+            'interview_results',
+            session_id=session.id,
+        )
+
+    return render(
+        request,
+        'career_app/interview_evaluation_loading.html',
+        {
+            'session': session,
+        }
+    )
+
+
+@login_required
+@require_POST
 @transaction.atomic
 def complete_interview(request, session_id):
     """
@@ -5968,120 +6372,6 @@ def interview_results(request, session_id):
         request,
         'career_app/interview_results.html',
         context
-    )
-
-@login_required
-def choose_interview_evaluation(request, session_id):
-    """
-    Allow the user to choose rule-based or AI-powered evaluation.
-    """
-
-    session = get_object_or_404(
-        InterviewSession.objects.select_related(
-            'job_role',
-            'project',
-        ),
-        id=session_id,
-        user=request.user,
-    )
-
-    total_questions = session.questions.count()
-
-    answered_count = InterviewAnswer.objects.filter(
-        question__session=session
-    ).exclude(
-        answer_text__isnull=True
-    ).exclude(
-        answer_text__exact=''
-    ).count()
-
-    if total_questions == 0:
-        messages.error(
-            request,
-            'This interview does not contain any questions.'
-        )
-        return redirect('interview_setup')
-
-    if answered_count < total_questions:
-        messages.warning(
-            request,
-            'Please answer every question before choosing an evaluation method.'
-        )
-
-        first_unanswered = session.questions.exclude(
-            answer__isnull=False
-        ).order_by(
-            'display_order',
-            'id'
-        ).first()
-
-        position = (
-            first_unanswered.display_order
-            if first_unanswered
-            else 1
-        )
-
-        return redirect(
-            f"{reverse('interview_session', args=[session.id])}"
-            f"?question={position}"
-        )
-
-    if request.method == 'POST':
-        evaluation_method = request.POST.get(
-            'evaluation_method'
-        )
-
-        if evaluation_method not in [
-            'rule',
-            'ai',
-        ]:
-            messages.error(
-                request,
-                'Please select a valid evaluation method.'
-            )
-
-            return redirect(
-                'choose_interview_evaluation',
-                session_id=session.id,
-            )
-
-        try:
-            evaluate_interview_session(
-                session,
-                method=evaluation_method,
-            )
-
-        except Exception as error:
-            messages.error(
-                request,
-                f'Interview evaluation failed: {error}'
-            )
-
-            return redirect(
-                'choose_interview_evaluation',
-                session_id=session.id,
-            )
-
-        messages.success(
-            request,
-            'Interview evaluated successfully.'
-        )
-
-        return redirect(
-            'interview_results',
-            session_id=session.id,
-        )
-
-    context = {
-        'session': session,
-        'total_questions': total_questions,
-        'answered_count': answered_count,
-    }
-
-    return render(
-        request,
-        'career_app/choose_interview_evaluation.html',
-        context,
     )
 
 @login_required

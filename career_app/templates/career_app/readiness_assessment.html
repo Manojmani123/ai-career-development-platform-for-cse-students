@@ -2,49 +2,508 @@
 
 {% block content %}
 
-<div class="row justify-content-center">
+<style>
+    .readiness-page {
+        max-width: 950px;
+        margin: 50px auto;
+        padding: 0 20px 60px;
+    }
 
-    <div class="col-lg-7">
+    .readiness-hero {
+        text-align: center;
+        margin-bottom: 35px;
+    }
 
-        <div class="card shadow">
+    .hero-icon {
+        width: 62px;
+        height: 62px;
+        margin: 0 auto 18px;
+        border-radius: 18px;
+        background: #ecfdf3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+    }
 
-            <div class="card-header bg-primary text-white">
-                <h3 class="mb-0">Academic-to-Industry Readiness Assessment</h3>
+    .readiness-hero h1 {
+        font-size: 34px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 10px;
+    }
+
+    .readiness-hero p {
+        max-width: 650px;
+        margin: 0 auto;
+        color: #6b7280;
+        font-size: 16px;
+        line-height: 1.7;
+    }
+
+    .assessment-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 32px;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.06);
+    }
+
+    .section-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 700;
+        color: #374151;
+        margin-bottom: 9px;
+    }
+
+    .role-section {
+        margin-bottom: 35px;
+    }
+
+    .role-section select {
+        width: 100%;
+        padding: 14px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        background: #ffffff;
+        font-size: 15px;
+        color: #111827;
+        outline: none;
+        transition: 0.2s;
+    }
+
+    .role-section select:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.12);
+    }
+
+    .method-heading {
+        margin-bottom: 18px;
+    }
+
+    .method-heading h3 {
+        font-size: 20px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 5px;
+    }
+
+    .method-heading p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .method-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+        margin-bottom: 30px;
+    }
+
+    .method-option {
+        position: relative;
+    }
+
+    .method-option input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .method-card {
+        height: 100%;
+        border: 2px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 24px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #ffffff;
+    }
+
+    .method-card:hover {
+        border-color: #86b99a;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+    }
+
+    .method-option input:checked + .method-card {
+        border-color: #198754;
+        background: #f0fdf4;
+        box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.10);
+    }
+
+    .method-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
+
+    .method-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+    }
+
+    .method-option input:checked + .method-card .method-icon {
+        background: #dcfce7;
+    }
+
+    .selection-circle {
+        width: 22px;
+        height: 22px;
+        border: 2px solid #d1d5db;
+        border-radius: 50%;
+        position: relative;
+    }
+
+    .method-option input:checked + .method-card .selection-circle {
+        border-color: #198754;
+    }
+
+    .method-option input:checked + .method-card
+    .selection-circle::after {
+        content: "";
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: #198754;
+        border-radius: 50%;
+        top: 4px;
+        left: 4px;
+    }
+
+    .method-card h4 {
+        font-size: 18px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+
+    .method-card p {
+        color: #6b7280;
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 18px;
+    }
+
+    .method-features {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+
+    .method-features li {
+        font-size: 13px;
+        color: #4b5563;
+        margin-bottom: 8px;
+        display: flex;
+        gap: 8px;
+    }
+
+    .method-features li::before {
+        content: "✓";
+        color: #198754;
+        font-weight: 800;
+    }
+
+    .ai-badge {
+        display: inline-block;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: #ede9fe;
+        color: #6d28d9;
+        font-size: 11px;
+        font-weight: 800;
+        margin-left: 6px;
+    }
+
+    .submit-area {
+        border-top: 1px solid #e5e7eb;
+        padding-top: 25px;
+        text-align: center;
+    }
+
+    .assess-button {
+        width: 100%;
+        padding: 15px 22px;
+        border: none;
+        border-radius: 11px;
+        background: #198754;
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .assess-button:hover {
+        background: #157347;
+        transform: translateY(-1px);
+    }
+
+    .dashboard-link {
+        display: inline-block;
+        margin-top: 17px;
+        color: #6b7280;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .dashboard-link:hover {
+        color: #111827;
+    }
+
+    .error-message,
+    .errorlist {
+        color: #b91c1c;
+        font-size: 13px;
+        margin-top: 7px;
+    }
+
+    @media (max-width: 700px) {
+        .method-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .assessment-card {
+            padding: 22px;
+        }
+
+        .readiness-hero h1 {
+            font-size: 28px;
+        }
+    }
+</style>
+
+
+<div class="readiness-page">
+
+    <div class="readiness-hero">
+
+        <div class="hero-icon">
+            ◎
+        </div>
+
+        <h1>
+            Career Readiness Assessment
+        </h1>
+
+        <p>
+            Measure how prepared you are for your target career using
+            your current skills, industry tools and practical project
+            evidence.
+        </p>
+
+    </div>
+
+
+    <div class="assessment-card">
+
+        <form method="POST">
+
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="error-message">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+
+            <div class="role-section">
+
+                <label
+                    class="section-label"
+                    for="{{ form.job_role.id_for_label }}"
+                >
+                    Target Career Role
+                </label>
+
+                {{ form.job_role }}
+
+                {% if form.job_role.errors %}
+                    <div class="error-message">
+                        {{ form.job_role.errors }}
+                    </div>
+                {% endif %}
+
             </div>
 
-            <div class="card-body">
 
-                <div class="alert alert-info">
-                    Select your target job role. The system will evaluate your
-                    academic skills, industry tool knowledge, and overall
-                    readiness for the selected career.
-                </div>
+            <div class="method-heading">
 
-                <form method="POST">
+                <h3>
+                    Choose Assessment Method
+                </h3>
 
-                    {% csrf_token %}
+                <p>
+                    Select how you want CareerReady AI to evaluate
+                    your readiness.
+                </p>
 
-                    <div class="mb-3">
-                        <label class="form-label">
-                            <strong>Select Target Job Role</strong>
-                        </label>
+            </div>
 
-                        {{ form.job_role }}
+
+            <div class="method-grid">
+
+                <label class="method-option">
+
+                    <input
+                        type="radio"
+                        name="assessment_method"
+                        value="RULE_BASED"
+                        {% if form.assessment_method.value == "RULE_BASED" or not form.assessment_method.value %}
+                            checked
+                        {% endif %}
+                    >
+
+                    <div class="method-card">
+
+                        <div class="method-top">
+
+                            <div class="method-icon">
+                                ⚙
+                            </div>
+
+                            <div class="selection-circle"></div>
+
+                        </div>
+
+                        <h4>
+                            Rule-Based Assessment
+                        </h4>
+
+                        <p>
+                            Uses CareerReady AI's structured competency
+                            framework to calculate your readiness.
+                        </p>
+
+                        <ul class="method-features">
+
+                            <li>
+                                Role-skill mappings
+                            </li>
+
+                            <li>
+                                Competency groups
+                            </li>
+
+                            <li>
+                                Industry tool requirements
+                            </li>
+
+                            <li>
+                                Deterministic scoring
+                            </li>
+
+                        </ul>
+
                     </div>
 
-                    <button type="submit" class="btn btn-primary">
-                        Calculate Readiness
-                    </button>
+                </label>
 
-                    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
-                        Back to Dashboard
-                    </a>
 
-                </form>
+                <label class="method-option">
+
+                    <input
+                        type="radio"
+                        name="assessment_method"
+                        value="AI_POWERED"
+                        {% if form.assessment_method.value == "AI_POWERED" %}
+                            checked
+                        {% endif %}
+                    >
+
+                    <div class="method-card">
+
+                        <div class="method-top">
+
+                            <div class="method-icon">
+                                ✦
+                            </div>
+
+                            <div class="selection-circle"></div>
+
+                        </div>
+
+                        <h4>
+                            AI-Powered Assessment
+
+                            <span class="ai-badge">
+                                AI
+                            </span>
+                        </h4>
+
+                        <p>
+                            Uses your career evidence and target-role
+                            requirements to make a contextual readiness
+                            assessment.
+                        </p>
+
+                        <ul class="method-features">
+
+                            <li>
+                                Current skills
+                            </li>
+
+                            <li>
+                                Industry tools
+                            </li>
+
+                            <li>
+                                Project evidence
+                            </li>
+
+                            <li>
+                                Role-specific AI reasoning
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                </label>
 
             </div>
 
-        </div>
+
+            {% if form.assessment_method.errors %}
+                <div class="error-message">
+                    {{ form.assessment_method.errors }}
+                </div>
+            {% endif %}
+
+
+            <div class="submit-area">
+
+                <button
+                    type="submit"
+                    class="assess-button"
+                >
+                    Assess My Readiness →
+                </button>
+
+                <br>
+
+                <a
+                    href="{% url 'user_dashboard' %}"
+                    class="dashboard-link"
+                >
+                    ← Back to Dashboard
+                </a>
+
+            </div>
+
+        </form>
 
     </div>
 

@@ -1,7 +1,7 @@
 {% extends 'career_app/base.html' %}
 
 {% block title %}
-Interview Session | CareerReady AI
+AI Interview Session | CareerReady AI
 {% endblock %}
 
 {% block content %}
@@ -78,20 +78,12 @@ Interview Session | CareerReady AI
     }
 
     .progress-bar::-webkit-progress-value {
-        background: linear-gradient(
-            90deg,
-            #4f46e5,
-            #7c3aed
-        );
+        background: linear-gradient(90deg, #4f46e5, #7c3aed);
         border-radius: 999px;
     }
 
     .progress-bar::-moz-progress-bar {
-        background: linear-gradient(
-            90deg,
-            #4f46e5,
-            #7c3aed
-        );
+        background: linear-gradient(90deg, #4f46e5, #7c3aed);
         border-radius: 999px;
     }
 
@@ -191,9 +183,7 @@ Interview Session | CareerReady AI
         color: #1f2937;
         background: #ffffff;
         box-sizing: border-box;
-        transition:
-            border-color 0.2s ease,
-            box-shadow 0.2s ease;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .answer-textarea:focus {
@@ -283,38 +273,29 @@ Interview Session | CareerReady AI
         border: 1px solid #fecaca;
     }
 
-    .completion-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 18px;
-        padding: 45px 30px;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-    }
-
-    .completion-icon {
-        width: 75px;
-        height: 75px;
-        margin: 0 auto 20px;
-        border-radius: 50%;
-        background: #ecfdf5;
-        color: #059669;
+    .interview-top-actions {
         display: flex;
-        justify-content: center;
+        justify-content: flex-end;
+        margin-top: 20px;
+    }
+
+    .secondary-action {
+        display: inline-flex;
         align-items: center;
-        font-size: 34px;
-        font-weight: 900;
+        justify-content: center;
+        padding: 11px 18px;
+        border-radius: 10px;
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        color: #374151;
+        font-weight: 700;
+        text-decoration: none;
+        transition: 0.2s ease;
     }
 
-    .completion-card h2 {
-        margin: 0 0 12px;
+    .secondary-action:hover {
+        background: #f3f4f6;
         color: #111827;
-        font-size: 28px;
-    }
-
-    .completion-card p {
-        color: #64748b;
-        line-height: 1.7;
     }
 
     @media (max-width: 700px) {
@@ -350,31 +331,6 @@ Interview Session | CareerReady AI
             font-size: 18px;
         }
     }
-
-    .interview-top-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 20px;
-}
-
-.secondary-action {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 11px 18px;
-    border-radius: 10px;
-    border: 1px solid #d1d5db;
-    background: #ffffff;
-    color: #374151;
-    font-weight: 700;
-    text-decoration: none;
-    transition: 0.2s ease;
-}
-
-.secondary-action:hover {
-    background: #f3f4f6;
-    color: #111827;
-}
 </style>
 
 <div class="interview-page">
@@ -395,7 +351,7 @@ Interview Session | CareerReady AI
     {% endif %}
 
     <div class="interview-header">
-        <h1>Personalised Interview</h1>
+        <h1>AI Interview</h1>
 
         <p>
             <strong>Target role:</strong>
@@ -409,6 +365,10 @@ Interview Session | CareerReady AI
 
         <div class="interview-meta">
             <span class="meta-badge">
+                AI Generated
+            </span>
+
+            <span class="meta-badge">
                 {{ total_questions }} Questions
             </span>
 
@@ -417,206 +377,161 @@ Interview Session | CareerReady AI
             </span>
         </div>
 
-        {% if not completed %}
-            <div class="progress-section">
-                <div class="progress-details">
-                    <span>
-                        {{ answered_count }} of
-                        {{ total_questions }} answered
-                    </span>
+        <div class="progress-section">
+            <div class="progress-details">
+                <span>
+                    {{ answered_count }} of {{ total_questions }} answered
+                </span>
 
-                    <span>
-                        {{ progress_percentage }}%
-                    </span>
-                </div>
-
-                <progress
-                    class="progress-bar"
-                    value="{{ progress_percentage }}"
-                    max="100"
-                >
+                <span>
                     {{ progress_percentage }}%
-                </progress>
+                </span>
             </div>
-        {% endif %}
+
+            <progress
+                class="progress-bar"
+                value="{{ progress_percentage }}"
+                max="100"
+            >
+                {{ progress_percentage }}%
+            </progress>
+        </div>
     </div>
 
-    {% if completed %}
+    <div class="question-card">
 
-        <div class="completion-card">
-            <div class="completion-icon">
-                ✓
+        <div class="question-top">
+
+            <div class="question-number">
+                Question {{ current_position }} of {{ total_questions }}
             </div>
 
-            <h2>Interview Completed</h2>
+            <div class="question-tags">
 
-            <p>
-                You answered {{ answered_count }} of
-                {{ total_questions }} questions for the
-                <strong>{{ session.job_role.role_name }}</strong>
-                interview.
-            </p>
+                <span class="question-tag">
+                    {{ current_question.get_question_type_display }}
+                </span>
 
-            <p>
-                Your answers have been saved successfully.
-                
-            </p>
-
-            <a
-    href="{% url 'interview_results' session.id %}"
-    class="button button-finish"
->
-    View Interview Evaluation
-</a>
-
-
-            <a
-    href="{% url 'user_dashboard' %}"
-    class="button button-primary"
->
-    Return to Dashboard
-</a>
-        </div>
-
-    {% else %}
-
-        <div class="question-card">
-
-            <div class="question-top">
-
-                <div class="question-number">
-                    Question {{ current_position }}
-                    of {{ total_questions }}
-                </div>
-
-                <div class="question-tags">
-
-                    <span class="question-tag">
-                        {{ current_question.get_question_type_display }}
-                    </span>
-
-                    <span class="
-                        question-tag
-                        {% if current_question.difficulty == 'EASY' %}
-                            difficulty-easy
-                        {% elif current_question.difficulty == 'HARD' %}
-                            difficulty-hard
-                        {% else %}
-                            difficulty-medium
-                        {% endif %}
-                    ">
-                        {{ current_question.get_difficulty_display }}
-                    </span>
-
-                </div>
-
-            </div>
-
-            <p class="question-text">
-                {{ current_question.question_text }}
-            </p>
-
-            {% if current_question.expected_skill or current_question.expected_tool or current_question.competency_group %}
-                <div class="question-evidence">
-
-                    {% if current_question.expected_skill %}
-                        <strong>Skill being assessed:</strong>
-                        {{ current_question.expected_skill.skill_name }}
-                    {% endif %}
-
-                    {% if current_question.expected_tool %}
-                        {% if current_question.expected_skill %}
-                            &nbsp; | &nbsp;
-                        {% endif %}
-
-                        <strong>Tool being assessed:</strong>
-                        {{ current_question.expected_tool.tool_name }}
-                    {% endif %}
-
-                    {% if current_question.competency_group %}
-                        {% if current_question.expected_skill or current_question.expected_tool %}
-                            &nbsp; | &nbsp;
-                        {% endif %}
-
-                        <strong>Competency:</strong>
-                        {{ current_question.competency_group.group_name }}
-                    {% endif %}
-
-                </div>
-            {% endif %}
-
-            <form method="post">
-                {% csrf_token %}
-
-                <input
-                    type="hidden"
-                    name="question_id"
-                    value="{{ current_question.id }}"
-                >
-
-                <div class="answer-section">
-                    <label for="{{ form.answer_text.id_for_label }}">
-                        Your answer
-                    </label>
-
-                    {{ form.answer_text }}
-
-                    {% for error in form.answer_text.errors %}
-                        <div class="form-error">
-                            {{ error }}
-                        </div>
-                    {% endfor %}
-                </div>
-
-                <div class="navigation-buttons">
-
-                    {% if previous_position %}
-                        <a
-                            href="{% url 'interview_session' session.id %}?question={{ previous_position }}"
-                            class="button button-secondary"
-                        >
-                            Previous
-                        </a>
+                <span class="
+                    question-tag
+                    {% if current_question.difficulty == 'EASY' %}
+                        difficulty-easy
+                    {% elif current_question.difficulty == 'HARD' %}
+                        difficulty-hard
                     {% else %}
-                        <span></span>
+                        difficulty-medium
                     {% endif %}
+                ">
+                    {{ current_question.get_difficulty_display }}
+                </span>
 
-                    <div class="right-buttons">
-
-                        {% if is_last_question %}
-                            <button
-                                type="submit"
-                                class="button button-finish"
-                            >
-                                Save & Finish Interview
-                            </button>
-                        {% else %}
-                            <button
-                                type="submit"
-                                class="button button-primary"
-                            >
-                                Save & Next
-                            </button>
-                        {% endif %}
-
-                    </div>
-
-                </div>
-
-            </form>
+            </div>
 
         </div>
 
-        <div class="interview-top-actions">
-    <a
-        href="{% url 'interview_history' %}"
-        class="secondary-action"
-    >
-        Exit Interview
-    </a>
-</div>
+        <p class="question-text">
+            {{ current_question.question_text }}
+        </p>
 
-    {% endif %}
+        {% if current_question.expected_skill or current_question.expected_tool or current_question.competency_group %}
+            <div class="question-evidence">
+
+                {% if current_question.expected_skill %}
+                    <strong>Skill being assessed:</strong>
+                    {{ current_question.expected_skill.skill_name }}
+                {% endif %}
+
+                {% if current_question.expected_tool %}
+                    {% if current_question.expected_skill %}
+                        &nbsp; | &nbsp;
+                    {% endif %}
+
+                    <strong>Tool being assessed:</strong>
+                    {{ current_question.expected_tool.tool_name }}
+                {% endif %}
+
+                {% if current_question.competency_group %}
+                    {% if current_question.expected_skill or current_question.expected_tool %}
+                        &nbsp; | &nbsp;
+                    {% endif %}
+
+                    <strong>Competency:</strong>
+                    {{ current_question.competency_group.group_name }}
+                {% endif %}
+
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <input
+                type="hidden"
+                name="question_id"
+                value="{{ current_question.id }}"
+            >
+
+            <div class="answer-section">
+                <label for="{{ form.answer_text.id_for_label }}">
+                    Your answer
+                </label>
+
+                {{ form.answer_text }}
+
+                {% for error in form.answer_text.errors %}
+                    <div class="form-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="navigation-buttons">
+
+                {% if previous_position %}
+                    <a
+                        href="{% url 'interview_session' session.id %}?question={{ previous_position }}"
+                        class="button button-secondary"
+                    >
+                        Previous
+                    </a>
+                {% else %}
+                    <span></span>
+                {% endif %}
+
+                <div class="right-buttons">
+
+                    {% if is_last_question %}
+                        <button
+                            type="submit"
+                            class="button button-finish"
+                        >
+                            Finish & Evaluate Interview
+                        </button>
+                    {% else %}
+                        <button
+                            type="submit"
+                            class="button button-primary"
+                        >
+                            Save & Next
+                        </button>
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    <div class="interview-top-actions">
+        <a
+            href="{% url 'interview_history' %}"
+            class="secondary-action"
+        >
+            Exit Interview
+        </a>
+    </div>
 
 </div>
 

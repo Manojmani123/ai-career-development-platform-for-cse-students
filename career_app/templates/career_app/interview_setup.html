@@ -43,6 +43,19 @@
         margin-bottom: 25px;
     }
 
+    .ai-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 22px;
+    }
+
     .form-group {
         margin-bottom: 25px;
     }
@@ -68,39 +81,8 @@
     .form-group select:focus,
     .form-group input:focus {
         outline: none;
-        border-color: #6b7280;
-    }
-
-    /*
-        Django RadioSelect normally renders a <div>
-        containing individual radio options.
-    */
-    .generation-method-wrapper > div {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 15px;
-        margin-top: 10px;
-    }
-
-    .generation-method-wrapper label {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        padding: 16px;
-        border: 1px solid #d1d5db;
-        border-radius: 11px;
-        cursor: pointer;
-        font-weight: 600;
-        background: #ffffff;
-    }
-
-    .generation-method-wrapper label:hover {
-        border-color: #9ca3af;
-        background: #f9fafb;
-    }
-
-    .generation-method-wrapper input[type="radio"] {
-        margin-top: 3px;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.10);
     }
 
     .field-help {
@@ -151,69 +133,58 @@
         padding: 14px 18px;
         border: none;
         border-radius: 10px;
+        background: #4f46e5;
+        color: #ffffff;
         font-size: 16px;
         font-weight: 700;
         cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .submit-button:hover {
+        background: #4338ca;
     }
 
     @media (max-width: 700px) {
-        .generation-method-wrapper > div {
-            grid-template-columns: 1fr;
-        }
-
         .setup-card {
             padding: 20px;
         }
     }
 </style>
 
-
 <div class="interview-setup-container">
 
     <div class="setup-header">
-
         <h1>AI Interview Coach</h1>
 
         <p>
             Select your target job role and one of your projects.
-            CareerReady AI will use your project evidence, skills,
-            tools, readiness results and employability gaps to
-            prepare a personalised interview.
+            CareerReady AI will generate a personalised interview using
+            your project evidence, skills, tools, readiness results,
+            competency gaps and employability evidence.
         </p>
 
         <span class="project-count">
             Available projects: {{ project_count }}
         </span>
-
     </div>
-
 
     <div class="setup-card">
 
-        <form method="POST">
+        <div class="ai-badge">
+            AI-Powered Interview
+        </div>
 
+        <form method="POST">
             {% csrf_token %}
 
-
-            <!-- ========================================= -->
-            <!-- FORM LEVEL ERRORS -->
-            <!-- ========================================= -->
-
             {% if form.non_field_errors %}
-
                 <div class="error-message">
                     {{ form.non_field_errors }}
                 </div>
-
             {% endif %}
 
-
-            <!-- ========================================= -->
-            <!-- TARGET JOB ROLE -->
-            <!-- ========================================= -->
-
             <div class="form-group">
-
                 <label for="{{ form.job_role.id_for_label }}">
                     Target Job Role
                 </label>
@@ -221,22 +192,17 @@
                 {{ form.job_role }}
 
                 {% if form.job_role.errors %}
-
                     <div class="error-message">
                         {{ form.job_role.errors }}
                     </div>
-
                 {% endif %}
 
+                <div class="field-help">
+                    Choose the role you want the interview to assess you against.
+                </div>
             </div>
 
-
-            <!-- ========================================= -->
-            <!-- PROJECT -->
-            <!-- ========================================= -->
-
             <div class="form-group">
-
                 <label for="{{ form.project.id_for_label }}">
                     Project Evidence
                 </label>
@@ -244,101 +210,37 @@
                 {{ form.project }}
 
                 {% if form.project.errors %}
-
                     <div class="error-message">
                         {{ form.project.errors }}
                     </div>
-
                 {% endif %}
 
                 <div class="field-help">
-                    Choose the project you want the interview questions
-                    to be based on.
+                    Choose the project that should be used as evidence during
+                    question generation and answer evaluation.
                 </div>
-
             </div>
-
-
-            <!-- ========================================= -->
-            <!-- QUESTION GENERATION METHOD -->
-            <!-- ========================================= -->
-
-            <div class="form-group">
-
-                <label>
-                    Question Generation Method
-                </label>
-
-                <div class="generation-method-wrapper">
-                    {{ form.question_generation_method }}
-                </div>
-
-                {% if form.question_generation_method.errors %}
-
-                    <div class="error-message">
-                        {{ form.question_generation_method.errors }}
-                    </div>
-
-                {% endif %}
-
-                <div class="field-help">
-                    Rule-Based Questions use predefined CareerReady AI
-                    competency rules and templates. AI-Generated Questions
-                    use your project and career evidence to generate
-                    contextual interview questions.
-                </div>
-
-            </div>
-
-
-            <!-- ========================================= -->
-            <!-- PERSONALISATION INFORMATION -->
-            <!-- ========================================= -->
 
             <div class="personalisation-box">
-
-                <h3>
-                    How the interview will be personalised
-                </h3>
+                <h3>How your AI interview is personalised</h3>
 
                 <ul>
-                    <li>
-                        Questions based on your selected project.
-                    </li>
-
-                    <li>
-                        Technical questions for your target job role.
-                    </li>
-
-                    <li>
-                        Questions covering relevant skills and tools.
-                    </li>
-
-                    <li>
-                        Questions based on readiness weaknesses.
-                    </li>
-
-                    <li>
-                        Feedback linked to evidence from your portfolio.
-                    </li>
+                    <li>Questions based on your selected project evidence.</li>
+                    <li>Technical questions aligned with your target job role.</li>
+                    <li>Questions covering relevant skills, tools and competency groups.</li>
+                    <li>Questions that can target identified readiness weaknesses and gaps.</li>
+                    <li>AI evaluation of technical quality, evidence consistency, competency and communication.</li>
+                    <li>Detailed feedback, strengths, improvement areas and an improved answer example.</li>
                 </ul>
-
             </div>
-
-
-            <!-- ========================================= -->
-            <!-- SUBMIT -->
-            <!-- ========================================= -->
 
             <button
                 type="submit"
                 class="submit-button"
             >
-                Create Interview Session
+                Start AI Interview
             </button>
-
         </form>
-
     </div>
 
 </div>

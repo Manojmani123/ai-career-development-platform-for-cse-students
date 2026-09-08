@@ -1,7 +1,7 @@
 {% extends 'career_app/base.html' %}
 
 {% block title %}
-Interview Evaluation | CareerReady AI
+AI Interview Evaluation | CareerReady AI
 {% endblock %}
 
 {% block content %}
@@ -33,15 +33,25 @@ Interview Evaluation | CareerReady AI
         color: #64748b;
     }
 
-    .status-badge {
+    .status-badge,
+    .ai-badge {
         display: inline-block;
         margin-top: 12px;
+        margin-right: 8px;
         padding: 8px 14px;
         border-radius: 999px;
-        background: #ecfdf5;
-        color: #047857;
         font-size: 13px;
         font-weight: 800;
+    }
+
+    .status-badge {
+        background: #ecfdf5;
+        color: #047857;
+    }
+
+    .ai-badge {
+        background: #eef2ff;
+        color: #4338ca;
     }
 
     .overall-score-section {
@@ -59,11 +69,7 @@ Interview Evaluation | CareerReady AI
         height: 180px;
         margin: auto;
         border-radius: 50%;
-        background: linear-gradient(
-            135deg,
-            #4f46e5,
-            #7c3aed
-        );
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
         color: #ffffff;
         display: flex;
         flex-direction: column;
@@ -85,10 +91,7 @@ Interview Evaluation | CareerReady AI
 
     .summary-grid {
         display: grid;
-        grid-template-columns: repeat(
-            auto-fit,
-            minmax(170px, 1fr)
-        );
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
         gap: 14px;
     }
 
@@ -218,10 +221,7 @@ Interview Evaluation | CareerReady AI
 
     .scores-grid {
         display: grid;
-        grid-template-columns: repeat(
-            auto-fit,
-            minmax(160px, 1fr)
-        );
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
         gap: 14px;
     }
 
@@ -254,10 +254,7 @@ Interview Evaluation | CareerReady AI
 
     .feedback-grid {
         display: grid;
-        grid-template-columns: repeat(
-            auto-fit,
-            minmax(310px, 1fr)
-        );
+        grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
         gap: 16px;
         margin-top: 24px;
     }
@@ -297,14 +294,14 @@ Interview Evaluation | CareerReady AI
         background: #fffbeb;
     }
 
-    .not-evaluated {
-        margin-top: 20px;
-        padding: 16px;
-        border: 1px solid #fed7aa;
-        border-radius: 12px;
-        background: #fff7ed;
-        color: #c2410c;
-        font-weight: 700;
+    .message {
+        margin-bottom: 18px;
+        padding: 14px 16px;
+        border-radius: 10px;
+        font-weight: 600;
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid #a7f3d0;
     }
 
     .results-actions {
@@ -356,15 +353,6 @@ Interview Evaluation | CareerReady AI
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
     }
 
-    .empty-state h2 {
-        margin-top: 0;
-        color: #111827;
-    }
-
-    .empty-state p {
-        color: #64748b;
-    }
-
     @media (max-width: 750px) {
         .results-header,
         .answer-card {
@@ -407,7 +395,7 @@ Interview Evaluation | CareerReady AI
 
     {% if messages %}
         {% for message in messages %}
-            <div class="not-evaluated">
+            <div class="message">
                 {{ message }}
             </div>
         {% endfor %}
@@ -415,7 +403,7 @@ Interview Evaluation | CareerReady AI
 
     <section class="results-header">
 
-        <h1>Interview Evaluation</h1>
+        <h1>AI Interview Evaluation</h1>
 
         <p>
             <strong>Target role:</strong>
@@ -438,22 +426,17 @@ Interview Evaluation | CareerReady AI
             {{ session.get_status_display }}
         </span>
 
+        <span class="ai-badge">
+            AI Evaluated
+        </span>
+
         <div class="overall-score-section">
 
             <div class="overall-score-circle">
-
-                {% if session.overall_score is not None %}
-                    <strong>
-                        {{ session.overall_score|floatformat:2 }}
-                    </strong>
-
-                    <span>out of 10</span>
-                {% else %}
-                    <strong>--</strong>
-
-                    <span>Not evaluated</span>
-                {% endif %}
-
+                <strong>
+                    {{ session.overall_score|floatformat:2 }}
+                </strong>
+                <span>out of 10</span>
             </div>
 
             <div class="summary-grid">
@@ -475,6 +458,16 @@ Interview Evaluation | CareerReady AI
 
                     <span class="summary-value">
                         {{ evaluated_count }}
+                    </span>
+                </div>
+
+                <div class="summary-card">
+                    <span class="summary-label">
+                        Evaluation method
+                    </span>
+
+                    <span class="summary-value">
+                        AI
                     </span>
                 </div>
 
@@ -577,159 +570,119 @@ Interview Evaluation | CareerReady AI
             {% endif %}
 
             <section class="content-section">
-
                 <h3>Your answer</h3>
 
                 <div class="content-box candidate-answer-box">
                     {{ answer.answer_text|linebreaksbr }}
                 </div>
-
             </section>
 
-            {% if answer.evaluated_at %}
+            <h3 class="scores-heading">
+                AI Evaluation Scores
+            </h3>
 
-                <h3 class="scores-heading">
-                    Evaluation scores
-                </h3>
+            <div class="scores-grid">
 
-                <div class="scores-grid">
-
-                    <div class="score-card">
-                        Technical accuracy
-
-                        <strong>
-                            {{ answer.technical_accuracy_score|floatformat:2 }}/10
-                        </strong>
-                    </div>
-
-                    <div class="score-card">
-                        Evidence consistency
-
-                        <strong>
-                            {{ answer.evidence_consistency_score|floatformat:2 }}/10
-                        </strong>
-                    </div>
-
-                    <div class="score-card">
-                        Competency
-
-                        <strong>
-                            {{ answer.competency_score|floatformat:2 }}/10
-                        </strong>
-                    </div>
-
-                    <div class="score-card">
-                        Communication
-
-                        <strong>
-                            {{ answer.communication_score|floatformat:2 }}/10
-                        </strong>
-                    </div>
-
-                    <div class="score-card overall-question-score">
-                        Overall score
-
-                        <strong>
-                            {{ answer.overall_score|floatformat:2 }}/10
-                        </strong>
-                    </div>
-
+                <div class="score-card">
+                    Technical accuracy
+                    <strong>
+                        {{ answer.technical_accuracy_score|floatformat:2 }}/10
+                    </strong>
                 </div>
 
-                <div class="feedback-grid">
-
-                    <section class="feedback-card">
-
-                        <h3>Technical feedback</h3>
-
-                        <div>
-                            {{ answer.technical_feedback|linebreaksbr }}
-                        </div>
-
-                    </section>
-
-                    <section class="feedback-card">
-
-                        <h3>Communication feedback</h3>
-
-                        <div>
-                            {{ answer.communication_feedback|linebreaksbr }}
-                        </div>
-
-                    </section>
-
-                    <section class="feedback-card strengths-card">
-
-                        <h3>Strengths</h3>
-
-                        <div>
-                            {{ answer.strengths|linebreaksbr }}
-                        </div>
-
-                    </section>
-
-                    <section class="feedback-card weaknesses-card">
-
-                        <h3>Areas for improvement</h3>
-
-                        <div>
-                            {{ answer.weaknesses|linebreaksbr }}
-                        </div>
-
-                    </section>
-
-                    <section class="feedback-card">
-
-                        <h3>Overall feedback</h3>
-
-                        <div>
-                            {{ answer.feedback|linebreaksbr }}
-                        </div>
-
-                    </section>
-
-                    <section class="feedback-card recommendation-card">
-
-                        <h3>Recommendation</h3>
-
-                        <div>
-                            {{ answer.recommendation|linebreaksbr }}
-                        </div>
-
-                    </section>
-
+                <div class="score-card">
+                    Evidence consistency
+                    <strong>
+                        {{ answer.evidence_consistency_score|floatformat:2 }}/10
+                    </strong>
                 </div>
 
-                <section class="content-section">
+                <div class="score-card">
+                    Competency
+                    <strong>
+                        {{ answer.competency_score|floatformat:2 }}/10
+                    </strong>
+                </div>
 
-                    <h3>Improved answer example</h3>
+                <div class="score-card">
+                    Communication
+                    <strong>
+                        {{ answer.communication_score|floatformat:2 }}/10
+                    </strong>
+                </div>
 
-                    <div class="content-box improved-answer-box">
-                        {{ answer.improved_answer|linebreaksbr }}
+                <div class="score-card overall-question-score">
+                    Overall score
+                    <strong>
+                        {{ answer.overall_score|floatformat:2 }}/10
+                    </strong>
+                </div>
+
+            </div>
+
+            <div class="feedback-grid">
+
+                <section class="feedback-card">
+                    <h3>Technical feedback</h3>
+                    <div>
+                        {{ answer.technical_feedback|linebreaksbr }}
                     </div>
-
                 </section>
 
-            {% else %}
+                <section class="feedback-card">
+                    <h3>Communication feedback</h3>
+                    <div>
+                        {{ answer.communication_feedback|linebreaksbr }}
+                    </div>
+                </section>
 
-                <div class="not-evaluated">
-                    This answer has not been evaluated yet.
+                <section class="feedback-card strengths-card">
+                    <h3>Strengths</h3>
+                    <div>
+                        {{ answer.strengths|linebreaksbr }}
+                    </div>
+                </section>
+
+                <section class="feedback-card weaknesses-card">
+                    <h3>Areas for improvement</h3>
+                    <div>
+                        {{ answer.weaknesses|linebreaksbr }}
+                    </div>
+                </section>
+
+                <section class="feedback-card">
+                    <h3>Overall feedback</h3>
+                    <div>
+                        {{ answer.feedback|linebreaksbr }}
+                    </div>
+                </section>
+
+                <section class="feedback-card recommendation-card">
+                    <h3>Recommendation</h3>
+                    <div>
+                        {{ answer.recommendation|linebreaksbr }}
+                    </div>
+                </section>
+
+            </div>
+
+            <section class="content-section">
+                <h3>Improved answer example</h3>
+
+                <div class="content-box improved-answer-box">
+                    {{ answer.improved_answer|linebreaksbr }}
                 </div>
-
-            {% endif %}
+            </section>
 
         </article>
 
     {% empty %}
 
         <div class="empty-state">
-
             <h2>No interview answers found</h2>
-
             <p>
                 There are no submitted answers for this interview session.
             </p>
-
         </div>
 
     {% endfor %}
@@ -747,7 +700,14 @@ Interview Evaluation | CareerReady AI
             href="{% url 'interview_setup' %}"
             class="button button-secondary"
         >
-            Start Another Interview
+            Start Another AI Interview
+        </a>
+
+        <a
+            href="{% url 'interview_history' %}"
+            class="button button-secondary"
+        >
+            Interview History
         </a>
 
     </div>

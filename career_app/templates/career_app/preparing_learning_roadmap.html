@@ -1,0 +1,179 @@
+{% extends 'career_app/base.html' %}
+
+{% block content %}
+
+<style>
+    .preparing-page {
+        max-width: 760px;
+        margin: 90px auto;
+        padding: 0 20px;
+        text-align: center;
+    }
+
+    .preparing-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 45px 35px;
+        box-shadow: 0 14px 35px rgba(0, 0, 0, 0.08);
+    }
+
+    .roadmap-spinner {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 25px;
+        border: 6px solid #e5e7eb;
+        border-top-color: #198754;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .preparing-card h2 {
+        font-size: 30px;
+        font-weight: 800;
+        margin-bottom: 12px;
+    }
+
+    .preparing-card > p {
+        color: #6b7280;
+        line-height: 1.7;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .roadmap-info {
+        margin-top: 28px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 20px;
+        text-align: left;
+    }
+
+    .roadmap-info p {
+        margin-bottom: 10px;
+    }
+
+    .roadmap-info p:last-child {
+        margin-bottom: 0;
+    }
+
+    .preparing-items {
+        margin-top: 25px;
+        text-align: left;
+        display: inline-block;
+        color: #4b5563;
+    }
+
+    .preparing-items div {
+        margin-bottom: 9px;
+    }
+
+    .wait-message {
+        margin-top: 25px;
+        font-size: 14px;
+        color: #9ca3af;
+    }
+</style>
+
+
+<div class="preparing-page">
+
+    <div class="preparing-card">
+
+        <div class="roadmap-spinner"></div>
+
+        <h2>
+            Preparing Your Personalised Roadmap
+        </h2>
+
+        <p>
+            CareerReady AI is analysing your career match,
+            competency gaps, current strengths, project evidence
+            and readiness information to create your learning journey.
+        </p>
+
+        <div class="roadmap-info">
+
+            <p>
+                <strong>Target Role:</strong>
+                {{ result.job_role.role_name }}
+            </p>
+
+            <p>
+                <strong>Career Match Score:</strong>
+                {{ result.match_score }}%
+            </p>
+
+            <p>
+                <strong>Roadmap Method:</strong>
+                AI Personalised
+            </p>
+
+        </div>
+
+        <div class="preparing-items">
+
+            <div>
+                ✓ Analysing competency gaps
+            </div>
+
+            <div>
+                ✓ Reviewing current strengths
+            </div>
+
+            <div>
+                ✓ Connecting learning to your projects
+            </div>
+
+            <div>
+                ✓ Preparing practical milestones
+            </div>
+
+            <div>
+                ✓ Building your career journey
+            </div>
+
+        </div>
+
+        <div class="wait-message">
+            This may take a few moments. Please keep this page open.
+        </div>
+
+        <form
+            id="roadmap-generation-form"
+            method="POST"
+        >
+            {% csrf_token %}
+        </form>
+
+    </div>
+
+</div>
+
+
+<script>
+    window.addEventListener(
+        "load",
+        function () {
+            setTimeout(
+                function () {
+                    document
+                        .getElementById(
+                            "roadmap-generation-form"
+                        )
+                        .submit();
+                },
+                600
+            );
+        }
+    );
+</script>
+
+{% endblock %}

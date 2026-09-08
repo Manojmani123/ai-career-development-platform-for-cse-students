@@ -127,6 +127,7 @@ class CareerMatchResult(models.Model):
     missing_skills = models.ManyToManyField(Skill, related_name='missing_skills', blank=True)
     match_score = models.FloatField(default=0)
     created_at = models.DateTimeField(default=timezone.now)
+    ai_roadmap = models.TextField(blank=True,null=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.job_role.role_name} - {self.match_score}%"
@@ -232,8 +233,28 @@ class ReadinessAssessment(models.Model):
     recommendation = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(default=timezone.now)
+    ai_analysis = models.TextField(blank=True,
+    null=True
+)
+    ai_recommendation = models.TextField(blank=True,
+    null=True
+)
+    READINESS_METHOD_CHOICES = [
+        ('RULE_BASED', 'Rule-Based Assessment'),
+        ('AI_POWERED', 'AI-Powered Assessment'),
+    ]
 
-    def __str__(self):
+    assessment_method = models.CharField(
+        max_length=20,
+        choices=READINESS_METHOD_CHOICES,
+        default='RULE_BASED',
+    )
+
+ai_reasoning = models.TextField(
+    blank=True,
+    null=True
+)
+def __str__(self):
         return f"{self.user.username} - {self.job_role.role_name} - {self.overall_readiness_score}%"
     
 class IndustryTool(models.Model):
@@ -284,7 +305,10 @@ class EmployabilityBottleneck(models.Model):
     recommendation = models.TextField()
 
     created_at = models.DateTimeField(default=timezone.now)
-
+    ai_analysis = models.TextField(blank=True,null=True)
+    ai_priority_gaps = models.TextField(blank=True,null=True)
+    ai_action_plan = models.TextField(blank=True,null=True)
+    ai_severity = models.CharField(max_length=20,blank=True,null=True)
     def __str__(self):
         return f"{self.user.username} - {self.job_role.role_name} - {self.main_bottleneck}"
     

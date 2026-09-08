@@ -1,0 +1,292 @@
+{% extends 'career_app/base.html' %}
+
+{% block title %}
+AI Evaluating Interview | CareerReady AI
+{% endblock %}
+
+{% block content %}
+
+<style>
+
+    .ai-evaluation-container {
+        max-width: 720px;
+        margin: 80px auto;
+        padding: 0 20px;
+    }
+
+    .ai-evaluation-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 55px 40px;
+        text-align: center;
+
+        box-shadow:
+            0 10px 30px
+            rgba(15, 23, 42, 0.06);
+    }
+
+    .ai-spinner {
+        width: 68px;
+        height: 68px;
+
+        margin:
+            0 auto
+            28px auto;
+
+        border: 7px solid #e5e7eb;
+        border-top-color: #4f46e5;
+
+        border-radius: 50%;
+
+        animation:
+            ai-spin
+            1s linear
+            infinite;
+    }
+
+    @keyframes ai-spin {
+
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+
+    }
+
+    .ai-evaluation-card h1 {
+        margin: 0 0 15px 0;
+
+        font-size: 30px;
+        font-weight: 700;
+
+        color: #111827;
+    }
+
+    .ai-evaluation-card p {
+        max-width: 570px;
+
+        margin:
+            0 auto
+            12px auto;
+
+        color: #6b7280;
+
+        font-size: 16px;
+        line-height: 1.7;
+    }
+
+    .ai-badge {
+        display: inline-block;
+
+        margin-bottom: 25px;
+
+        padding:
+            7px 13px;
+
+        border-radius: 999px;
+
+        background: #eef2ff;
+
+        color: #4338ca;
+
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .evaluation-progress {
+        margin-top: 30px;
+
+        padding: 18px;
+
+        border-radius: 12px;
+
+        background: #f8fafc;
+
+        border: 1px solid #e5e7eb;
+    }
+
+    .evaluation-progress strong {
+        display: block;
+
+        margin-bottom: 7px;
+
+        color: #111827;
+    }
+
+    .evaluation-progress span {
+        color: #6b7280;
+
+        font-size: 14px;
+    }
+
+    .loading-dots::after {
+        content: '';
+
+        animation:
+            loading-dots
+            1.5s infinite;
+    }
+
+    @keyframes loading-dots {
+
+        0% {
+            content: '';
+        }
+
+        25% {
+            content: '.';
+        }
+
+        50% {
+            content: '..';
+        }
+
+        75% {
+            content: '...';
+        }
+
+        100% {
+            content: '';
+        }
+
+    }
+
+    .warning-message {
+        margin-top: 22px;
+
+        color: #9ca3af;
+
+        font-size: 13px;
+    }
+
+</style>
+
+
+<div class="ai-evaluation-container">
+
+    <div class="ai-evaluation-card">
+
+        <!-- AI badge -->
+
+        <div class="ai-badge">
+            AI-Powered Evaluation
+        </div>
+
+
+        <!-- Spinner -->
+
+        <div class="ai-spinner"></div>
+
+
+        <!-- Heading -->
+
+        <h1>
+            AI is evaluating your interview
+            <span class="loading-dots"></span>
+        </h1>
+
+
+        <!-- Description -->
+
+        <p>
+            CareerReady AI is analysing your interview
+            answers using your project evidence,
+            target role and competency context.
+        </p>
+
+        <p>
+            Your answers are being evaluated for
+            technical accuracy, evidence consistency,
+            competency and communication.
+        </p>
+
+
+        <!-- Status -->
+
+        <div class="evaluation-progress">
+
+            <strong>
+                Evaluating your answers
+                <span class="loading-dots"></span>
+            </strong>
+
+            <span>
+                This may take a few moments.
+            </span>
+
+        </div>
+
+
+        <div class="warning-message">
+            Please do not close or refresh this page
+            while the AI evaluation is running.
+        </div>
+
+
+        <!--
+            This form calls complete_interview.
+
+            complete_interview then calls:
+
+            evaluate_interview_session(session)
+
+            which evaluates every answer using AI.
+        -->
+
+        <form
+            id="ai-evaluation-form"
+            method="post"
+            action="{% url 'complete_interview' session.id %}"
+        >
+
+            {% csrf_token %}
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /*
+        IMPORTANT:
+
+        We wait briefly before submitting the form.
+
+        This gives the browser enough time to render
+        the loading page before the AI evaluation
+        request starts.
+    */
+
+    window.addEventListener(
+        'load',
+        function () {
+
+            setTimeout(
+                function () {
+
+                    const form =
+                        document.getElementById(
+                            'ai-evaluation-form'
+                        );
+
+                    if (form) {
+                        form.submit();
+                    }
+
+                },
+                700
+            );
+
+        }
+    );
+
+</script>
+
+{% endblock %}
