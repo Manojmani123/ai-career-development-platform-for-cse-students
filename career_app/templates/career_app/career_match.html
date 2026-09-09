@@ -2,52 +2,608 @@
 
 {% block content %}
 
-<div class="row justify-content-center">
+<style>
+    .career-match-page {
+        max-width: 1100px;
+        margin: 40px auto 70px;
+        padding: 0 20px;
+    }
 
-    <div class="col-lg-7">
+    /* =========================================
+       HERO
+    ========================================= */
 
-        <div class="card shadow">
+    .match-hero {
+        background: linear-gradient(
+            135deg,
+            #111827 0%,
+            #1e293b 55%,
+            #312e81 100%
+        );
+        border-radius: 22px;
+        padding: 34px 36px;
+        color: #ffffff;
+        margin-bottom: 24px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+    }
 
-            <div class="card-header bg-primary text-white">
-                <h3 class="mb-0">Career Matching</h3>
+    .match-eyebrow {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: #c7d2fe;
+        margin-bottom: 8px;
+    }
+
+    .match-hero h1 {
+        margin: 0 0 10px 0;
+        font-size: 30px;
+        font-weight: 800;
+    }
+
+    .match-hero p {
+        margin: 0;
+        max-width: 760px;
+        color: #dbeafe;
+        line-height: 1.7;
+    }
+
+    /* =========================================
+       MAIN CARD
+    ========================================= */
+
+    .match-layout {
+        display: grid;
+        grid-template-columns: 1.25fr 0.75fr;
+        gap: 22px;
+        align-items: start;
+    }
+
+    .match-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 28px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .section-title {
+        font-size: 20px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 6px;
+    }
+
+    .section-subtitle {
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 24px;
+    }
+
+    /* =========================================
+       FORM
+    ========================================= */
+
+    .form-group {
+        margin-bottom: 22px;
+    }
+
+    .form-label-custom {
+        display: block;
+        margin-bottom: 9px;
+        color: #111827;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .match-card select,
+    .match-card input {
+        width: 100%;
+        min-height: 48px;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        padding: 10px 13px;
+        background: #ffffff;
+        color: #111827;
+        outline: none;
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .match-card select:focus,
+    .match-card input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+    }
+
+    .field-error {
+        margin-top: 7px;
+        color: #dc2626;
+        font-size: 13px;
+    }
+
+    /* =========================================
+       PROFILE EVIDENCE INFO
+    ========================================= */
+
+    .evidence-info {
+        display: flex;
+        gap: 13px;
+        align-items: flex-start;
+        padding: 16px;
+        margin-bottom: 24px;
+        border-radius: 13px;
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+    }
+
+    .evidence-icon {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #4f46e5;
+        color: #ffffff;
+        font-weight: 800;
+    }
+
+    .evidence-title {
+        color: #312e81;
+        font-weight: 800;
+        margin-bottom: 3px;
+        font-size: 14px;
+    }
+
+    .evidence-text {
+        color: #4f46e5;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    /* =========================================
+       BUTTONS
+    ========================================= */
+
+    .button-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+
+    .match-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        padding: 11px 18px;
+        min-height: 44px;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition:
+            background 0.2s ease,
+            border-color 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .match-btn:hover {
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .primary-action {
+        background: #4f46e5;
+        color: #ffffff;
+    }
+
+    .primary-action:hover {
+        background: #4338ca;
+        color: #ffffff;
+    }
+
+    .secondary-action {
+        background: #ffffff;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+
+    .secondary-action:hover {
+        background: #f9fafb;
+        color: #111827;
+        border-color: #9ca3af;
+    }
+
+    /* =========================================
+       HOW IT WORKS
+    ========================================= */
+
+    .process-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 25px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .process-title {
+        margin-bottom: 20px;
+        font-size: 17px;
+        font-weight: 800;
+        color: #111827;
+    }
+
+    .process-step {
+        display: flex;
+        gap: 13px;
+        align-items: flex-start;
+        position: relative;
+        padding-bottom: 20px;
+    }
+
+    .process-step:last-child {
+        padding-bottom: 0;
+    }
+
+    .process-number {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        border-radius: 50%;
+        background: #eef2ff;
+        color: #4338ca;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .process-content strong {
+        display: block;
+        color: #111827;
+        font-size: 14px;
+        margin-bottom: 3px;
+    }
+
+    .process-content span {
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    /* =========================================
+       ANALYSIS NOTE
+    ========================================= */
+
+    .analysis-note {
+        margin-top: 22px;
+        padding: 18px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+
+    .analysis-note-title {
+        color: #111827;
+        font-weight: 800;
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+
+    .analysis-note p {
+        margin: 0;
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    /* =========================================
+       RESPONSIVE
+    ========================================= */
+
+    @media (max-width: 850px) {
+        .match-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .career-match-page {
+            padding: 0 14px;
+            margin-top: 20px;
+        }
+
+        .match-hero {
+            padding: 26px 22px;
+        }
+
+        .match-hero h1 {
+            font-size: 25px;
+        }
+
+        .match-card,
+        .process-card {
+            padding: 22px;
+        }
+
+        .button-row {
+            flex-direction: column;
+        }
+
+        .match-btn {
+            width: 100%;
+        }
+    }
+</style>
+
+
+<div class="career-match-page">
+
+    <!-- =====================================
+         HERO
+    ====================================== -->
+
+    <section class="match-hero">
+
+        <div class="match-eyebrow">
+            CareerReady AI
+        </div>
+
+        <h1>
+            Career Matching
+        </h1>
+
+        <p>
+            Discover how closely your current competencies match
+            a target Computer Science career using the evidence
+            stored in your CareerReady AI profile.
+        </p>
+
+    </section>
+
+
+    <div class="match-layout">
+
+        <!-- =================================
+             MATCH FORM
+        ================================== -->
+
+        <section class="match-card">
+
+            <div class="section-title">
+                Select Your Target Role
             </div>
 
-            <div class="card-body">
+            <div class="section-subtitle">
+                Choose the career you want to evaluate.
+                CareerReady AI will compare your current profile
+                against the competency requirements for that role.
+            </div>
 
-                <div class="alert alert-info">
-                    The system will use your <strong>resume-extracted skills</strong> and your
-                    <strong>manually added profile skills</strong> to calculate your career match.
+
+            <!-- Profile evidence -->
+
+            <div class="evidence-info">
+
+                <div class="evidence-icon">
+                    ✓
                 </div>
 
-                <form method="POST">
+                <div>
 
-                    {% csrf_token %}
-
-                    <div class="mb-3">
-                        <label class="form-label">
-                            <strong>Select Target Job Role</strong>
-                        </label>
-
-                        {{ form.job_role }}
+                    <div class="evidence-title">
+                        Your profile evidence will be used
                     </div>
 
-                    <button type="submit" class="btn btn-primary">
+                    <div class="evidence-text">
+                        Career matching considers your
+                        resume-extracted skills and manually added
+                        profile skills.
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+
+                <div class="form-group">
+
+                    <label class="form-label-custom">
+                        Target Job Role
+                    </label>
+
+                    {{ form.job_role }}
+
+                    {% if form.job_role.errors %}
+
+                        {% for error in form.job_role.errors %}
+
+                            <div class="field-error">
+                                {{ error }}
+                            </div>
+
+                        {% endfor %}
+
+                    {% endif %}
+
+                </div>
+
+
+                {% if form.non_field_errors %}
+
+                    {% for error in form.non_field_errors %}
+
+                        <div class="field-error mb-3">
+                            {{ error }}
+                        </div>
+
+                    {% endfor %}
+
+                {% endif %}
+
+
+                <div class="button-row">
+
+                    <button
+                        type="submit"
+                        class="match-btn primary-action"
+                    >
                         Analyze Career Match
                     </button>
 
-                    <a href="{% url 'view_profile' %}" class="btn btn-outline-secondary">
+
+                    <a
+                        href="{% url 'view_profile' %}"
+                        class="match-btn secondary-action"
+                    >
                         View / Edit Profile
                     </a>
 
-                    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
+
+                    <a
+                        href="{% url 'user_dashboard' %}"
+                        class="match-btn secondary-action"
+                    >
                         Back to Dashboard
                     </a>
 
-                </form>
+                </div>
+
+            </form>
+
+
+            <div class="analysis-note">
+
+                <div class="analysis-note-title">
+                    Evidence-based competency matching
+                </div>
+
+                <p>
+                    The matching score is calculated from the
+                    competency requirements defined for the selected
+                    role. ANY_ONE competency groups are treated as a
+                    single requirement when one valid option is
+                    satisfied.
+                </p>
 
             </div>
 
-        </div>
+        </section>
+
+
+        <!-- =================================
+             PROCESS
+        ================================== -->
+
+        <aside class="process-card">
+
+            <div class="process-title">
+                How Career Matching Works
+            </div>
+
+
+            <div class="process-step">
+
+                <div class="process-number">
+                    01
+                </div>
+
+                <div class="process-content">
+
+                    <strong>
+                        Select a Target Role
+                    </strong>
+
+                    <span>
+                        Choose the Computer Science role you
+                        want to evaluate.
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="process-step">
+
+                <div class="process-number">
+                    02
+                </div>
+
+                <div class="process-content">
+
+                    <strong>
+                        Analyse Your Evidence
+                    </strong>
+
+                    <span>
+                        Your profile skills are compared with
+                        the role competency dataset.
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="process-step">
+
+                <div class="process-number">
+                    03
+                </div>
+
+                <div class="process-content">
+
+                    <strong>
+                        Identify Competency Gaps
+                    </strong>
+
+                    <span>
+                        CareerReady AI identifies satisfied
+                        and missing requirements.
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="process-step">
+
+                <div class="process-number">
+                    04
+                </div>
+
+                <div class="process-content">
+
+                    <strong>
+                        Generate Your Match
+                    </strong>
+
+                    <span>
+                        Review your career-match score,
+                        competency status and learning needs.
+                    </span>
+
+                </div>
+
+            </div>
+
+        </aside>
 
     </div>
 

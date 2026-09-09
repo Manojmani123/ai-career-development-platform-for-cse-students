@@ -2,326 +2,1151 @@
 
 {% block content %}
 
-<div class="container mt-4 mb-5">
+<style>
+    .transition-page {
+        max-width: 1180px;
+        margin: 35px auto 70px;
+        padding: 0 20px;
+    }
 
-    <div class="mb-4">
+    /* =========================================================
+       HERO
+    ========================================================= */
 
-        <h2>
-            Career Transition Feasibility Analysis
-        </h2>
+    .transition-hero {
+        background: linear-gradient(
+            135deg,
+            #111827 0%,
+            #1e293b 55%,
+            #312e81 100%
+        );
+        color: #ffffff;
+        border-radius: 22px;
+        padding: 34px 36px;
+        margin-bottom: 26px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+    }
 
-        <p class="text-muted">
+    .hero-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
 
-            <strong>Current Role:</strong>
-            {{ analysis.current_role.role_name }}
+    .hero-eyebrow {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: #c7d2fe;
+        margin-bottom: 8px;
+    }
 
-            →
+    .transition-hero h1 {
+        font-size: 30px;
+        font-weight: 800;
+        margin: 0;
+    }
 
-            <strong>Target Role:</strong>
-            {{ analysis.target_role.role_name }}
+    .ai-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 13px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 700;
+    }
 
-        </p>
+    .role-route {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-top: 28px;
+        flex-wrap: wrap;
+    }
 
-        {% if analysis.ai_analysis %}
-            <span class="badge bg-primary">
-                AI Enhanced Analysis
-            </span>
-        {% endif %}
+    .role-box {
+        min-width: 220px;
+        flex: 1;
+        border-radius: 15px;
+        padding: 18px 20px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.13);
+    }
 
-    </div>
+    .role-label {
+        color: #cbd5e1;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .role-name {
+        font-size: 19px;
+        font-weight: 800;
+    }
+
+    .route-arrow {
+        font-size: 28px;
+        color: #a5b4fc;
+        font-weight: 800;
+    }
+
+    /* =========================================================
+       SCORE CARDS
+    ========================================================= */
+
+    .score-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    .score-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .score-label {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+    }
+
+    .score-value {
+        font-size: 36px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 14px;
+        line-height: 1;
+    }
+
+    .score-track {
+        width: 100%;
+        height: 9px;
+        border-radius: 999px;
+        background: #e5e7eb;
+        overflow: hidden;
+    }
+
+    .score-fill {
+        width: 0;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(
+            90deg,
+            #4f46e5,
+            #6366f1
+        );
+        transition: width 0.8s ease;
+    }
+
+    .score-note {
+        margin-top: 10px;
+        color: #94a3b8;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    /* =========================================================
+       TRANSITION STATUS
+    ========================================================= */
+
+    .status-panel {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 24px 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .status-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 14px;
+    }
+
+    .transition-path {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .path-node {
+        width: 14px;
+        height: 14px;
+        min-width: 14px;
+        border-radius: 50%;
+        background: #4f46e5;
+        box-shadow: 0 0 0 5px #eef2ff;
+    }
+
+    .path-line {
+        height: 4px;
+        flex: 1;
+        background: linear-gradient(
+            90deg,
+            #4f46e5,
+            #a5b4fc
+        );
+        border-radius: 999px;
+    }
+
+    .difficulty-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 18px;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .difficulty-label {
+        color: #64748b;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    .difficulty-value {
+        font-size: 21px;
+        font-weight: 800;
+        color: #111827;
+    }
+
+    .feasibility-pill {
+        padding: 8px 14px;
+        background: #eef2ff;
+        color: #4338ca;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    /* =========================================================
+       TWO-COLUMN AI SUMMARY
+    ========================================================= */
+
+    .insight-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .info-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .info-header {
+        padding: 18px 22px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .info-header h3 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 800;
+        color: #111827;
+    }
+
+    .info-body {
+        padding: 22px;
+        color: #475569;
+        line-height: 1.75;
+    }
+
+    .info-body p:last-child {
+        margin-bottom: 0;
+    }
+
+    .strength-card {
+        border-top: 4px solid #16a34a;
+    }
+
+    .gap-card {
+        border-top: 4px solid #f59e0b;
+    }
+
+    .small-badge {
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .strength-badge {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .gap-badge {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    /* =========================================================
+       AI INSIGHT
+    ========================================================= */
+
+    .ai-panel {
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 24px;
+        background: linear-gradient(
+            135deg,
+            #eef2ff,
+            #f5f3ff
+        );
+        border: 1px solid #c7d2fe;
+    }
+
+    .ai-panel::after {
+        content: "";
+        position: absolute;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        right: -70px;
+        top: -70px;
+        background: rgba(99, 102, 241, 0.09);
+    }
+
+    .ai-title {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #3730a3;
+        font-size: 18px;
+        font-weight: 800;
+        margin-bottom: 15px;
+    }
+
+    .ai-icon {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        border-radius: 10px;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        background: #4f46e5;
+        color: #ffffff;
+        font-size: 17px;
+    }
+
+    .ai-content {
+        position: relative;
+        z-index: 2;
+        color: #374151;
+        line-height: 1.8;
+    }
+
+    .ai-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* =========================================================
+       MISSING SKILLS / TOOLS
+    ========================================================= */
+
+    .gap-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .gap-detail-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+    }
+
+    .gap-detail-title {
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 12px;
+        font-size: 16px;
+    }
+
+    .gap-detail-content {
+        color: #64748b;
+        line-height: 1.7;
+    }
+
+    /* =========================================================
+       ACTION PLAN
+    ========================================================= */
+
+    .plan-section {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .plan-header {
+        margin-bottom: 24px;
+    }
+
+    .plan-header h3 {
+        margin: 0 0 6px 0;
+        color: #111827;
+        font-size: 21px;
+        font-weight: 800;
+    }
+
+    .plan-header p {
+        color: #64748b;
+        margin: 0;
+    }
+
+    .journey {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .journey-step {
+        position: relative;
+        padding: 18px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+
+    .step-number {
+        width: 34px;
+        height: 34px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        background: #4f46e5;
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 12px;
+    }
+
+    .step-title {
+        font-weight: 800;
+        color: #111827;
+        font-size: 14px;
+    }
+
+    .action-plan-content {
+        padding: 20px;
+        border-radius: 14px;
+        background: #f8fafc;
+        color: #475569;
+        line-height: 1.8;
+    }
+
+    .action-plan-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* =========================================================
+       RECOMMENDATION
+    ========================================================= */
+
+    .recommendation-card {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 18px;
+        padding: 24px;
+        margin-bottom: 28px;
+    }
+
+    .recommendation-title {
+        color: #166534;
+        font-size: 16px;
+        font-weight: 800;
+        margin-bottom: 10px;
+    }
+
+    .recommendation-text {
+        color: #365314;
+        line-height: 1.75;
+    }
+
+    /* =========================================================
+       BUTTONS
+    ========================================================= */
+
+    .page-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 18px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 14px;
+        transition:
+            background 0.2s ease,
+            color 0.2s ease,
+            border-color 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .primary-btn {
+        background: #4f46e5;
+        color: #ffffff;
+        border: 1px solid #4f46e5;
+    }
+
+    .primary-btn:hover {
+        background: #4338ca;
+        border-color: #4338ca;
+        color: #ffffff;
+    }
+
+    .secondary-btn {
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        color: #374151;
+    }
+
+    .secondary-btn:hover {
+        background: #f9fafb;
+        color: #111827;
+        border-color: #9ca3af;
+    }
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================= */
+
+    @media (max-width: 900px) {
+        .score-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .insight-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .gap-details {
+            grid-template-columns: 1fr;
+        }
+
+        .journey {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .transition-page {
+            padding: 0 14px;
+            margin-top: 20px;
+        }
+
+        .transition-hero {
+            padding: 26px 22px;
+        }
+
+        .transition-hero h1 {
+            font-size: 25px;
+        }
+
+        .role-route {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .route-arrow {
+            transform: rotate(90deg);
+            text-align: center;
+        }
+
+        .score-card {
+            padding: 20px;
+        }
+
+        .score-value {
+            font-size: 31px;
+        }
+
+        .status-panel {
+            padding: 22px;
+        }
+
+        .journey {
+            grid-template-columns: 1fr;
+        }
+
+        .plan-section {
+            padding: 22px;
+        }
+
+        .ai-panel {
+            padding: 24px;
+        }
+
+        .page-actions {
+            flex-direction: column;
+        }
+
+        .action-btn {
+            width: 100%;
+        }
+    }
+</style>
 
 
-    <!-- ============================== -->
-    <!-- DETERMINISTIC SCORES -->
-    <!-- ============================== -->
+<div class="transition-page">
 
-    <div class="row mt-4">
+    <!-- =====================================================
+         HERO
+    ====================================================== -->
 
-        <div class="col-md-4 mb-3">
+    <section class="transition-hero">
 
-            <div class="card text-center h-100">
+        <div class="hero-top">
 
-                <div class="card-body">
+            <div>
 
-                    <h5>
-                        Skill Match
-                    </h5>
-
-                    <h2>
-                        {{ analysis.skill_match_score }}%
-                    </h2>
-
+                <div class="hero-eyebrow">
+                    CareerReady AI
                 </div>
+
+                <h1>
+                    Career Transition Analysis
+                </h1>
 
             </div>
 
-        </div>
+            {% if analysis.ai_analysis %}
 
-
-        <div class="col-md-4 mb-3">
-
-            <div class="card text-center h-100">
-
-                <div class="card-body">
-
-                    <h5>
-                        Tool Match
-                    </h5>
-
-                    <h2>
-                        {{ analysis.tool_match_score }}%
-                    </h2>
-
+                <div class="ai-badge">
+                    ✦ AI Enhanced Analysis
                 </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-md-4 mb-3">
-
-            <div class="card text-center h-100">
-
-                <div class="card-body">
-
-                    <h5>
-                        Transition Feasibility
-                    </h5>
-
-                    <h2>
-                        {{ analysis.feasibility_score }}%
-                    </h2>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- ============================== -->
-    <!-- DIFFICULTY -->
-    <!-- ============================== -->
-
-    <div class="card mt-4">
-
-        <div class="card-header bg-primary text-white">
-
-            Transition Difficulty
-
-        </div>
-
-        <div class="card-body">
-
-            <h4>
-                {{ analysis.difficulty_level }}
-            </h4>
-
-        </div>
-
-    </div>
-
-
-    <!-- ============================== -->
-    <!-- MISSING SKILLS -->
-    <!-- ============================== -->
-
-    <div class="card mt-4">
-
-        <div class="card-header bg-danger text-white">
-
-            Missing Skills
-
-        </div>
-
-        <div class="card-body">
-
-            {% if analysis.missing_skills %}
-
-                {{ analysis.missing_skills }}
-
-            {% else %}
-
-                No major missing skills.
 
             {% endif %}
 
         </div>
 
-    </div>
+
+        <div class="role-route">
+
+            <div class="role-box">
+
+                <div class="role-label">
+                    Current Role
+                </div>
+
+                <div class="role-name">
+                    {{ analysis.current_role.role_name }}
+                </div>
+
+            </div>
 
 
-    <!-- ============================== -->
-    <!-- MISSING TOOLS -->
-    <!-- ============================== -->
-
-    <div class="card mt-4">
-
-        <div class="card-header bg-warning">
-
-            Missing Tools
-
-        </div>
-
-        <div class="card-body">
-
-            {% if analysis.missing_tools %}
-
-                {{ analysis.missing_tools }}
-
-            {% else %}
-
-                No major missing tools.
-
-            {% endif %}
-
-        </div>
-
-    </div>
+            <div class="route-arrow">
+                →
+            </div>
 
 
-    <!-- ============================== -->
-    <!-- SYSTEM RECOMMENDATION -->
-    <!-- ============================== -->
+            <div class="role-box">
 
-    <div class="card mt-4">
+                <div class="role-label">
+                    Target Role
+                </div>
 
-        <div class="card-header bg-success text-white">
+                <div class="role-name">
+                    {{ analysis.target_role.role_name }}
+                </div>
 
-            Transition Recommendation
+            </div>
 
         </div>
 
-        <div class="card-body">
+    </section>
 
-            {{ analysis.recommendation }}
+
+    <!-- =====================================================
+         SCORES
+    ====================================================== -->
+
+    <section class="score-grid">
+
+        <!-- Skill Match -->
+
+        <div class="score-card">
+
+            <div class="score-label">
+                Skill Match
+            </div>
+
+            <div class="score-value">
+                {{ analysis.skill_match_score }}%
+            </div>
+
+            <div class="score-track">
+
+                <div
+                    class="score-fill"
+                    data-score="{{ analysis.skill_match_score }}"
+                ></div>
+
+            </div>
+
+            <div class="score-note">
+                Match against target-role skill requirements
+            </div>
 
         </div>
 
-    </div>
+
+        <!-- Tool Match -->
+
+        <div class="score-card">
+
+            <div class="score-label">
+                Tool Match
+            </div>
+
+            <div class="score-value">
+                {{ analysis.tool_match_score }}%
+            </div>
+
+            <div class="score-track">
+
+                <div
+                    class="score-fill"
+                    data-score="{{ analysis.tool_match_score }}"
+                ></div>
+
+            </div>
+
+            <div class="score-note">
+                Match against required industry tools
+            </div>
+
+        </div>
 
 
-    <!-- ============================== -->
-    <!-- AI SECTION -->
-    <!-- ============================== -->
+        <!-- Overall Feasibility -->
+
+        <div class="score-card">
+
+            <div class="score-label">
+                Overall Feasibility
+            </div>
+
+            <div class="score-value">
+                {{ analysis.feasibility_score }}%
+            </div>
+
+            <div class="score-track">
+
+                <div
+                    class="score-fill"
+                    data-score="{{ analysis.feasibility_score }}"
+                ></div>
+
+            </div>
+
+            <div class="score-note">
+                Combined career-transition feasibility
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         TRANSITION PATH
+    ====================================================== -->
+
+    <section class="status-panel">
+
+        <div class="status-title">
+            Transition Path
+        </div>
+
+        <div class="transition-path">
+
+            <div class="path-node"></div>
+
+            <div class="path-line"></div>
+
+            <div class="path-node"></div>
+
+        </div>
+
+        <div class="difficulty-row">
+
+            <div>
+
+                <div class="difficulty-label">
+                    Difficulty
+                </div>
+
+                <div class="difficulty-value">
+                    {{ analysis.difficulty_level }}
+                </div>
+
+            </div>
+
+            <div class="feasibility-pill">
+                {{ analysis.feasibility_score }}% Feasible
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         AI STRENGTHS + PRIORITY GAPS
+    ====================================================== -->
 
     {% if analysis.ai_analysis %}
 
-        <hr class="my-5">
+        <section class="insight-grid">
 
-        <div class="mb-3">
+            <!-- Transferable Strengths -->
 
-            <h3>
-                AI Career Transition Guidance
-            </h3>
+            <div class="info-card strength-card">
 
-            <p class="text-muted">
-                Personalised interpretation based on your
-                CareerReady AI evidence.
-            </p>
+                <div class="info-header">
 
-        </div>
+                    <h3>
+                        Transferable Strengths
+                    </h3>
 
+                    <span class="small-badge strength-badge">
+                        Existing Evidence
+                    </span>
 
-        <!-- AI ANALYSIS -->
+                </div>
 
-        <div class="card mt-4">
+                <div class="info-body">
 
-            <div class="card-header">
+                    {% if analysis.ai_transferable_strengths %}
 
-                <strong>
-                    Why This Transition Has This Feasibility
-                </strong>
+                        {{ analysis.ai_transferable_strengths|linebreaks }}
+
+                    {% else %}
+
+                        <p>
+                            No transferable strengths were identified.
+                        </p>
+
+                    {% endif %}
+
+                </div>
 
             </div>
 
-            <div class="card-body">
+
+            <!-- Priority Gaps -->
+
+            <div class="info-card gap-card">
+
+                <div class="info-header">
+
+                    <h3>
+                        Priority Gaps
+                    </h3>
+
+                    <span class="small-badge gap-badge">
+                        Focus Next
+                    </span>
+
+                </div>
+
+                <div class="info-body">
+
+                    {% if analysis.ai_priority_gaps %}
+
+                        {{ analysis.ai_priority_gaps|linebreaks }}
+
+                    {% else %}
+
+                        <p>
+                            No major priority gaps were identified.
+                        </p>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             AI CAREER TRANSITION INSIGHT
+        ================================================== -->
+
+        <section class="ai-panel">
+
+            <div class="ai-title">
+
+                <span class="ai-icon">
+                    ✦
+                </span>
+
+                AI Career Transition Insight
+
+            </div>
+
+            <div class="ai-content">
 
                 {{ analysis.ai_analysis|linebreaks }}
 
             </div>
 
-        </div>
+        </section>
+
+    {% endif %}
 
 
-        <!-- TRANSFERABLE STRENGTHS -->
+    <!-- =====================================================
+         MISSING SKILLS + TOOLS
+    ====================================================== -->
 
-        <div class="card mt-4">
+    <section class="gap-details">
 
-            <div class="card-header bg-success text-white">
+        <!-- Missing Skills -->
 
-                Transferable Strengths
+        <div class="gap-detail-card">
 
+            <div class="gap-detail-title">
+                Missing Skills
             </div>
 
-            <div class="card-body">
+            <div class="gap-detail-content">
 
-                {{ analysis.ai_transferable_strengths|linebreaks }}
+                {% if analysis.missing_skills %}
 
-            </div>
+                    {{ analysis.missing_skills }}
 
-        </div>
+                {% else %}
 
+                    No major missing skills identified.
 
-        <!-- PRIORITY GAPS -->
-
-        <div class="card mt-4">
-
-            <div class="card-header bg-warning">
-
-                Priority Gaps
-
-            </div>
-
-            <div class="card-body">
-
-                {{ analysis.ai_priority_gaps|linebreaks }}
+                {% endif %}
 
             </div>
 
         </div>
 
 
-        <!-- ACTION PLAN -->
+        <!-- Missing Tools -->
 
-        <div class="card mt-4">
+        <div class="gap-detail-card">
 
-            <div class="card-header bg-primary text-white">
+            <div class="gap-detail-title">
+                Missing Tools
+            </div>
 
-                AI Transition Action Plan
+            <div class="gap-detail-content">
+
+                {% if analysis.missing_tools %}
+
+                    {{ analysis.missing_tools }}
+
+                {% else %}
+
+                    No major missing tools identified.
+
+                {% endif %}
 
             </div>
 
-            <div class="card-body">
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         AI TRANSITION ACTION PLAN
+    ====================================================== -->
+
+    {% if analysis.ai_action_plan %}
+
+        <section class="plan-section">
+
+            <div class="plan-header">
+
+                <h3>
+                    Your Career Transition Plan
+                </h3>
+
+                <p>
+                    A practical path from your current position
+                    toward the target role.
+                </p>
+
+            </div>
+
+
+            <div class="journey">
+
+                <!-- Step 1 -->
+
+                <div class="journey-step">
+
+                    <div class="step-number">
+                        01
+                    </div>
+
+                    <div class="step-title">
+                        Close Core Gaps
+                    </div>
+
+                </div>
+
+
+                <!-- Step 2 -->
+
+                <div class="journey-step">
+
+                    <div class="step-number">
+                        02
+                    </div>
+
+                    <div class="step-title">
+                        Apply in Projects
+                    </div>
+
+                </div>
+
+
+                <!-- Step 3 -->
+
+                <div class="journey-step">
+
+                    <div class="step-number">
+                        03
+                    </div>
+
+                    <div class="step-title">
+                        Build Evidence
+                    </div>
+
+                </div>
+
+
+                <!-- Step 4 -->
+
+                <div class="journey-step">
+
+                    <div class="step-number">
+                        04
+                    </div>
+
+                    <div class="step-title">
+                        Prepare for Role
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="action-plan-content">
 
                 {{ analysis.ai_action_plan|linebreaks }}
 
             </div>
 
-        </div>
+        </section>
 
     {% endif %}
 
 
-    <!-- ============================== -->
-    <!-- ACTIONS -->
-    <!-- ============================== -->
+    <!-- =====================================================
+         SYSTEM RECOMMENDATION
+    ====================================================== -->
 
-    <div class="mt-4">
+    <section class="recommendation-card">
+
+        <div class="recommendation-title">
+            CareerReady AI Recommendation
+        </div>
+
+        <div class="recommendation-text">
+            {{ analysis.recommendation }}
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         ACTION BUTTONS
+    ====================================================== -->
+
+    <div class="page-actions">
 
         <a
             href="{% url 'career_transition_analysis' %}"
-            class="btn btn-secondary"
+            class="action-btn primary-btn"
         >
             Analyse Another Transition
         </a>
 
         <a
             href="{% url 'user_dashboard' %}"
-            class="btn btn-dark"
+            class="action-btn secondary-btn"
         >
             Back to Dashboard
         </a>
@@ -329,5 +1154,54 @@
     </div>
 
 </div>
+
+
+<!-- =========================================================
+     SCORE BAR SCRIPT
+
+     We use data-score instead of putting Django variables
+     directly inside CSS width properties. This prevents VS Code
+     from reporting CSS property-value errors.
+========================================================= -->
+
+<script>
+    document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+
+            const scoreBars = document.querySelectorAll(
+                '.score-fill[data-score]'
+            );
+
+            scoreBars.forEach(
+                function (bar) {
+
+                    let score = parseFloat(
+                        bar.dataset.score
+                    );
+
+                    if (isNaN(score)) {
+                        score = 0;
+                    }
+
+                    score = Math.max(
+                        0,
+                        Math.min(
+                            100,
+                            score
+                        )
+                    );
+
+                    window.requestAnimationFrame(
+                        function () {
+                            bar.style.width =
+                                score + '%';
+                        }
+                    );
+                }
+            );
+        }
+    );
+</script>
 
 {% endblock %}

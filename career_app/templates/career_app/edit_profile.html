@@ -2,93 +2,927 @@
 
 {% block content %}
 
-<div class="row justify-content-center">
+<style>
+    .profile-edit-page {
+        max-width: 1120px;
+        margin: 38px auto 70px;
+        padding: 0 20px;
+    }
 
-    <div class="col-lg-8">
+    /* =========================================================
+       HERO
+    ========================================================= */
 
-        <div class="card shadow">
+    .profile-hero {
+        background: linear-gradient(
+            135deg,
+            #111827 0%,
+            #1e293b 55%,
+            #312e81 100%
+        );
+        color: #ffffff;
+        border-radius: 22px;
+        padding: 34px 36px;
+        margin-bottom: 24px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+    }
 
-            <div class="card-header bg-primary text-white">
-                <h3 class="mb-0">Edit Profile</h3>
+    .profile-eyebrow {
+        color: #c7d2fe;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    .profile-hero h1 {
+        margin: 0 0 10px 0;
+        font-size: 30px;
+        font-weight: 800;
+    }
+
+    .profile-hero p {
+        margin: 0;
+        max-width: 780px;
+        color: #dbeafe;
+        line-height: 1.7;
+    }
+
+    /* =========================================================
+       LAYOUT
+    ========================================================= */
+
+    .profile-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 22px;
+        align-items: start;
+    }
+
+    .profile-main {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+    }
+
+    .profile-section {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .section-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #ffffff;
+    }
+
+    .section-header h2 {
+        margin: 0 0 5px 0;
+        color: #111827;
+        font-size: 18px;
+        font-weight: 800;
+    }
+
+    .section-header p {
+        margin: 0;
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .section-body {
+        padding: 24px;
+    }
+
+    /* =========================================================
+       FORM FIELDS
+    ========================================================= */
+
+    .field-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+    }
+
+    .field-full {
+        grid-column: 1 / -1;
+    }
+
+    .form-field {
+        margin-bottom: 2px;
+    }
+
+    .form-field label {
+        display: block;
+        margin-bottom: 8px;
+        color: #111827;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .profile-section input[type="text"],
+    .profile-section input[type="url"],
+    .profile-section input[type="email"],
+    .profile-section input[type="file"],
+    .profile-section select,
+    .profile-section textarea {
+        width: 100%;
+        min-height: 46px;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: #ffffff;
+        color: #111827;
+        outline: none;
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .profile-section input:focus,
+    .profile-section select:focus,
+    .profile-section textarea:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+    }
+
+    .field-help {
+        margin-top: 7px;
+        color: #94a3b8;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .field-error {
+        margin-top: 6px;
+        color: #dc2626;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    /* =========================================================
+       CHECKBOX LISTS
+    ========================================================= */
+
+    .selection-box {
+        max-height: 310px;
+        overflow-y: auto;
+        padding: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+    }
+
+    .selection-box ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .selection-box li {
+        margin: 0;
+        padding: 0;
+    }
+
+    .selection-box label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        padding: 11px 12px;
+        border-radius: 9px;
+        color: #374151;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .selection-box label:hover {
+        background: #eef2ff;
+    }
+
+    .selection-box input[type="checkbox"] {
+        width: 17px;
+        height: 17px;
+        accent-color: #4f46e5;
+        flex-shrink: 0;
+    }
+
+    /* =========================================================
+       INFO SIDEBAR
+    ========================================================= */
+
+    .profile-sidebar {
+        position: sticky;
+        top: 24px;
+    }
+
+    .info-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+        margin-bottom: 18px;
+    }
+
+    .info-card h3 {
+        margin: 0 0 15px 0;
+        color: #111827;
+        font-size: 16px;
+        font-weight: 800;
+    }
+
+    .info-step {
+        display: flex;
+        gap: 11px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+
+    .info-step:last-child {
+        margin-bottom: 0;
+    }
+
+    .info-icon {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .info-content strong {
+        display: block;
+        color: #111827;
+        font-size: 13px;
+        margin-bottom: 2px;
+    }
+
+    .info-content span {
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .ai-note {
+        background: linear-gradient(
+            135deg,
+            #eef2ff,
+            #f5f3ff
+        );
+        border: 1px solid #c7d2fe;
+    }
+
+    .ai-note h3 {
+        color: #3730a3;
+    }
+
+    .ai-note p {
+        margin: 0;
+        color: #4f46e5;
+        font-size: 13px;
+        line-height: 1.65;
+    }
+
+    /* =========================================================
+       FORM ACTIONS
+    ========================================================= */
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 24px;
+        border-top: 1px solid #e5e7eb;
+        background: #f8fafc;
+    }
+
+    .profile-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 11px 19px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        transition:
+            background 0.2s ease,
+            color 0.2s ease,
+            border-color 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .profile-btn:hover {
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .save-btn {
+        border: 1px solid #4f46e5;
+        background: #4f46e5;
+        color: #ffffff;
+    }
+
+    .save-btn:hover {
+        background: #4338ca;
+        border-color: #4338ca;
+        color: #ffffff;
+    }
+
+    .cancel-btn {
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        color: #374151;
+    }
+
+    .cancel-btn:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
+        color: #111827;
+    }
+
+    /* =========================================================
+       FORM ERRORS
+    ========================================================= */
+
+    .form-errors {
+        margin-bottom: 20px;
+        padding: 14px 16px;
+        border-radius: 11px;
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        color: #991b1b;
+        font-size: 13px;
+    }
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================= */
+
+    @media (max-width: 900px) {
+        .profile-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .profile-sidebar {
+            position: static;
+        }
+    }
+
+    @media (max-width: 650px) {
+        .profile-edit-page {
+            padding: 0 14px;
+            margin-top: 20px;
+        }
+
+        .profile-hero {
+            padding: 26px 22px;
+        }
+
+        .profile-hero h1 {
+            font-size: 25px;
+        }
+
+        .field-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .field-full {
+            grid-column: auto;
+        }
+
+        .section-body {
+            padding: 20px;
+        }
+
+        .form-actions {
+            padding: 20px;
+            flex-direction: column;
+        }
+
+        .profile-btn {
+            width: 100%;
+        }
+    }
+</style>
+
+
+<div class="profile-edit-page">
+
+    <!-- =====================================================
+         HERO
+    ====================================================== -->
+
+    <section class="profile-hero">
+
+        <div class="profile-eyebrow">
+            CareerReady AI
+        </div>
+
+        <h1>
+            Edit Career Profile
+        </h1>
+
+        <p>
+            Keep your academic information, resume, skills and
+            industry tools up to date. Your profile evidence is
+            used across career matching, readiness assessment,
+            career transition analysis and AI-powered features.
+        </p>
+
+    </section>
+
+
+    <form
+        method="POST"
+        enctype="multipart/form-data"
+    >
+
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+
+            <div class="form-errors">
+
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+
             </div>
 
-            <div class="card-body">
+        {% endif %}
 
-                <div class="alert alert-info">
-                    Update your academic information, resume, skills, and
-                    industry tools. These details are used throughout the
-                    CareerReady AI platform for career matching and readiness
-                    analysis.
+
+        <div class="profile-layout">
+
+            <!-- =================================================
+                 MAIN PROFILE CONTENT
+            ================================================== -->
+
+            <div class="profile-main">
+
+                <!-- =============================================
+                     PERSONAL / ACADEMIC INFORMATION
+                ============================================== -->
+
+                <section class="profile-section">
+
+                    <div class="section-header">
+
+                        <h2>
+                            Academic & Personal Information
+                        </h2>
+
+                        <p>
+                            Basic information used to understand your
+                            current academic background.
+                        </p>
+
+                    </div>
+
+
+                    <div class="section-body">
+
+                        <div class="field-grid">
+
+                            <!-- Full Name -->
+
+                            <div class="form-field">
+
+                                {{ form.full_name.label_tag }}
+
+                                {{ form.full_name }}
+
+                                {% for error in form.full_name.errors %}
+                                    <div class="field-error">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+
+                            </div>
+
+
+                            <!-- University -->
+
+                            <div class="form-field">
+
+                                {{ form.university.label_tag }}
+
+                                {{ form.university }}
+
+                                {% for error in form.university.errors %}
+                                    <div class="field-error">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+
+                            </div>
+
+
+                            <!-- Degree -->
+
+                            <div class="form-field">
+
+                                {{ form.degree.label_tag }}
+
+                                {{ form.degree }}
+
+                                {% for error in form.degree.errors %}
+                                    <div class="field-error">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+
+                            </div>
+
+
+                            <!-- Year of Study -->
+
+                            <div class="form-field">
+
+                                {{ form.year_of_study.label_tag }}
+
+                                {{ form.year_of_study }}
+
+                                {% for error in form.year_of_study.errors %}
+                                    <div class="field-error">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- =============================================
+                     PROFESSIONAL LINKS
+                ============================================== -->
+
+                <section class="profile-section">
+
+                    <div class="section-header">
+
+                        <h2>
+                            Professional Presence
+                        </h2>
+
+                        <p>
+                            Add links that help represent your
+                            technical portfolio and professional profile.
+                        </p>
+
+                    </div>
+
+
+                    <div class="section-body">
+
+                        <div class="field-grid">
+
+                            <!-- GitHub -->
+
+                            <div class="form-field">
+
+                                {{ form.github_link.label_tag }}
+
+                                {{ form.github_link }}
+
+                                <div class="field-help">
+                                    Add your GitHub profile or portfolio repository link.
+                                </div>
+
+                                {% for error in form.github_link.errors %}
+                                    <div class="field-error">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+
+                            </div>
+
+
+                            <!-- LinkedIn -->
+
+                            <div class="form-field">
+
+                                {{ form.linkedin_link.label_tag }}
+
+                                {{ form.linkedin_link }}
+
+                                <div class="field-help">
+                                    Add your LinkedIn profile URL.
+                                </div>
+
+                                {% for error in form.linkedin_link.errors %}
+                                    <div class="field-error">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- =============================================
+                     RESUME
+                ============================================== -->
+
+                <section class="profile-section">
+
+                    <div class="section-header">
+
+                        <h2>
+                            Resume
+                        </h2>
+
+                        <p>
+                            Upload an updated resume so CareerReady AI
+                            can extract relevant skills from your profile.
+                        </p>
+
+                    </div>
+
+
+                    <div class="section-body">
+
+                        <div class="form-field">
+
+                            {{ form.resume.label_tag }}
+
+                            {{ form.resume }}
+
+                            <div class="field-help">
+                                Uploading a new resume will update the
+                                resume-extracted skill evidence used by
+                                the platform.
+                            </div>
+
+                            {% for error in form.resume.errors %}
+                                <div class="field-error">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- =============================================
+                     MANUAL SKILLS
+                ============================================== -->
+
+                <section class="profile-section">
+
+                    <div class="section-header">
+
+                        <h2>
+                            Manual Skills
+                        </h2>
+
+                        <p>
+                            Select skills you can genuinely demonstrate
+                            that may not have been detected from your resume.
+                        </p>
+
+                    </div>
+
+
+                    <div class="section-body">
+
+                        <div class="selection-box">
+                            {{ form.manual_skills }}
+                        </div>
+
+                        {% for error in form.manual_skills.errors %}
+                            <div class="field-error">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+
+                    </div>
+
+                </section>
+
+
+                <!-- =============================================
+                     INDUSTRY TOOLS
+                ============================================== -->
+
+                <section class="profile-section">
+
+                    <div class="section-header">
+
+                        <h2>
+                            Industry Tools
+                        </h2>
+
+                        <p>
+                            Select the technologies and industry tools
+                            you currently know or use.
+                        </p>
+
+                    </div>
+
+
+                    <div class="section-body">
+
+                        <div class="selection-box">
+                            {{ form.manual_tools }}
+                        </div>
+
+                        {% for error in form.manual_tools.errors %}
+                            <div class="field-error">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+
+                    </div>
+
+                </section>
+
+
+                <!-- =============================================
+                     ACTIONS
+                ============================================== -->
+
+                <section class="profile-section">
+
+                    <div class="form-actions">
+
+                        <button
+                            type="submit"
+                            class="profile-btn save-btn"
+                        >
+                            Save Profile Changes
+                        </button>
+
+
+                        <a
+                            href="{% url 'view_profile' %}"
+                            class="profile-btn cancel-btn"
+                        >
+                            Cancel
+                        </a>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+
+            <!-- =================================================
+                 SIDEBAR
+            ================================================== -->
+
+            <aside class="profile-sidebar">
+
+                <!-- Why profile matters -->
+
+                <div class="info-card">
+
+                    <h3>
+                        Why Your Profile Matters
+                    </h3>
+
+
+                    <div class="info-step">
+
+                        <div class="info-icon">
+                            01
+                        </div>
+
+                        <div class="info-content">
+
+                            <strong>
+                                Career Matching
+                            </strong>
+
+                            <span>
+                                Your skills are compared against
+                                target-role competencies.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-step">
+
+                        <div class="info-icon">
+                            02
+                        </div>
+
+                        <div class="info-content">
+
+                            <strong>
+                                Readiness Assessment
+                            </strong>
+
+                            <span>
+                                Skills and tools contribute evidence
+                                toward your readiness analysis.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-step">
+
+                        <div class="info-icon">
+                            03
+                        </div>
+
+                        <div class="info-content">
+
+                            <strong>
+                                Career Transition
+                            </strong>
+
+                            <span>
+                                Your current evidence is compared with
+                                the requirements of the target role.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-step">
+
+                        <div class="info-icon">
+                            04
+                        </div>
+
+                        <div class="info-content">
+
+                            <strong>
+                                AI Interview Coach
+                            </strong>
+
+                            <span>
+                                Profile evidence helps personalise
+                                role-specific interview questions.
+                            </span>
+
+                        </div>
+
+                    </div>
+
                 </div>
 
-                <form method="POST" enctype="multipart/form-data">
 
-                    {% csrf_token %}
+                <!-- AI evidence note -->
 
-                    <div class="mb-3">
-                        {{ form.full_name.label_tag }}
-                        {{ form.full_name }}
-                    </div>
+                <div class="info-card ai-note">
 
-                    <div class="mb-3">
-                        {{ form.university.label_tag }}
-                        {{ form.university }}
-                    </div>
+                    <h3>
+                        ✦ Evidence Quality
+                    </h3>
 
-                    <div class="mb-3">
-                        {{ form.degree.label_tag }}
-                        {{ form.degree }}
-                    </div>
+                    <p>
+                        Only select skills and tools you can genuinely
+                        explain or demonstrate. Better profile evidence
+                        leads to more meaningful career analysis and
+                        personalised AI guidance.
+                    </p>
 
-                    <div class="mb-3">
-                        {{ form.year_of_study.label_tag }}
-                        {{ form.year_of_study }}
-                    </div>
+                </div>
 
-                    <div class="mb-3">
-                        {{ form.github_link.label_tag }}
-                        {{ form.github_link }}
-                    </div>
-
-                    <div class="mb-3">
-                        {{ form.linkedin_link.label_tag }}
-                        {{ form.linkedin_link }}
-                    </div>
-
-                    <div class="mb-3">
-                        {{ form.resume.label_tag }}
-                        {{ form.resume }}
-                    </div>
-
-                    <hr>
-
-                    <h5>Manual Skills</h5>
-
-                    <div class="border rounded p-3 mb-3" style="max-height:250px; overflow-y:auto;">
-                        {{ form.manual_skills }}
-                    </div>
-
-                    <h5>Industry Tools</h5>
-
-                    <div class="border rounded p-3 mb-3" style="max-height:250px; overflow-y:auto;">
-                        {{ form.manual_tools }}
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">
-                        Update Profile
-                    </button>
-
-                    <a href="{% url 'view_profile' %}" class="btn btn-secondary">
-                        Cancel
-                    </a>
-
-                </form>
-
-            </div>
+            </aside>
 
         </div>
 
-    </div>
+    </form>
 
 </div>
 

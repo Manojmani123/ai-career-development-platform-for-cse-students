@@ -2,156 +2,1111 @@
 
 {% block content %}
 
-<div class="container mt-4">
+<style>
+    .profile-page {
+        max-width: 1120px;
+        margin: 38px auto 70px;
+        padding: 0 20px;
+    }
 
-    <div class="card shadow">
+    /* =========================================================
+       HERO
+    ========================================================= */
 
-        <div class="card-header bg-primary text-white">
-            <h3 class="mb-0">My Profile</h3>
-        </div>
+    .profile-hero {
+        background: linear-gradient(
+            135deg,
+            #111827 0%,
+            #1e293b 55%,
+            #312e81 100%
+        );
+        color: #ffffff;
+        border-radius: 22px;
+        padding: 34px 36px;
+        margin-bottom: 24px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+    }
 
-        <div class="card-body">
+    .hero-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
 
-            {% if profile %}
+    .profile-eyebrow {
+        color: #c7d2fe;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        margin-bottom: 8px;
+    }
 
-            <div class="row">
+    .profile-hero h1 {
+        margin: 0 0 8px 0;
+        font-size: 30px;
+        font-weight: 800;
+    }
 
-                <div class="col-md-6">
+    .profile-hero p {
+        margin: 0;
+        color: #dbeafe;
+        line-height: 1.7;
+    }
 
-                    <h5>Personal Information</h5>
-                    <hr>
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 13px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 700;
+    }
 
-                    <p><strong>Full Name:</strong> {{ profile.full_name }}</p>
-                    <p><strong>University:</strong> {{ profile.university }}</p>
-                    <p><strong>Degree:</strong> {{ profile.degree }}</p>
-                    <p><strong>Year of Study:</strong> {{ profile.year_of_study }}</p>
+    /* =========================================================
+       PROFILE OVERVIEW
+    ========================================================= */
+
+    .overview-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 22px;
+    }
+
+    .profile-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .card-header-custom {
+        padding: 19px 22px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .card-header-custom h2 {
+        margin: 0;
+        color: #111827;
+        font-size: 17px;
+        font-weight: 800;
+    }
+
+    .card-body-custom {
+        padding: 22px;
+    }
+
+    /* =========================================================
+       INFORMATION ROWS
+    ========================================================= */
+
+    .detail-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 12px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .detail-row:first-child {
+        padding-top: 0;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .detail-label {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .detail-value {
+        color: #111827;
+        font-size: 14px;
+        font-weight: 600;
+        text-align: right;
+        word-break: break-word;
+    }
+
+    .not-added {
+        color: #94a3b8;
+        font-weight: 500;
+    }
+
+    .profile-link {
+        color: #4f46e5;
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .profile-link:hover {
+        color: #4338ca;
+        text-decoration: underline;
+    }
+
+    /* =========================================================
+       RESUME STATUS
+    ========================================================= */
+
+    .resume-section {
+        margin-bottom: 22px;
+    }
+
+    .resume-status {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 18px;
+        border-radius: 14px;
+    }
+
+    .resume-valid {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+    }
+
+    .resume-invalid {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+    }
+
+    .resume-empty {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+
+    .status-icon {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: 800;
+    }
+
+    .resume-valid .status-icon {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .resume-invalid .status-icon {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .resume-empty .status-icon {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .status-content strong {
+        display: block;
+        margin-bottom: 4px;
+        color: #111827;
+        font-size: 14px;
+    }
+
+    .status-content span {
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    /* =========================================================
+       CAREER EVIDENCE GRID
+    ========================================================= */
+
+    .evidence-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .evidence-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .evidence-card.extracted {
+        border-top: 4px solid #16a34a;
+    }
+
+    .evidence-card.manual {
+        border-top: 4px solid #4f46e5;
+    }
+
+    .evidence-card.tools {
+        border-top: 4px solid #f59e0b;
+    }
+
+    .evidence-header {
+        padding: 18px 20px 12px;
+    }
+
+    .evidence-header h3 {
+        margin: 0 0 5px 0;
+        color: #111827;
+        font-size: 16px;
+        font-weight: 800;
+    }
+
+    .evidence-header p {
+        margin: 0;
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .evidence-body {
+        padding: 8px 20px 20px;
+    }
+
+    /* =========================================================
+       TAGS
+    ========================================================= */
+
+    .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .profile-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .tag-extracted {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .tag-manual {
+        background: #eef2ff;
+        color: #4338ca;
+    }
+
+    .tag-tool {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .empty-evidence {
+        padding: 14px;
+        background: #f8fafc;
+        border-radius: 10px;
+        color: #94a3b8;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    /* =========================================================
+       EVIDENCE INFO
+    ========================================================= */
+
+    .profile-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        margin-bottom: 24px;
+        padding: 20px;
+        background: linear-gradient(
+            135deg,
+            #eef2ff,
+            #f5f3ff
+        );
+        border: 1px solid #c7d2fe;
+        border-radius: 16px;
+    }
+
+    .note-icon {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 10px;
+        background: #4f46e5;
+        color: #ffffff;
+        font-weight: 800;
+    }
+
+    .note-content strong {
+        display: block;
+        color: #3730a3;
+        margin-bottom: 4px;
+        font-size: 14px;
+    }
+
+    .note-content span {
+        color: #4f46e5;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    /* =========================================================
+       BUTTONS
+    ========================================================= */
+
+    .page-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .profile-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 11px 18px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        transition:
+            background 0.2s ease,
+            border-color 0.2s ease,
+            color 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .profile-btn:hover {
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .edit-btn {
+        background: #4f46e5;
+        color: #ffffff;
+        border: 1px solid #4f46e5;
+    }
+
+    .edit-btn:hover {
+        background: #4338ca;
+        border-color: #4338ca;
+        color: #ffffff;
+    }
+
+    .dashboard-btn {
+        background: #ffffff;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+
+    .dashboard-btn:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
+        color: #111827;
+    }
+
+    /* =========================================================
+       NO PROFILE STATE
+    ========================================================= */
+
+    .empty-profile {
+        max-width: 700px;
+        margin: 80px auto;
+        padding: 42px 30px;
+        text-align: center;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .empty-profile-icon {
+        width: 58px;
+        height: 58px;
+        margin: 0 auto 18px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 25px;
+        font-weight: 800;
+    }
+
+    .empty-profile h2 {
+        color: #111827;
+        margin-bottom: 8px;
+        font-size: 23px;
+        font-weight: 800;
+    }
+
+    .empty-profile p {
+        color: #64748b;
+        line-height: 1.7;
+        margin-bottom: 22px;
+    }
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================= */
+
+    @media (max-width: 900px) {
+        .overview-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .evidence-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .profile-page {
+            padding: 0 14px;
+            margin-top: 20px;
+        }
+
+        .profile-hero {
+            padding: 26px 22px;
+        }
+
+        .profile-hero h1 {
+            font-size: 25px;
+        }
+
+        .detail-row {
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .detail-value {
+            text-align: left;
+        }
+
+        .page-actions {
+            flex-direction: column;
+        }
+
+        .profile-btn {
+            width: 100%;
+        }
+    }
+</style>
+
+
+<div class="profile-page">
+
+    {% if profile %}
+
+        <!-- =====================================================
+             HERO
+        ====================================================== -->
+
+        <section class="profile-hero">
+
+            <div class="hero-top">
+
+                <div>
+
+                    <div class="profile-eyebrow">
+                        CareerReady AI
+                    </div>
+
+                    <h1>
+                        {{ profile.full_name|default:"My Career Profile" }}
+                    </h1>
+
+                    <p>
+                        Your academic background, professional links,
+                        resume evidence, skills and industry tools.
+                    </p>
 
                 </div>
 
-                <div class="col-md-6">
 
-                    <h5>Professional Links</h5>
-                    <hr>
+                {% if profile.resume and profile.is_resume_valid %}
 
-                    <p>
-                        <strong>GitHub:</strong>
-
-                        {% if profile.github_link %}
-                            <a href="{{ profile.github_link }}" target="_blank">
-                                View GitHub
-                            </a>
-                        {% else %}
-                            Not Added
-                        {% endif %}
-                    </p>
-
-                    <p>
-                        <strong>LinkedIn:</strong>
-
-                        {% if profile.linkedin_link %}
-                            <a href="{{ profile.linkedin_link }}" target="_blank">
-                                View LinkedIn
-                            </a>
-                        {% else %}
-                            Not Added
-                        {% endif %}
-                    </p>
-
-                    <p>
-                        <strong>Resume:</strong>
-
-                        {% if profile.resume %}
-                            <a href="{{ profile.resume.url }}" target="_blank">
-                                View Resume
-                            </a>
-                        {% else %}
-                            No Resume Uploaded
-                        {% endif %}
-                    </p>
-
-                </div>
-
-            </div>
-
-            <hr>
-
-            <h5>Resume Validation</h5>
-
-            {% if profile.resume %}
-
-                {% if profile.is_resume_valid %}
-                    <div class="alert alert-success">
-                        ✔ Resume validation successful.
+                    <div class="hero-badge">
+                        ✓ Resume Verified
                     </div>
-                {% else %}
-                    <div class="alert alert-danger">
-                        ✖ Uploaded file does not appear to be a valid resume.
-                    </div>
+
                 {% endif %}
 
-            {% endif %}
+            </div>
 
-            <h5 class="mt-4">Extracted Skills</h5>
+        </section>
 
-            {% for skill in profile.extracted_skills.all %}
-                <span class="badge bg-success me-1 mb-1">
-                    {{ skill.skill_name }}
-                </span>
-            {% empty %}
-                <p>No extracted skills found.</p>
-            {% endfor %}
 
-            <h5 class="mt-4">Manual Skills</h5>
+        <!-- =====================================================
+             PROFILE OVERVIEW
+        ====================================================== -->
 
-            {% for skill in profile.manual_skills.all %}
-                <span class="badge bg-primary me-1 mb-1">
-                    {{ skill.skill_name }}
-                </span>
-            {% empty %}
-                <p>No manual skills added.</p>
-            {% endfor %}
+        <section class="overview-grid">
 
-            <h5 class="mt-4">Manual Industry Tools</h5>
+            <!-- Personal / Academic -->
 
-            {% for tool in profile.manual_tools.all %}
-                <span class="badge bg-warning text-dark me-1 mb-1">
-                    {{ tool.tool_name }}
-                </span>
-            {% empty %}
-                <p>No manual tools added.</p>
-            {% endfor %}
+            <div class="profile-card">
 
-            <div class="mt-4">
+                <div class="card-header-custom">
+                    <h2>
+                        Academic Information
+                    </h2>
+                </div>
 
-                <a href="{% url 'edit_profile' %}" class="btn btn-primary">
-                    Edit Profile
-                </a>
 
-                <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
-                    Back to Dashboard
-                </a>
+                <div class="card-body-custom">
+
+                    <div class="detail-row">
+
+                        <span class="detail-label">
+                            Full Name
+                        </span>
+
+                        <span class="detail-value">
+                            {{ profile.full_name|default:"Not Added" }}
+                        </span>
+
+                    </div>
+
+
+                    <div class="detail-row">
+
+                        <span class="detail-label">
+                            University
+                        </span>
+
+                        <span class="detail-value">
+
+                            {% if profile.university %}
+                                {{ profile.university }}
+                            {% else %}
+                                <span class="not-added">
+                                    Not Added
+                                </span>
+                            {% endif %}
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="detail-row">
+
+                        <span class="detail-label">
+                            Degree
+                        </span>
+
+                        <span class="detail-value">
+
+                            {% if profile.degree %}
+                                {{ profile.degree }}
+                            {% else %}
+                                <span class="not-added">
+                                    Not Added
+                                </span>
+                            {% endif %}
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="detail-row">
+
+                        <span class="detail-label">
+                            Year of Study
+                        </span>
+
+                        <span class="detail-value">
+
+                            {% if profile.year_of_study %}
+                                {{ profile.year_of_study }}
+                            {% else %}
+                                <span class="not-added">
+                                    Not Added
+                                </span>
+                            {% endif %}
+
+                        </span>
+
+                    </div>
+
+                </div>
 
             </div>
 
-            {% else %}
 
-                <div class="alert alert-warning">
-                    No profile has been created yet.
+            <!-- Professional Links -->
+
+            <div class="profile-card">
+
+                <div class="card-header-custom">
+                    <h2>
+                        Professional Presence
+                    </h2>
                 </div>
 
-                <a href="{% url 'create_profile' %}" class="btn btn-success">
+
+                <div class="card-body-custom">
+
+                    <div class="detail-row">
+
+                        <span class="detail-label">
+                            GitHub
+                        </span>
+
+                        <span class="detail-value">
+
+                            {% if profile.github_link %}
+
+                                <a
+                                    href="{{ profile.github_link }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="profile-link"
+                                >
+                                    View GitHub
+                                </a>
+
+                            {% else %}
+
+                                <span class="not-added">
+                                    Not Added
+                                </span>
+
+                            {% endif %}
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="detail-row">
+
+                        <span class="detail-label">
+                            LinkedIn
+                        </span>
+
+                        <span class="detail-value">
+
+                            {% if profile.linkedin_link %}
+
+                                <a
+                                    href="{{ profile.linkedin_link }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="profile-link"
+                                >
+                                    View LinkedIn
+                                </a>
+
+                            {% else %}
+
+                                <span class="not-added">
+                                    Not Added
+                                </span>
+
+                            {% endif %}
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="detail-row">
+
+                        <span class="detail-label">
+                            Resume
+                        </span>
+
+                        <span class="detail-value">
+
+                            {% if profile.resume %}
+
+                                <a
+                                    href="{{ profile.resume.url }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="profile-link"
+                                >
+                                    View Resume
+                                </a>
+
+                            {% else %}
+
+                                <span class="not-added">
+                                    No Resume Uploaded
+                                </span>
+
+                            {% endif %}
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             RESUME VALIDATION
+        ====================================================== -->
+
+        <section class="profile-card resume-section">
+
+            <div class="card-header-custom">
+
+                <h2>
+                    Resume Evidence
+                </h2>
+
+            </div>
+
+
+            <div class="card-body-custom">
+
+                {% if profile.resume %}
+
+                    {% if profile.is_resume_valid %}
+
+                        <div class="resume-status resume-valid">
+
+                            <div class="status-icon">
+                                ✓
+                            </div>
+
+                            <div class="status-content">
+
+                                <strong>
+                                    Resume validation successful
+                                </strong>
+
+                                <span>
+                                    Your uploaded resume was recognised
+                                    as valid and is being used as a
+                                    source of skill evidence.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    {% else %}
+
+                        <div class="resume-status resume-invalid">
+
+                            <div class="status-icon">
+                                !
+                            </div>
+
+                            <div class="status-content">
+
+                                <strong>
+                                    Resume validation unsuccessful
+                                </strong>
+
+                                <span>
+                                    The uploaded file does not appear
+                                    to contain valid resume content.
+                                    Upload another resume from Edit Profile.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+                {% else %}
+
+                    <div class="resume-status resume-empty">
+
+                        <div class="status-icon">
+                            —
+                        </div>
+
+                        <div class="status-content">
+
+                            <strong>
+                                No resume uploaded
+                            </strong>
+
+                            <span>
+                                Add a resume to allow CareerReady AI
+                                to extract relevant skill evidence.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             CAREER EVIDENCE
+        ====================================================== -->
+
+        <section class="evidence-grid">
+
+            <!-- Extracted skills -->
+
+            <div class="evidence-card extracted">
+
+                <div class="evidence-header">
+
+                    <h3>
+                        Resume-Extracted Skills
+                    </h3>
+
+                    <p>
+                        Skills detected automatically from your resume.
+                    </p>
+
+                </div>
+
+
+                <div class="evidence-body">
+
+                    {% if profile.extracted_skills.all %}
+
+                        <div class="tag-list">
+
+                            {% for skill in profile.extracted_skills.all %}
+
+                                <span class="profile-tag tag-extracted">
+                                    {{ skill.skill_name }}
+                                </span>
+
+                            {% empty %}
+
+                                <div class="empty-evidence">
+                                    No extracted skills found.
+                                </div>
+
+                            {% endfor %}
+
+                        </div>
+
+                    {% else %}
+
+                        <div class="empty-evidence">
+                            No extracted skills found.
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <!-- Manual skills -->
+
+            <div class="evidence-card manual">
+
+                <div class="evidence-header">
+
+                    <h3>
+                        Manual Skills
+                    </h3>
+
+                    <p>
+                        Skills you have explicitly added to your profile.
+                    </p>
+
+                </div>
+
+
+                <div class="evidence-body">
+
+                    <div class="tag-list">
+
+                        {% for skill in profile.manual_skills.all %}
+
+                            <span class="profile-tag tag-manual">
+                                {{ skill.skill_name }}
+                            </span>
+
+                        {% empty %}
+
+                            <div class="empty-evidence">
+                                No manual skills added.
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Tools -->
+
+            <div class="evidence-card tools">
+
+                <div class="evidence-header">
+
+                    <h3>
+                        Industry Tools
+                    </h3>
+
+                    <p>
+                        Tools and technologies recorded in your profile.
+                    </p>
+
+                </div>
+
+
+                <div class="evidence-body">
+
+                    <div class="tag-list">
+
+                        {% for tool in profile.manual_tools.all %}
+
+                            <span class="profile-tag tag-tool">
+                                {{ tool.tool_name }}
+                            </span>
+
+                        {% empty %}
+
+                            <div class="empty-evidence">
+                                No industry tools added.
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             PROFILE USE NOTE
+        ====================================================== -->
+
+        <section class="profile-note">
+
+            <div class="note-icon">
+                ✦
+            </div>
+
+            <div class="note-content">
+
+                <strong>
+                    Your profile powers CareerReady AI
+                </strong>
+
+                <span>
+                    Skills, tools and resume evidence from this profile
+                    are used across career matching, readiness analysis,
+                    employability bottleneck detection, career transition
+                    analysis and personalised interview preparation.
+                </span>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             ACTIONS
+        ====================================================== -->
+
+        <div class="page-actions">
+
+            <a
+                href="{% url 'edit_profile' %}"
+                class="profile-btn edit-btn"
+            >
+                Edit Profile
+            </a>
+
+            <a
+                href="{% url 'user_dashboard' %}"
+                class="profile-btn dashboard-btn"
+            >
+                Back to Dashboard
+            </a>
+
+        </div>
+
+
+    {% else %}
+
+        <!-- =====================================================
+             NO PROFILE
+        ====================================================== -->
+
+        <section class="empty-profile">
+
+            <div class="empty-profile-icon">
+                +
+            </div>
+
+            <h2>
+                Create Your Career Profile
+            </h2>
+
+            <p>
+                You have not created a profile yet. Add your academic
+                details, resume, skills and tools so CareerReady AI can
+                provide personalised career analysis.
+            </p>
+
+            <div class="page-actions" style="justify-content:center;">
+
+                <a
+                    href="{% url 'create_profile' %}"
+                    class="profile-btn edit-btn"
+                >
                     Create Profile
                 </a>
 
-                <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
+                <a
+                    href="{% url 'user_dashboard' %}"
+                    class="profile-btn dashboard-btn"
+                >
                     Back to Dashboard
                 </a>
 
-            {% endif %}
+            </div>
 
-        </div>
+        </section>
 
-    </div>
+    {% endif %}
 
 </div>
 
