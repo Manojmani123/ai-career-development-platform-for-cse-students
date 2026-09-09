@@ -66,8 +66,9 @@ urlpatterns = [
     path('delete-project/<int:project_id>/', views.delete_project, name='delete_project'),
 
     path('career-transition-analysis/', views.career_transition_analysis, name='career_transition_analysis'),
+    path('career-transition/<int:analysis_id>/ai/',views.prepare_ai_career_transition,name='prepare_ai_career_transition'),
     path('career-transition-result/<int:analysis_id>/', views.career_transition_result, name='career_transition_result'),
-
+    
     path('import-dataset/', views.import_dataset, name='import_dataset'),
 
     path('add-competency-group/', views.add_competency_group, name='add_competency_group'),

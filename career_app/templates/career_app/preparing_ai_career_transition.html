@@ -1,0 +1,132 @@
+{% extends 'career_app/base.html' %}
+
+{% block content %}
+
+<style>
+    .transition-loading-container {
+        max-width: 700px;
+        margin: 80px auto;
+        padding: 0 20px;
+        text-align: center;
+    }
+
+    .transition-loading-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 50px 35px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .ai-spinner {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 25px;
+
+        border: 6px solid #e5e7eb;
+        border-top: 6px solid #4f46e5;
+
+        border-radius: 50%;
+
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .transition-loading-card h2 {
+        margin-bottom: 15px;
+        font-weight: 700;
+    }
+
+    .transition-loading-card p {
+        color: #6b7280;
+        line-height: 1.7;
+    }
+
+    .transition-route {
+        margin-top: 20px;
+        padding: 14px;
+
+        background: #eef2ff;
+        border-radius: 10px;
+
+        color: #4338ca;
+        font-weight: 600;
+    }
+</style>
+
+<div class="transition-loading-container">
+
+    <div class="transition-loading-card">
+
+        <div class="ai-spinner"></div>
+
+        <h2>
+            AI is analysing your career transition
+        </h2>
+
+        <p>
+            CareerReady AI is interpreting your skills,
+            tools, projects and competency gaps to create
+            personalised transition guidance.
+        </p>
+
+        <div class="transition-route">
+
+            {{ analysis.current_role.role_name }}
+
+            →
+
+            {{ analysis.target_role.role_name }}
+
+        </div>
+
+        <p class="mt-3">
+            This may take a few moments.
+        </p>
+
+        <form
+            id="ai-transition-form"
+            method="post"
+            action="{% url 'prepare_ai_career_transition' analysis.id %}"
+        >
+            {% csrf_token %}
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+
+    window.addEventListener(
+        'load',
+        function () {
+
+            setTimeout(
+                function () {
+
+                    document
+                        .getElementById(
+                            'ai-transition-form'
+                        )
+                        .submit();
+
+                },
+                700
+            );
+
+        }
+    );
+
+</script>
+
+{% endblock %}

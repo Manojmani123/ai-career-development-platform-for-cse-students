@@ -2,118 +2,331 @@
 
 {% block content %}
 
-<h2>Career Transition Feasibility Analysis</h2>
+<div class="container mt-4 mb-5">
 
-<p class="text-muted">
-    <strong>Current Role:</strong> {{ analysis.current_role.role_name }}
-    →
-    <strong>Target Role:</strong> {{ analysis.target_role.role_name }}
-</p>
+    <div class="mb-4">
 
-<div class="row mt-4">
+        <h2>
+            Career Transition Feasibility Analysis
+        </h2>
 
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5>Skill Match</h5>
-                <h2>{{ analysis.skill_match_score }}%</h2>
-            </div>
-        </div>
-    </div>
+        <p class="text-muted">
 
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5>Tool Match</h5>
-                <h2>{{ analysis.tool_match_score }}%</h2>
-            </div>
-        </div>
-    </div>
+            <strong>Current Role:</strong>
+            {{ analysis.current_role.role_name }}
 
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5>Feasibility</h5>
-                <h2>{{ analysis.feasibility_score }}%</h2>
-            </div>
-        </div>
-    </div>
+            →
 
-</div>
+            <strong>Target Role:</strong>
+            {{ analysis.target_role.role_name }}
 
-<div class="card mt-4">
+        </p>
 
-    <div class="card-header bg-primary text-white">
-        Difficulty Level
-    </div>
-
-    <div class="card-body">
-
-        <h4>{{ analysis.difficulty_level }}</h4>
-
-    </div>
-
-</div>
-
-<div class="card mt-4">
-
-    <div class="card-header bg-danger text-white">
-        Missing Skills
-    </div>
-
-    <div class="card-body">
-
-        {% if analysis.missing_skills %}
-            {{ analysis.missing_skills }}
-        {% else %}
-            No major missing skills.
+        {% if analysis.ai_analysis %}
+            <span class="badge bg-primary">
+                AI Enhanced Analysis
+            </span>
         {% endif %}
 
     </div>
 
-</div>
 
-<div class="card mt-4">
+    <!-- ============================== -->
+    <!-- DETERMINISTIC SCORES -->
+    <!-- ============================== -->
 
-    <div class="card-header bg-warning">
-        Missing Tools
+    <div class="row mt-4">
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card text-center h-100">
+
+                <div class="card-body">
+
+                    <h5>
+                        Skill Match
+                    </h5>
+
+                    <h2>
+                        {{ analysis.skill_match_score }}%
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card text-center h-100">
+
+                <div class="card-body">
+
+                    <h5>
+                        Tool Match
+                    </h5>
+
+                    <h2>
+                        {{ analysis.tool_match_score }}%
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card text-center h-100">
+
+                <div class="card-body">
+
+                    <h5>
+                        Transition Feasibility
+                    </h5>
+
+                    <h2>
+                        {{ analysis.feasibility_score }}%
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
-    <div class="card-body">
 
-        {% if analysis.missing_tools %}
-            {{ analysis.missing_tools }}
-        {% else %}
-            No major missing tools.
-        {% endif %}
+    <!-- ============================== -->
+    <!-- DIFFICULTY -->
+    <!-- ============================== -->
+
+    <div class="card mt-4">
+
+        <div class="card-header bg-primary text-white">
+
+            Transition Difficulty
+
+        </div>
+
+        <div class="card-body">
+
+            <h4>
+                {{ analysis.difficulty_level }}
+            </h4>
+
+        </div>
 
     </div>
 
-</div>
 
-<div class="card mt-4">
+    <!-- ============================== -->
+    <!-- MISSING SKILLS -->
+    <!-- ============================== -->
 
-    <div class="card-header bg-success text-white">
-        Recommendation
+    <div class="card mt-4">
+
+        <div class="card-header bg-danger text-white">
+
+            Missing Skills
+
+        </div>
+
+        <div class="card-body">
+
+            {% if analysis.missing_skills %}
+
+                {{ analysis.missing_skills }}
+
+            {% else %}
+
+                No major missing skills.
+
+            {% endif %}
+
+        </div>
+
     </div>
 
-    <div class="card-body">
 
-        {{ analysis.recommendation }}
+    <!-- ============================== -->
+    <!-- MISSING TOOLS -->
+    <!-- ============================== -->
+
+    <div class="card mt-4">
+
+        <div class="card-header bg-warning">
+
+            Missing Tools
+
+        </div>
+
+        <div class="card-body">
+
+            {% if analysis.missing_tools %}
+
+                {{ analysis.missing_tools }}
+
+            {% else %}
+
+                No major missing tools.
+
+            {% endif %}
+
+        </div>
 
     </div>
 
-</div>
 
-<div class="mt-4">
+    <!-- ============================== -->
+    <!-- SYSTEM RECOMMENDATION -->
+    <!-- ============================== -->
 
-    <a href="{% url 'career_transition_analysis' %}" class="btn btn-secondary">
-        Analyse Another Transition
-    </a>
+    <div class="card mt-4">
 
-    <a href="{% url 'user_dashboard' %}" class="btn btn-dark">
-        Back to Dashboard
-    </a>
+        <div class="card-header bg-success text-white">
+
+            Transition Recommendation
+
+        </div>
+
+        <div class="card-body">
+
+            {{ analysis.recommendation }}
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================== -->
+    <!-- AI SECTION -->
+    <!-- ============================== -->
+
+    {% if analysis.ai_analysis %}
+
+        <hr class="my-5">
+
+        <div class="mb-3">
+
+            <h3>
+                AI Career Transition Guidance
+            </h3>
+
+            <p class="text-muted">
+                Personalised interpretation based on your
+                CareerReady AI evidence.
+            </p>
+
+        </div>
+
+
+        <!-- AI ANALYSIS -->
+
+        <div class="card mt-4">
+
+            <div class="card-header">
+
+                <strong>
+                    Why This Transition Has This Feasibility
+                </strong>
+
+            </div>
+
+            <div class="card-body">
+
+                {{ analysis.ai_analysis|linebreaks }}
+
+            </div>
+
+        </div>
+
+
+        <!-- TRANSFERABLE STRENGTHS -->
+
+        <div class="card mt-4">
+
+            <div class="card-header bg-success text-white">
+
+                Transferable Strengths
+
+            </div>
+
+            <div class="card-body">
+
+                {{ analysis.ai_transferable_strengths|linebreaks }}
+
+            </div>
+
+        </div>
+
+
+        <!-- PRIORITY GAPS -->
+
+        <div class="card mt-4">
+
+            <div class="card-header bg-warning">
+
+                Priority Gaps
+
+            </div>
+
+            <div class="card-body">
+
+                {{ analysis.ai_priority_gaps|linebreaks }}
+
+            </div>
+
+        </div>
+
+
+        <!-- ACTION PLAN -->
+
+        <div class="card mt-4">
+
+            <div class="card-header bg-primary text-white">
+
+                AI Transition Action Plan
+
+            </div>
+
+            <div class="card-body">
+
+                {{ analysis.ai_action_plan|linebreaks }}
+
+            </div>
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- ============================== -->
+    <!-- ACTIONS -->
+    <!-- ============================== -->
+
+    <div class="mt-4">
+
+        <a
+            href="{% url 'career_transition_analysis' %}"
+            class="btn btn-secondary"
+        >
+            Analyse Another Transition
+        </a>
+
+        <a
+            href="{% url 'user_dashboard' %}"
+            class="btn btn-dark"
+        >
+            Back to Dashboard
+        </a>
+
+    </div>
 
 </div>
 

@@ -2882,6 +2882,310 @@ def delete_project(request, project_id):
 
     return redirect('view_projects')
 
+
+def generate_ai_career_transition_analysis(analysis):
+    """
+    Interpret an existing CareerReady AI career transition analysis.
+
+    The deterministic transition engine remains responsible for:
+    - skill match score
+    - tool match score
+    - feasibility score
+    - difficulty level
+    - missing skills
+    - missing tools
+
+    AI only interprets those results and generates personalised
+    transition guidance.
+    """
+
+    client = OpenAI(
+        api_key=settings.OPENAI_API_KEY
+    )
+
+    user = analysis.user
+    current_role = analysis.current_role
+    target_role = analysis.target_role
+
+    profile = UserProfile.objects.filter(
+        user=user
+    ).first()
+
+    user_skills = []
+    user_tools = []
+
+    if profile:
+        user_skills = list(
+            (
+                profile.extracted_skills.all()
+                | profile.manual_skills.all()
+            ).distinct().values_list(
+                'skill_name',
+                flat=True
+            )
+        )
+
+        user_tools = list(
+            profile.manual_tools.values_list(
+                'tool_name',
+                flat=True
+            )
+        )
+
+    # --------------------------------------------------
+    # Current-role requirements
+    # --------------------------------------------------
+
+    current_role_skills = list(
+        JobRoleSkill.objects.filter(
+            job_role=current_role
+        ).values(
+            'skill__skill_name',
+            'importance'
+        )
+    )
+
+    current_role_tools = list(
+        JobRoleTool.objects.filter(
+            job_role=current_role
+        ).values(
+            'tool__tool_name',
+            'importance'
+        )
+    )
+
+    # --------------------------------------------------
+    # Target-role requirements
+    # --------------------------------------------------
+
+    target_role_skills = list(
+        JobRoleSkill.objects.filter(
+            job_role=target_role
+        ).values(
+            'skill__skill_name',
+            'importance'
+        )
+    )
+
+    target_role_tools = list(
+        JobRoleTool.objects.filter(
+            job_role=target_role
+        ).values(
+            'tool__tool_name',
+            'importance'
+        )
+    )
+
+    # --------------------------------------------------
+    # Projects
+    # --------------------------------------------------
+
+    projects = UserProject.objects.filter(
+        user=user
+    ).prefetch_related(
+        'skills_used',
+        'tools_used'
+    )
+
+    project_evidence = []
+
+    for project in projects:
+        project_evidence.append({
+            'title': project.title,
+            'project_type': (
+                project.get_project_type_display()
+                if hasattr(
+                    project,
+                    'get_project_type_display'
+                )
+                else 'Not specified'
+            ),
+            'description': project.description or '',
+            'skills_used': list(
+                project.skills_used.values_list(
+                    'skill_name',
+                    flat=True
+                )
+            ),
+            'tools_used': list(
+                project.tools_used.values_list(
+                    'tool_name',
+                    flat=True
+                )
+            ),
+        })
+
+    context = {
+        'current_role': current_role.role_name,
+        'target_role': target_role.role_name,
+
+        'deterministic_transition_analysis': {
+            'skill_match_score': (
+                analysis.skill_match_score
+            ),
+            'tool_match_score': (
+                analysis.tool_match_score
+            ),
+            'feasibility_score': (
+                analysis.feasibility_score
+            ),
+            'difficulty_level': (
+                analysis.difficulty_level
+            ),
+            'missing_skills': (
+                analysis.missing_skills or ''
+            ),
+            'missing_tools': (
+                analysis.missing_tools or ''
+            ),
+            'recommendation': (
+                analysis.recommendation
+            ),
+        },
+
+        'user_evidence': {
+            'skills': user_skills,
+            'tools': user_tools,
+            'projects': project_evidence,
+        },
+
+        'current_role_requirements': {
+            'skills': current_role_skills,
+            'tools': current_role_tools,
+        },
+
+        'target_role_requirements': {
+            'skills': target_role_skills,
+            'tools': target_role_tools,
+        },
+    }
+
+    instructions = """
+You are the AI Career Transition Advisor inside CareerReady AI.
+
+CareerReady AI has already performed a deterministic career-transition
+feasibility analysis.
+
+The deterministic system has already calculated:
+
+- skill match score
+- tool match score
+- overall feasibility score
+- transition difficulty
+- missing skills
+- missing tools
+
+DO NOT recalculate, replace, alter or contradict these values.
+
+Your responsibility is to interpret the existing transition analysis
+and provide personalised career-transition guidance.
+
+Use ONLY the supplied CareerReady AI evidence.
+
+Do not invent:
+- skills
+- tools
+- projects
+- work experience
+- qualifications
+- achievements
+- certifications
+- technologies
+
+IMPORTANT RULES:
+
+1. Explain why the transition has the supplied feasibility level.
+
+2. Identify transferable strengths that genuinely help the candidate
+   move from the current role toward the target role.
+
+3. Transferable strengths must be supported by supplied user evidence
+   and/or overlap between current-role and target-role requirements.
+
+4. Identify the highest-priority gaps from the supplied missing
+   skills and tools.
+
+5. High-importance target-role requirements should receive greater
+   attention than lower-priority requirements.
+
+6. Give a practical transition plan in a sensible order.
+
+7. Where appropriate, recommend extending an existing project to
+   demonstrate a missing target-role competency.
+
+8. Do not tell the candidate to relearn competencies they already
+   demonstrate unless improvement is clearly necessary.
+
+9. Do not change the deterministic difficulty classification.
+
+10. Do not generate a new percentage or numerical transition score.
+
+11. Keep the response practical, concise and career-focused.
+
+Return exactly:
+
+analysis
+transferable_strengths
+priority_gaps
+action_plan
+""".strip()
+
+    try:
+        response = client.responses.create(
+            model='gpt-5',
+            instructions=instructions,
+            input=json.dumps(
+                context,
+                indent=2,
+                default=str
+            ),
+            text={
+                'format': {
+                    'type': 'json_schema',
+                    'name': 'career_transition_ai_analysis',
+                    'strict': True,
+                    'schema': {
+                        'type': 'object',
+                        'properties': {
+                            'analysis': {
+                                'type': 'string'
+                            },
+                            'transferable_strengths': {
+                                'type': 'string'
+                            },
+                            'priority_gaps': {
+                                'type': 'string'
+                            },
+                            'action_plan': {
+                                'type': 'string'
+                            }
+                        },
+                        'required': [
+                            'analysis',
+                            'transferable_strengths',
+                            'priority_gaps',
+                            'action_plan'
+                        ],
+                        'additionalProperties': False
+                    }
+                }
+            }
+        )
+
+        return json.loads(
+            response.output_text
+        )
+
+    except Exception as error:
+        logger.warning(
+            'AI career transition analysis failed '
+            'for analysis %s: %s',
+            analysis.id,
+            error
+        )
+
+        return None
+    
 @login_required
 def career_transition_analysis(request):
     form = CareerTransitionForm(request.POST or None)
@@ -3039,7 +3343,7 @@ def career_transition_analysis(request):
         )
 
         return redirect(
-            'career_transition_result',
+            'prepare_ai_career_transition',
             analysis_id=analysis.id
         )
 
@@ -3047,6 +3351,90 @@ def career_transition_analysis(request):
         request,
         'career_app/career_transition_analysis.html',
         {'form': form}
+    )
+
+@login_required
+def prepare_ai_career_transition(
+    request,
+    analysis_id
+):
+    analysis = get_object_or_404(
+        CareerTransitionAnalysis.objects.select_related(
+            'current_role',
+            'target_role'
+        ),
+        id=analysis_id,
+        user=request.user
+    )
+
+    # If AI analysis already exists,
+    # don't generate it again.
+    if analysis.ai_analysis:
+        return redirect(
+            'career_transition_result',
+            analysis_id=analysis.id
+        )
+
+    # GET displays the loading page.
+    if request.method == 'GET':
+        return render(
+            request,
+            'career_app/preparing_ai_career_transition.html',
+            {
+                'analysis': analysis
+            }
+        )
+
+    # POST performs the actual AI request.
+    ai_result = generate_ai_career_transition_analysis(
+        analysis
+    )
+
+    if ai_result:
+        analysis.ai_analysis = ai_result.get(
+            'analysis',
+            ''
+        )
+
+        analysis.ai_transferable_strengths = ai_result.get(
+            'transferable_strengths',
+            ''
+        )
+
+        analysis.ai_priority_gaps = ai_result.get(
+            'priority_gaps',
+            ''
+        )
+
+        analysis.ai_action_plan = ai_result.get(
+            'action_plan',
+            ''
+        )
+
+        analysis.save(
+            update_fields=[
+                'ai_analysis',
+                'ai_transferable_strengths',
+                'ai_priority_gaps',
+                'ai_action_plan'
+            ]
+        )
+
+        messages.success(
+            request,
+            'AI career transition analysis generated successfully.'
+        )
+
+    else:
+        messages.warning(
+            request,
+            'The transition was analysed, but the AI guidance '
+            'could not be generated.'
+        )
+
+    return redirect(
+        'career_transition_result',
+        analysis_id=analysis.id
     )
 
 @login_required

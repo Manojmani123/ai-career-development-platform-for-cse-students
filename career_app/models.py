@@ -377,7 +377,10 @@ class UserProject(models.Model):
     
 
 class CareerTransitionAnalysis(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+    )
 
     current_role = models.ForeignKey(
         JobRole,
@@ -391,24 +394,65 @@ class CareerTransitionAnalysis(models.Model):
         related_name='target_transition_roles'
     )
 
-    skill_match_score = models.FloatField(default=0)
-    tool_match_score = models.FloatField(default=0)
-    feasibility_score = models.FloatField(default=0)
+    skill_match_score = models.FloatField(
+        default=0
+    )
 
-    difficulty_level = models.CharField(max_length=100)
+    tool_match_score = models.FloatField(
+        default=0
+    )
 
-    missing_skills = models.TextField(blank=True, null=True)
-    missing_tools = models.TextField(blank=True, null=True)
+    feasibility_score = models.FloatField(
+        default=0
+    )
+
+    difficulty_level = models.CharField(
+        max_length=100
+    )
+
+    missing_skills = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    missing_tools = models.TextField(
+        blank=True,
+        null=True
+    )
 
     recommendation = models.TextField()
 
-    created_at = models.DateTimeField(default=timezone.now)
+    # AI interpretation fields
+    ai_analysis = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    ai_transferable_strengths = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    ai_priority_gaps = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    ai_action_plan = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    created_at = models.DateTimeField(
+        default=timezone.now
+    )
 
     def __str__(self):
-        return f"{self.user.username}: {self.current_role.role_name} to {self.target_role.role_name}"
-    
-
-
+        return (
+            f"{self.user.username}: "
+            f"{self.current_role.role_name} "
+            f"to {self.target_role.role_name}"
+        )
 class InterviewSession(models.Model):
     QUESTION_GENERATION_CHOICES = [
         ('RULE_BASED', 'Rule-Based Questions'),
