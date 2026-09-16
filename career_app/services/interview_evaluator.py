@@ -438,9 +438,7 @@ def _calculate_evidence_score(interview_answer):
             'The answer does not explain how the solution was tested or validated.'
         )
 
-    # -------------------------------------------------
-    # 7. Result or outcome: maximum 1
-    # -------------------------------------------------
+   
 
     result_phrases = [
         'the result',
@@ -604,9 +602,7 @@ def _calculate_technical_score(interview_answer):
 
     score = 0.0
 
-    # -------------------------------------------------
-    # 1. Correct technical concepts: maximum 2
-    # -------------------------------------------------
+    
 
     technical_concept_terms = [
         'architecture',
@@ -664,9 +660,7 @@ def _calculate_technical_score(interview_answer):
     elif concept_matches >= 1:
         score += 0.6
 
-    # -------------------------------------------------
-    # 2. Architecture and design decisions: maximum 2
-    # -------------------------------------------------
+    
 
     architecture_terms = [
         'component',
@@ -711,9 +705,7 @@ def _calculate_technical_score(interview_answer):
     elif architecture_matches == 1:
         score += 0.5
 
-    # -------------------------------------------------
-    # 3. Technology and service selection: maximum 2
-    # -------------------------------------------------
+    
 
     technology_terms = [
         'aws',
